@@ -1,0 +1,213 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static humanize %}
+
+{% block title %}Aprobar Comunicación{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'correspondencia/css/comunicacion-interna-hub-detalle.css' %}">
+<link rel="stylesheet" href="{% static 'correspondencia/css/comunicacion-interna-aprobar.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="interna-module-page interna-aprobar-page">
+    <div class="internal-module-shell">
+        <section class="module-hero module-hero--single-column approval-hero">
+            <div>
+                <span class="module-kicker"><i class="bi bi-shield-check"></i>Revisión líder</span>
+                <h1 class="module-title">{{ titulo_pagina }}</h1>
+                <p class="module-subtitle">Valida el documento, confirma su destino y decide si debe avanzar al flujo interno o cerrarse definitivamente. La interfaz conserva el cableado actual y prioriza legibilidad para revisión rápida.</p>
+
+                <div class="module-chip-row module-chip-row--inline mt-3">
+                    <span class="module-chip"><i class="bi bi-upc-scan"></i>{{ comunicacion.radicado|default:"Sin radicar aún" }}</span>
+                    <span class="module-status-pill is-warning"><i class="bi bi-hourglass-split"></i>{{ comunicacion.get_estado_display }}</span>
+                    {% if comunicacion.trd %}<span class="module-chip-soft"><i class="bi bi-diagram-2"></i>TRD {{ comunicacion.trd }}</span>{% endif %}
+                    <span class="module-chip-soft"><i class="bi bi-paperclip"></i>{{ comunicacion.anexos.count }} anexo{{ comunicacion.anexos.count|pluralize }}</span>
+                </div>
+
+                <div class="module-hero-workflow">
+                    <div class="module-hero-workflow-head">
+                        <div>
+                            <h2 class="module-section-title">Qué ocurre al decidir</h2>
+                            <p class="module-copy mb-0">La aprobación genera radicado y PDF. El rechazo cierra el flujo y notifica al creador.</p>
+                        </div>
+                    </div>
+                    <div class="module-step-grid module-step-grid--hero mt-3">
+                        <article class="module-guide-card">
+                            <span class="module-mini-badge"><i class="bi bi-search"></i>Paso 1</span>
+                            <h3 class="module-section-title mt-3">Revisar contenido</h3>
+                            <p class="module-copy mb-0">Valida asunto, remitente, destinatarios y cuerpo antes de emitir la decisión.</p>
+                        </article>
+                        <article class="module-guide-card">
+                            <span class="module-mini-badge"><i class="bi bi-check2-circle"></i>Paso 2</span>
+                            <h3 class="module-section-title mt-3">Aprobar o devolver</h3>
+                            <p class="module-copy mb-0">Si apruebas, la pieza avanza al flujo final. Si rechazas, debes dejar trazabilidad del motivo.</p>
+                        </article>
+                        <article class="module-guide-card">
+                            <span class="module-mini-badge"><i class="bi bi-diagram-3"></i>Paso 3</span>
+                            <h3 class="module-section-title mt-3">Distribución</h3>
+                            <p class="module-copy mb-0">Según el tipo de distribución, se firma primero o se reparte automáticamente a destino.</p>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {% if comunicacion.requiere_firma %}
+        <section class="module-banner is-warning">
+            <div class="module-banner-icon"><i class="bi bi-pen-fill"></i></div>
+            <div>
+                <h3 class="module-section-title">Esta aprobación requiere firma digital posterior</h3>
+                <p class="mb-0">Al aprobar se genera el PDF y la comunicación queda lista para subir el archivo firmado antes de su distribución final.</p>
+            </div>
+        </section>
+        {% endif %}
+
+        <div class="module-detail-grid">
+            <div class="module-button-stack">
+                <section class="module-card">
+                    <div class="module-panel-head">
+                        <h2 class="module-panel-title"><i class="bi bi-journal-text me-2"></i>Resumen para revisión</h2>
+                        <p class="module-copy">Consulta metadatos del documento y confirma que el destino corresponde al flujo esperado.</p>
+                    </div>
+                    <div class="module-panel-body">
+                        <div class="module-summary-grid">
+                            <div class="module-summary-card">
+                                <span class="module-detail-label">Fecha del documento</span>
+                                <div class="module-detail-value">{{ comunicacion.fecha_documento|date:"d/m/Y" }}</div>
+                            </div>
+                            <div class="module-summary-card">
+                                <span class="module-detail-label">Ciudad</span>
+                                <div class="module-detail-value">{{ comunicacion.ciudad }}</div>
+                            </div>
+                            <div class="module-summary-card">
+                                <span class="module-detail-label">Oficina remitente</span>
+                                <div class="module-detail-value">{{ comunicacion.remitente_oficina.nombre }}</div>
+                            </div>
+                            <div class="module-summary-card">
+                                <span class="module-detail-label">Modo de distribución</span>
+                                <div class="module-detail-value">{{ comunicacion.get_tipo_distribucion_display|default:comunicacion.tipo_distribucion }}</div>
+                            </div>
+                        </div>
+
+                        <div class="module-info-item mt-3">
+                            <span class="module-detail-label">Destinatario o alcance</span>
+                            <div class="module-detail-value approval-destination-stack">
+                                {% if comunicacion.es_a_toda_entidad or comunicacion.tipo_distribucion == 'ENTIDAD' %}
+                                    {% with entidad=comunicacion.remitente_oficina.unidad_administrativa.entidad_productora %}
+                                        <span class="module-status-pill is-info"><i class="bi bi-people-fill"></i>{{ entidad.nombre|upper }}</span>
+                                    {% endwith %}
+                                {% elif comunicacion.tipo_distribucion == 'PROCESO' and comunicacion.destinatario_proceso %}
+                                    <span class="module-status-pill is-info"><i class="bi bi-diagram-3-fill"></i>{{ comunicacion.destinatario_proceso.nombre }}</span>
+                                {% elif comunicacion.destinatarios_multiples.exists %}
+                                    {% for dest in comunicacion.destinatarios_multiples.all %}
+                                        {% if dest.tipo == 'OFICINA' and dest.oficina %}
+                                            <span class="module-status-pill is-info"><i class="bi bi-building-fill"></i>{{ dest.oficina.nombre }}</span>
+                                        {% elif dest.tipo == 'USUARIO' and dest.usuario %}
+                                            <span class="module-status-pill is-success"><i class="bi bi-person-fill"></i>{{ dest.usuario.get_full_name|default:dest.usuario.username }}</span>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    {% if comunicacion.destinatario_oficina %}
+                                        <span class="module-status-pill is-info"><i class="bi bi-building-fill"></i>{{ comunicacion.destinatario_oficina.nombre }}</span>
+                                    {% endif %}
+                                    {% if comunicacion.destinatario_usuario %}
+                                        <span class="module-status-pill is-success"><i class="bi bi-person-fill"></i>{{ comunicacion.destinatario_usuario.get_full_name|default:comunicacion.destinatario_usuario.username }}</span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="module-info-item mt-3">
+                            <span class="module-detail-label">Asunto</span>
+                            <div class="module-detail-value">{{ comunicacion.asunto }}</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="module-card">
+                    <div class="module-panel-head">
+                        <h2 class="module-panel-title"><i class="bi bi-file-richtext me-2"></i>Contenido del documento</h2>
+                        <p class="module-copy">Lee el texto completo antes de decidir. El cuerpo mantiene formato legible y ancho cómodo para revisión.</p>
+                    </div>
+                    <div class="module-panel-body">
+                        <div class="module-rich-text approval-rich-text">{{ comunicacion.cuerpo|linebreaks }}</div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="module-side-stack approval-side-stack-lifted">
+                <section class="module-card approval-action-card approval-action-card--approve">
+                    <div class="module-panel-head approval-action-head">
+                        <div>
+                            <h2 class="module-panel-title"><i class="bi bi-check-circle-fill me-2"></i>Aprobar comunicación</h2>
+                            <p class="module-copy mb-0">Genera radicado, produce el PDF y deja trazabilidad de la revisión.</p>
+                        </div>
+                        <span class="module-status-pill is-success">{% if comunicacion.requiere_firma %}Requiere firma{% else %}Distribución inmediata{% endif %}</span>
+                    </div>
+                    <div class="module-panel-body">
+                        <div class="approval-note approval-note--success">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <div>
+                                {% if comunicacion.requiere_firma %}
+                                La pieza quedará aprobada y lista para cargar el archivo firmado antes de distribuirse.
+                                {% else %}
+                                La pieza quedará aprobada, radicada y lista para distribución automática a su destino.
+                                {% endif %}
+                            </div>
+                        </div>
+                        <form method="post" class="approval-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion" value="aprobar">
+                            <button type="submit" class="btn approval-submit approval-submit--success w-100">
+                                <i class="bi bi-check-lg me-2"></i>
+                                {% if comunicacion.requiere_firma %}Aprobar y pasar a firma{% else %}Aprobar y distribuir{% endif %}
+                            </button>
+                        </form>
+                    </div>
+                </section>
+
+                <section class="module-card approval-action-card approval-action-card--reject">
+                    <div class="module-panel-head approval-action-head">
+                        <div>
+                            <h2 class="module-panel-title"><i class="bi bi-x-circle-fill me-2"></i>Rechazar comunicación</h2>
+                            <p class="module-copy mb-0">Usa esta opción solo si el documento debe cerrarse y devolverse al creador con justificación.</p>
+                        </div>
+                        <span class="module-status-pill is-danger">Cierre definitivo</span>
+                    </div>
+                    <div class="module-panel-body">
+                        <div class="approval-note approval-note--danger">
+                            <i class="bi bi-exclamation-octagon-fill"></i>
+                            <div>El rechazo deja la pieza en estado final y no podrá seguir el flujo de distribución.</div>
+                        </div>
+                        <form method="post" class="approval-form">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion" value="rechazar">
+                            <label for="motivo" class="approval-label">Motivo del rechazo</label>
+                            <textarea name="motivo" id="motivo" class="form-control approval-textarea" rows="5" placeholder="Explique brevemente por qué rechaza esta comunicación..." required></textarea>
+                            <button type="submit" class="btn approval-submit approval-submit--danger w-100">
+                                <i class="bi bi-x-lg me-2"></i>Rechazar definitivamente
+                            </button>
+                        </form>
+                    </div>
+                </section>
+
+                <section class="module-card approval-side-card">
+                    <div class="module-panel-head">
+                        <h2 class="module-panel-title"><i class="bi bi-compass me-2"></i>Navegación rápida</h2>
+                        <p class="module-copy">Mantén el contexto del flujo sin perder acceso a la bandeja y al detalle documental.</p>
+                    </div>
+                    <div class="module-panel-body approval-nav-stack">
+                        <a href="{% url 'correspondencia:interna_detalle' comunicacion.pk %}" class="approval-link-btn approval-link-btn--primary">
+                            <i class="bi bi-eye"></i>Ver detalle completo
+                        </a>
+                        <a href="{% url 'correspondencia:interna_pendientes' %}" class="approval-link-btn approval-link-btn--secondary">
+                            <i class="bi bi-arrow-left"></i>Volver a pendientes
+                        </a>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

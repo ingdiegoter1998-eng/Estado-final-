@@ -1,0 +1,207 @@
+<!-- 
+  MODAL DE RADICACIÓN RÁPIDA - CORRESPONDENCIA SALIENTE
+  
+  Formulario simplificado para registrar correspondencia saliente durante
+  el período de transición. Usa campos mínimos obligatorios.
+-->
+<div class="modal fade" id="{{ modal_id|default:'modalRadicacionRapidaSaliente' }}" tabindex="-1" 
+     aria-labelledby="modalRadicacionRapidaSalienteLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" action="" id="form-radicacion-rapida-saliente" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="form_prefix" value="rapida_saliente">
+        
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title" id="modalRadicacionRapidaSalienteLabel">
+            <i class="bi bi-lightning-fill me-2"></i>Radicación Rápida - Saliente
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        
+        <div class="modal-body">
+          <!-- Alerta informativa -->
+          <div class="alert alert-success bg-success-subtle mb-3" id="alert-rapida-saliente">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <strong>Radicación rápida:</strong> Registre correspondencia saliente enviada por vías externas.
+          </div>
+          
+          {% if form_rapida_saliente %}
+          <!-- Asunto -->
+          <div class="mb-3">
+            <label for="id_rapida_sal-asunto" class="form-label fw-semibold">
+              Asunto <span class="text-danger">*</span>
+            </label>
+            {{ form_rapida_saliente.asunto }}
+            {% if form_rapida_saliente.asunto.errors %}
+              <div class="invalid-feedback d-block">{{ form_rapida_saliente.asunto.errors.0 }}</div>
+            {% endif %}
+          </div>
+          
+          <!-- Cuerpo/Descripción -->
+          <div class="mb-3">
+            <label for="id_rapida_sal-cuerpo" class="form-label fw-semibold">
+              Descripción/Contenido <span class="text-danger">*</span>
+            </label>
+            {{ form_rapida_saliente.cuerpo }}
+            {% if form_rapida_saliente.cuerpo.errors %}
+              <div class="invalid-feedback d-block">{{ form_rapida_saliente.cuerpo.errors.0 }}</div>
+            {% endif %}
+          </div>
+          
+          <div class="row">
+            <!-- Destinatario (contacto) -->
+            <div class="col-md-6 mb-3">
+              <label for="id_rapida_sal-destinatario_contacto" class="form-label fw-semibold">
+                Destinatario (contacto registrado)
+              </label>
+              {{ form_rapida_saliente.destinatario_contacto }}
+              {% if form_rapida_saliente.destinatario_contacto.errors %}
+                <div class="invalid-feedback d-block">{{ form_rapida_saliente.destinatario_contacto.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Destinatario (texto libre) -->
+            <div class="col-md-6 mb-3">
+              <label for="id_rapida_sal-destinatario_texto" class="form-label fw-semibold">
+                Destinatario (texto libre)
+              </label>
+              {{ form_rapida_saliente.destinatario_texto }}
+              <small class="text-muted">Use si el destinatario no está registrado.</small>
+            </div>
+          </div>
+          
+          <!-- Oficina Emisora -->
+          <div class="mb-3">
+            <label for="id_rapida_sal-oficina_emisora" class="form-label fw-semibold">
+              Oficina Emisora <span class="text-danger">*</span>
+            </label>
+            {{ form_rapida_saliente.oficina_emisora }}
+            {% if form_rapida_saliente.oficina_emisora.errors %}
+              <div class="invalid-feedback d-block">{{ form_rapida_saliente.oficina_emisora.errors.0 }}</div>
+            {% endif %}
+            <small class="text-muted">Oficina que genera esta correspondencia de salida.</small>
+          </div>
+          
+          <!-- Funcionario que envía -->
+          <div class="mb-3">
+            <label for="id_rapida_sal-funcionario_envia" class="form-label fw-semibold">
+              <i class="bi bi-person-badge me-1"></i>Funcionario que envía
+            </label>
+            {{ form_rapida_saliente.funcionario_envia }}
+            {% if form_rapida_saliente.funcionario_envia.errors %}
+              <div class="invalid-feedback d-block">{{ form_rapida_saliente.funcionario_envia.errors.0 }}</div>
+            {% endif %}
+            <small class="text-muted">Nombre del funcionario responsable del envío.</small>
+          </div>
+          
+          <!-- Radicado de Entrada Correspondiente (solo lectura, visible en edición) -->
+          <div class="mb-3 d-none" id="campo-radicado-entrada-saliente">
+            <label class="form-label fw-semibold">
+              <i class="bi bi-link-45deg me-1"></i>Radicado de Entrada Correspondiente
+            </label>
+            <input type="text" class="form-control" id="radicado-entrada-correspondiente" readonly
+                   style="background-color: #e9ecef; font-weight: 600; color: #0d6efd;">
+            <small class="text-muted">Radicado entrante vinculado a esta salida (no editable).</small>
+          </div>
+
+          <hr class="my-3">
+
+          <!-- Fue Respondida -->
+          <div class="mb-3">
+            <div class="form-check form-switch">
+              {{ form_rapida_saliente.fue_respondida }}
+              <label class="form-check-label fw-semibold" for="id_rapida_sal-fue_respondida">
+                <i class="bi bi-check-circle me-1"></i>¿Ya fue respondida?
+              </label>
+            </div>
+            <small class="text-muted">Marque esta casilla si la correspondencia ya fue respondida.</small>
+          </div>
+
+          <!-- Evidencia de Respuesta -->
+          <div class="mb-3" id="campo-evidencia-respuesta">
+            <label for="id_rapida_sal-evidencia_respuesta" class="form-label fw-semibold">
+              <i class="bi bi-paperclip me-1"></i>Evidencia de respuesta
+            </label>
+            {{ form_rapida_saliente.evidencia_respuesta }}
+            {% if form_rapida_saliente.evidencia_respuesta.errors %}
+              <div class="invalid-feedback d-block">{{ form_rapida_saliente.evidencia_respuesta.errors.0 }}</div>
+            {% endif %}
+            <small class="text-muted">Adjunte archivo de evidencia (PDF, Word, imagen, Excel, correo).</small>
+            <div class="d-none mt-2" id="evidencia-actual-saliente">
+              <span class="badge bg-info text-dark">
+                <i class="bi bi-file-earmark me-1"></i>Archivo actual: <a href="#" id="link-evidencia-actual" target="_blank" class="text-dark"></a>
+              </span>
+            </div>
+          </div>
+          
+          <!-- Errores no relacionados a campos -->
+          {% if form_rapida_saliente.non_field_errors %}
+            <div class="alert alert-danger">
+              {% for error in form_rapida_saliente.non_field_errors %}
+                {{ error }}
+              {% endfor %}
+            </div>
+          {% endif %}
+          
+          {% else %}
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              Formulario no disponible. Recargue la página.
+            </div>
+          {% endif %}
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Cancelar
+          </button>
+          <button type="submit" class="btn btn-success" id="btn-submit-rapida-saliente">
+            <i class="bi bi-check-lg me-1"></i>Radicar Saliente
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var modalSaliente = document.getElementById('{{ modal_id|default:"modalRadicacionRapidaSaliente" }}');
+  if (modalSaliente && typeof jQuery !== 'undefined' && jQuery.fn.select2) {
+    modalSaliente.addEventListener('shown.bs.modal', function() {
+      if (window.DashboardDeferredSelects && window.DashboardDeferredSelects.isDeferredMode()) {
+        return;
+      }
+      // Inicializar Select2 en todos los selects del modal (bandeja sin modo diferido)
+      $(modalSaliente).find('select').each(function() {
+        var $select = $(this);
+        if (!$select.hasClass('select2-hidden-accessible')) {
+          $select.select2({
+            theme: 'bootstrap-5',
+            dropdownParent: $(modalSaliente),
+            allowClear: true,
+            width: '100%',
+            placeholder: 'Seleccionar...',
+            language: {
+              noResults: function() { return "No se encontraron resultados"; },
+              searching: function() { return "Buscando..."; }
+            }
+          });
+        }
+      });
+    });
+    
+    modalSaliente.addEventListener('hidden.bs.modal', function() {
+      if (window.DashboardDeferredSelects && window.DashboardDeferredSelects.isDeferredMode()) {
+        return;
+      }
+      $(modalSaliente).find('select').each(function() {
+        if ($(this).hasClass('select2-hidden-accessible')) {
+          $(this).select2('destroy');
+        }
+      });
+    });
+  }
+});
+</script>

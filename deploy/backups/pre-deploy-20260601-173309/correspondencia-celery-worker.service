@@ -1,0 +1,19 @@
+[Unit]
+Description=Celery Worker - Correspondencia (procesar correos, enviar respuestas)
+After=network.target redis-server.service
+Wants=redis-server.service
+
+[Service]
+Type=simple
+User=devdiego
+Group=www-data
+WorkingDirectory=/home/devdiego/Correspondencia-diciembre-1.0
+EnvironmentFile=/home/devdiego/Correspondencia-diciembre-1.0/.env
+Environment="PATH=/home/devdiego/Correspondencia-diciembre-1.0/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=hospital_document_management.settings"
+ExecStart=/home/devdiego/Correspondencia-diciembre-1.0/venv/bin/celery -A hospital_document_management worker -l info --max-tasks-per-child=200 --without-gossip --without-mingle
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

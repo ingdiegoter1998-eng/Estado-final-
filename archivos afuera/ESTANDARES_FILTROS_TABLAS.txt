@@ -1,0 +1,116 @@
+ESTÁNDARES PARA SISTEMAS DE FILTROS EN TABLAS
+=================================================
+
+Objetivo
+- Definir un estándar único para crear, mantener y escalar filtros en tablas dentro del sistema de correspondencia (entrada/salida), promoviendo consistencia visual, buen rendimiento y accesibilidad.
+
+Tecnologías y versiones recomendadas
+- Django: >= 3.2 LTS (recomendado 4.2 LTS)
+- Bootstrap: 5.3.x
+- Bootstrap Icons: 1.11.x
+- jQuery: 3.7.x
+- DataTables: 1.13.x
+- Select2: 4.1.x
+- HTMX: 1.9.x (para fragmentos dinámicos opcionales)
+
+Estructura base (front)
+- CSS común de filtros: correspondencia/css/historial_compacto.css
+- JS común de filtros: correspondencia/js/historial_compacto.js
+- Helpers DataTables: correspondencia/js/datatables-modern.js, correspondencia/js/datatables-responsive.js
+- Inclusión típica en plantillas:
+  - CSS en bloque extra_css o extra_head
+  - JS en bloque extra_scripts
+
+Convenciones de UI/UX
+- Contenedor de filtros: panel colapsable con botón toggle (icono embudo) y animación suave.
+- Secciones: agrupar por temática (Búsqueda, Clasificación, Estados/Fechas, Acciones).
+- Acciones: "Aplicar Filtros" (submit GET) y "Limpiar Filtros" (reseteo + submit automático).
+- Filtros activos: renderizar badges con pares etiqueta:valor visibles y fáciles de quitar re-enviando GET sin ese parámetro.
+- Campos:
+  - Búsqueda libre: name=search_term
+  - Usuarios: name=usuario (texto o autocompletado/Select2 según vista)
+  - Destinatario: name=destinatario
+  - Estado salida/entrada: name=estado_salida / name=estado_entrada (enum)
+  - Fechas: name=fecha_inicio, name=fecha_fin (type=date)
+  - Tipo (si aplica): name=tipo con valores Entrada | Salida
+- Accesibilidad: aplicar aria-label a inputs con el texto de su label; foco visible; navegación por teclado.
+- Persistencia opcional: localStorage para estado de filtros (activado en historial_compacto.js).
+- Responsive: usar grid Bootstrap; en <768px los controles se apilan.
+
+Convenciones de backend (Django)
+- Método: GET con parámetros limpios y explícitos.
+- Validación: sanitizar strings, validar enums, parsear fechas (YYYY-MM-DD); ignorar valores inválidos silenciosamente.
+- Paginación: usar Paginator; param page.
+- Ordenación: permitir sort solo por columnas whitelisted (param sort, dir) si se habilita.
+- Optimización de consultas:
+  - select_related para FK de uso común (usuario_redactor, respuesta_a, etc.)
+  - prefetch_related para m2m/related sets
+  - Índices sobre campos filtrables (estado, fechas, usuario, destinatario)
+- Seguridad: no interpolar parámetros en SQL; verificar permisos (por ejemplo, grupo "Ventanilla" cuando aplique).
+
+Nombres de parámetros estándar (reutilizables)
+- search_term: texto libre (asunto, radicado, remitente/redactor)
+- usuario: username o nombre a buscar (icontains) o id si se usa Select2
+- destinatario: nombre/razón social a buscar (icontains)
+- estado_entrada / estado_salida: uno de [RADICADA, ASIGNADA_USUARIO, LEIDA, RESPONDIDA] o [BORRADOR, PENDIENTE_APROBACION, APROBADA, RECHAZADA, ENVIADA, ERROR_ENVIO]
+- fecha_inicio / fecha_fin: rango de fechas (inclusive)
+- tipo: Entrada | Salida (cuando una vista mezcla ambos dominios)
+- page: paginación
+
+Integración DataTables
+- Modo recomendado: server-side para datasets grandes (> 1k filas). Si client-side, cargar dataset acotado.
+- Clases de columnas: usar clases semánticas para widths y alineación (p.ej., .col-fecha, .col-asunto, .col-estado).
+- Anchos: definir en CSS base (ajustables por contexto). Ejemplo: .col-fecha (200–250px), .col-estado (100–130px).
+
+Estilos y componentes comunes
+- CSS: reutilizar historial_compacto.css para look & feel del panel de filtros.
+- JS: reutilizar historial_compacto.js para:
+  - Toggle con animación
+  - Reset de filtros + submit
+  - Validación de fechas
+  - Resaltado de campos con valor
+  - Persistencia localStorage (opcional)
+- Badges de filtros activos: consistentes con "Filtros Activos" del historial.
+
+Patrones de implementación (paso a paso)
+1) Vista Django: aceptar GET estándar, validar, aplicar filtros al QuerySet, paginar, setear flags/valores en contexto para re-render.
+2) Plantilla: copiar bloque de filtros estándar y adaptar labels/combos al dominio (entrada/salida), incluyendo badges de filtros activos.
+3) Estilos: incluir correspondencia/css/historial_compacto.css en extra_css o extra_head.
+4) Scripts: incluir correspondencia/js/historial_compacto.js en extra_scripts.
+5) DataTables (si aplica): inicialización coherente con helpers existentes; evitar doble paginación (preferir paginación del servidor).
+6) QA: verificar accesibilidad (tab order, aria-labels), responsive, y que el reset limpia y reenvía GET.
+
+Accesibilidad y i18n
+- aria-label en inputs (desde su label).
+- Textos: usar cadenas claras y consistentes; ajustar formatos de fecha a locale.
+
+Rendimiento
+- Índices en campos filtrables y fechas.
+- select_related/prefetch_related donde corresponda.
+- Limitar resultados por página según contexto de uso (10–50 por página).
+- Debounce en búsquedas en vivo (si se incorporan) y límites de resultados en endpoints de autocompletado.
+
+Seguridad
+- Validar y normalizar todos los parámetros GET.
+- Restringir vistas por rol/grupo cuando aplique (p.ej., Ventanilla).
+- Evitar exponer información sensible en badges o tooltips.
+
+Pruebas
+- Unitarias: combinaciones de filtros (mínimas y compuestas), validación de parámetros inválidos, paginación.
+- Integración: vistas con plantillas (render con GET diversos) y conteos esperados.
+- E2E: flujos de aplicación/limpieza de filtros y persistencia (si se usa) en páginas críticas.
+
+Checklist rápido (por vista)
+- [ ] GET params validados (search_term, usuario, destinatario, estado_*, fecha_inicio/fin, page)
+- [ ] QuerySet optimizado con select_related/prefetch_related
+- [ ] Panel de filtros incluido (CSS+JS comunes)
+- [ ] Badges de filtros activos
+- [ ] Paginación coherente
+- [ ] Accesible (aria-label, foco visible)
+- [ ] Responsive (ver <768px)
+- [ ] Sin errores de consola ni conflictos DataTables
+
+Notas de mantenimiento
+- Centralizar ajustes visuales en historial_compacto.css.
+- Mantener historial_compacto.js sin lógica de dominio; solo utilidades de UI/UX del panel.
+- Versionar cambios de comportamiento (p. ej., nuevos parámetros) en CHANGELOG del proyecto.

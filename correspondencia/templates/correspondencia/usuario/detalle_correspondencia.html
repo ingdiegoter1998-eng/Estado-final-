@@ -1,0 +1,1801 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static %}
+{% load humanize auth_extras %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block content %}
+{% if correspondencia %}
+<style>
+    .detail-page {
+        --detail-surface: #ffffff;
+        --detail-surface-muted: #f8fafc;
+        --detail-border: #e2e8f0;
+        --detail-muted: #64748b;
+        --detail-title: #0f172a;
+        --detail-primary: var(--bs-primary, #0d6efd);
+        --detail-primary-rgb: var(--bs-primary-rgb, 13, 110, 253);
+        --detail-success-rgb: 25, 135, 84;
+        --detail-warning-rgb: 255, 193, 7;
+        --detail-info-rgb: 13, 202, 240;
+        --detail-shadow: 0 18px 40px -26px rgba(15, 23, 42, 0.28);
+    }
+
+    .container-fluid.detail-page {
+        max-width: none;
+        width: 100%;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    /* Anular el padding: 2rem de base_correspondencia.css en .main-content */
+    .main-content:has(.detail-page) {
+        padding: 0;
+    }
+
+    .detail-page .detail-shell {
+        width: 95%;
+        max-width: none;
+        margin: 0 auto 2rem;
+        padding: 0;
+    }
+
+    .main-content .detail-page .detail-content-row {
+        padding: 0;
+        --bs-gutter-x: 1.5rem;
+        --bs-gutter-y: 1.5rem;
+        width: 100%;
+    }
+
+    .detail-page .detail-hero {
+        padding: 1.8rem 1.9rem;
+        margin-bottom: 1.5rem;
+        border-radius: 28px;
+        border: 1px solid rgba(var(--detail-primary-rgb), 0.12);
+        background: linear-gradient(180deg, #ffffff 0%, rgba(var(--detail-primary-rgb), 0.04) 100%);
+        box-shadow: var(--detail-shadow);
+    }
+
+    .detail-page .detail-breadcrumb {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.45rem;
+        margin-bottom: 0.85rem;
+        color: var(--detail-muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+
+    .detail-page .detail-breadcrumb i {
+        font-size: 0.95rem;
+        color: rgba(var(--detail-primary-rgb), 0.7);
+    }
+
+    .detail-page .detail-hero h2 {
+        margin: 0;
+        color: var(--detail-title);
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+    }
+
+    .detail-page .detail-hero p {
+        margin: 0.55rem 0 0;
+        color: var(--detail-muted);
+        font-size: 0.95rem;
+    }
+
+    .detail-page .detail-hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin-top: 1rem;
+    }
+
+    .detail-page .detail-meta-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.52rem 0.8rem;
+        border-radius: 999px;
+        background: rgba(var(--detail-primary-rgb), 0.06);
+        border: 1px solid rgba(var(--detail-primary-rgb), 0.1);
+        color: #334155;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .detail-page .detail-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .detail-page .detail-card-accent {
+        position: relative;
+    }
+
+    .detail-page .detail-card-accent::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        border-radius: 24px;
+        background: var(--detail-primary);
+    }
+
+    .detail-page .card {
+        border: 1px solid var(--detail-border);
+        border-radius: 24px;
+        overflow: hidden;
+        background: var(--detail-surface);
+        box-shadow: var(--detail-shadow);
+    }
+
+    .detail-page .card-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--detail-border);
+        background: linear-gradient(180deg, #ffffff 0%, var(--detail-surface-muted) 100%);
+        color: var(--detail-title);
+        font-size: 0.92rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+    }
+
+    .detail-page .card-body {
+        padding: 1.35rem;
+    }
+
+    .detail-page .section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--detail-title);
+    }
+
+    .detail-page .section-title i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 12px;
+        background: rgba(var(--detail-primary-rgb), 0.1);
+        color: var(--detail-primary);
+        font-size: 1rem;
+    }
+
+    .detail-page .section-link {
+        color: var(--detail-primary);
+        font-size: 0.76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-decoration: none;
+    }
+
+    .detail-page .btn {
+        border-radius: 14px;
+        font-weight: 700;
+    }
+
+    .detail-page .btn-outline-secondary,
+    .detail-page .btn-outline-primary,
+    .detail-page .btn-outline-info,
+    .detail-page .btn-outline-dark {
+        background: #fff;
+    }
+
+    .detail-page .table thead th {
+        border-bottom: 1px solid var(--detail-border);
+        color: #475569;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .detail-page .table > :not(caption) > * > * {
+        padding-top: 0.85rem;
+        padding-bottom: 0.85rem;
+    }
+
+    .detail-page .detail-info-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .detail-page .detail-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .detail-page .detail-summary-card {
+        min-height: 100%;
+        padding: 1.15rem 1.2rem;
+        border: 1px solid #e6edf5;
+        border-radius: 20px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        box-shadow: 0 16px 34px -30px rgba(15, 23, 42, 0.35);
+    }
+
+    .detail-page .detail-summary-card.is-primary {
+        grid-column: span 5;
+        border-color: rgba(var(--detail-primary-rgb), 0.14);
+        background: linear-gradient(180deg, #ffffff 0%, rgba(var(--detail-primary-rgb), 0.05) 100%);
+    }
+
+    .detail-page .detail-summary-card.is-compact {
+        grid-column: span 2;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .detail-page .detail-summary-card.is-response {
+        grid-column: span 3;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    }
+
+    .detail-page .detail-summary-card.is-response .detail-overline,
+    .detail-page .detail-summary-card.is-response .detail-summary-meta {
+        text-align: center;
+    }
+
+    .detail-page .detail-summary-card.is-radicado {
+        justify-content: center;
+    }
+
+    .detail-page .detail-summary-grid.has-deadline .detail-summary-card.is-primary {
+        grid-column: span 4;
+    }
+
+    .detail-page .detail-summary-grid.has-deadline .detail-summary-card.is-response {
+        grid-column: span 2;
+    }
+
+    .detail-page .detail-summary-grid.has-deadline .detail-summary-card.is-radicado {
+        grid-column: span 1;
+    }
+
+    .detail-page .detail-summary-card.is-deadline {
+        grid-column: span 3;
+        border-color: rgba(var(--detail-warning-rgb), 0.28);
+        background: linear-gradient(180deg, #ffffff 0%, rgba(var(--detail-warning-rgb), 0.08) 100%);
+    }
+
+    .detail-page .detail-summary-card.is-deadline.is-responded {
+        border-color: rgba(var(--detail-success-rgb), 0.28);
+        background: linear-gradient(180deg, #ffffff 0%, rgba(var(--detail-success-rgb), 0.08) 100%);
+    }
+
+    .detail-page .detail-summary-value.is-missing {
+        color: #b45309;
+        font-size: 0.95rem;
+    }
+
+    .detail-page .detail-summary-topline {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.8rem;
+    }
+
+    .detail-page .detail-summary-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(var(--detail-primary-rgb), 0.08);
+        color: var(--detail-primary);
+        font-size: 1rem;
+        flex: 0 0 40px;
+    }
+
+    .detail-page .detail-summary-card .detail-overline {
+        margin-bottom: 0.45rem;
+        color: #64748b;
+    }
+
+    .detail-page .detail-summary-value {
+        color: var(--detail-title);
+        font-size: 1.02rem;
+        font-weight: 800;
+        line-height: 1.45;
+        word-break: break-word;
+    }
+
+    .detail-page .detail-summary-answer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 108px;
+        color: var(--detail-title);
+        font-size: 2.45rem;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -0.04em;
+        text-transform: uppercase;
+    }
+
+    .detail-page .detail-summary-answer.is-yes {
+        color: #166534;
+    }
+
+    .detail-page .detail-summary-answer.is-no {
+        color: #991b1b;
+    }
+
+    .detail-page .detail-summary-card.is-primary .detail-summary-value {
+        font-size: 1.28rem;
+        line-height: 1.32;
+    }
+
+    .detail-page .detail-summary-meta {
+        margin-top: 0.45rem;
+        color: var(--detail-muted);
+        font-size: 0.8rem;
+        line-height: 1.45;
+    }
+
+    .detail-page .detail-summary-stack {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.7rem;
+    }
+
+    .detail-page .detail-extra-toggle {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        padding: 0.9rem 1rem;
+        border: 1px solid #dbe5f1;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        color: #0f172a;
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+        text-align: left;
+    }
+
+    .detail-page .detail-extra-toggle-copy {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        min-width: 0;
+    }
+
+    .detail-page .detail-extra-toggle-copy span {
+        display: flex;
+        flex-direction: column;
+        gap: 0.12rem;
+    }
+
+    .detail-page .detail-extra-toggle-copy small {
+        color: var(--detail-muted);
+        font-size: 0.74rem;
+        font-weight: 700;
+    }
+
+    .detail-page .detail-extra-toggle i:last-child {
+        transition: transform 0.2s ease;
+    }
+
+    .detail-page .detail-extra-toggle[aria-expanded="true"] i:last-child {
+        transform: rotate(180deg);
+    }
+
+    .detail-page .detail-extra-panel {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #edf2f7;
+    }
+
+    .detail-page .detail-info-item {
+        padding: 1rem 1.05rem;
+        border: 1px solid #edf2f7;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+
+    .detail-page .detail-info-item.detail-info-item-wide {
+        grid-column: 1 / -1;
+    }
+
+    .detail-page .detail-overline {
+        margin-bottom: 0.38rem;
+        color: #94a3b8;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .detail-page .detail-value {
+        color: var(--detail-title);
+        font-size: 0.96rem;
+        font-weight: 700;
+        line-height: 1.5;
+        word-break: break-word;
+    }
+
+    .detail-page .detail-value.is-muted {
+        color: var(--detail-muted);
+        font-weight: 600;
+    }
+
+    .detail-page .detail-subtext {
+        margin-top: 0.25rem;
+        color: var(--detail-muted);
+        font-size: 0.78rem;
+    }
+
+    .detail-page .detail-inline-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.3rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+    }
+
+    .detail-page .alert {
+        border-radius: 18px;
+        border-width: 1px;
+    }
+
+    .detail-page .list-group-item {
+        border-color: #edf2f7;
+    }
+
+    .detail-page .detail-attachment-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    .detail-page .detail-attachment-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.05rem;
+        border: 1px solid #edf2f7;
+        border-radius: 18px;
+        background: #fff;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .detail-page .detail-attachment-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 35px -28px rgba(15, 23, 42, 0.5);
+    }
+
+    .detail-page .attachment-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        font-size: 1.15rem;
+        flex: 0 0 44px;
+    }
+
+    .detail-page .attachment-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-left: auto;
+    }
+
+    .detail-page .attachment-actions .btn {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .detail-page .detail-action-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.9rem;
+    }
+
+    .detail-page .detail-action-tile {
+        width: 100%;
+        min-height: 102px;
+        padding: 1rem 0.85rem;
+        border: 1px solid #edf2f7;
+        border-radius: 18px;
+        background: #fff;
+        color: #475569;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        text-align: center;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .detail-page .detail-action-tile:hover,
+    .detail-page .detail-action-tile:focus {
+        transform: translateY(-1px);
+        border-color: rgba(var(--detail-primary-rgb), 0.22);
+        box-shadow: 0 18px 35px -28px rgba(var(--detail-primary-rgb), 0.55);
+        color: var(--detail-primary);
+    }
+
+    .detail-page .detail-action-tile i {
+        color: var(--detail-primary);
+        font-size: 1.3rem;
+    }
+
+    .detail-page .detail-action-tile span {
+        font-size: 0.78rem;
+        font-weight: 800;
+        line-height: 1.35;
+    }
+
+    .detail-page .detail-primary-cta {
+        margin-top: 1rem;
+        min-height: 48px;
+        border-radius: 16px;
+        background: rgba(var(--detail-primary-rgb), 0.09);
+        border: 1px solid rgba(var(--detail-primary-rgb), 0.12);
+        color: var(--detail-primary);
+    }
+
+    .detail-page .detail-primary-cta:hover,
+    .detail-page .detail-primary-cta:focus {
+        background: rgba(var(--detail-primary-rgb), 0.14);
+        color: var(--detail-primary);
+    }
+
+    .detail-page .detail-status-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.65rem;
+        width: 100%;
+        margin-top: 1rem;
+        min-height: 48px;
+        padding: 0.85rem 1rem;
+        border-radius: 16px;
+        border: 1px solid transparent;
+        font-weight: 800;
+        line-height: 1.3;
+        cursor: default;
+        opacity: 1;
+    }
+
+    .detail-page .detail-status-cta:disabled {
+        opacity: 1;
+    }
+
+    .detail-page .detail-status-cta.is-draft {
+        background: rgba(100, 116, 139, 0.1);
+        border-color: rgba(100, 116, 139, 0.2);
+        color: #475569;
+    }
+
+    .detail-page .detail-status-cta.is-pending {
+        background: rgba(var(--detail-warning-rgb), 0.18);
+        border-color: rgba(var(--detail-warning-rgb), 0.3);
+        color: #92400e;
+    }
+
+    .detail-page .detail-status-cta.is-approved {
+        background: rgba(var(--detail-info-rgb), 0.16);
+        border-color: rgba(var(--detail-info-rgb), 0.28);
+        color: #0c4a6e;
+    }
+
+    .detail-page .detail-status-cta.is-sent {
+        background: rgba(var(--detail-success-rgb), 0.14);
+        border-color: rgba(var(--detail-success-rgb), 0.26);
+        color: #166534;
+    }
+
+    .detail-page .detail-status-cta.is-error {
+        background: rgba(239, 68, 68, 0.14);
+        border-color: rgba(239, 68, 68, 0.24);
+        color: #991b1b;
+    }
+
+    .detail-page .detail-note {
+        margin-top: 0.9rem;
+        padding: 0.9rem 1rem;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 0.82rem;
+        line-height: 1.5;
+    }
+
+    .detail-page .detail-timeline {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        padding-left: 1.55rem;
+    }
+
+    .detail-page .detail-timeline::before {
+        content: "";
+        position: absolute;
+        top: 0.3rem;
+        bottom: 0.3rem;
+        left: 0.45rem;
+        width: 1px;
+        background: #dbe5f1;
+    }
+
+    .detail-page .detail-timeline-item {
+        position: relative;
+    }
+
+    .detail-page .detail-timeline-dot {
+        position: absolute;
+        left: -1.55rem;
+        top: 0.2rem;
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: var(--detail-primary);
+        box-shadow: 0 0 0 5px #fff;
+    }
+
+    .detail-page .detail-timeline-item.is-muted .detail-timeline-dot {
+        background: #cbd5e1;
+    }
+
+    .detail-page .detail-timeline-title {
+        color: var(--detail-title);
+        font-size: 0.85rem;
+        font-weight: 800;
+    }
+
+    .detail-page .detail-timeline-time {
+        color: var(--detail-muted);
+        font-size: 0.74rem;
+        font-weight: 600;
+    }
+
+    .detail-page .detail-timeline-text {
+        margin-top: 0.25rem;
+        color: #475569;
+        font-size: 0.8rem;
+        line-height: 1.5;
+    }
+
+    .detail-page .detail-read-card {
+        margin-top: 1.5rem;
+        padding-top: 1.3rem;
+        border-top: 1px solid #edf2f7;
+    }
+
+    .detail-page .detail-read-box {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        padding: 0.95rem 1rem;
+        border-radius: 18px;
+        background: var(--detail-surface-muted);
+        border: 1px solid #edf2f7;
+    }
+
+    .detail-page .detail-read-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(var(--detail-primary-rgb), 0.08);
+        color: var(--detail-primary);
+        font-size: 1.1rem;
+        flex: 0 0 40px;
+    }
+
+    .detail-page .detail-modal-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        box-shadow: 0 18px 40px -30px rgba(15, 23, 42, 0.5);
+    }
+
+    .detail-page .email-meta-card {
+        display: flex;
+        gap: 0.9rem;
+        align-items: flex-start;
+        padding: 1rem;
+        min-height: 100%;
+    }
+
+    .detail-page .email-meta-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 42px;
+        font-size: 1.1rem;
+    }
+
+    .detail-page .email-meta-label {
+        margin-bottom: 0.3rem;
+        color: #64748b;
+        font-size: 0.76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .detail-page .email-meta-value {
+        color: #0f172a;
+        font-size: 0.96rem;
+        font-weight: 700;
+        line-height: 1.45;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+    .detail-page .correo-viewer {
+        border: 1px solid #dbe5f1;
+        border-radius: 20px;
+        background: #fff;
+        max-height: 60vh;
+        overflow: auto;
+        padding: 1rem 1.15rem;
+        color: #1e293b;
+    }
+
+    .detail-page .correo-viewer,
+    .detail-page .correo-viewer p,
+    .detail-page .correo-viewer div,
+    .detail-page .correo-viewer span,
+    .detail-page .correo-viewer td,
+    .detail-page .correo-viewer li {
+        text-align: justify;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+    .detail-page .correo-viewer img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .detail-page .correo-viewer table {
+        max-width: 100%;
+    }
+
+    @media (max-width: 1199.98px) {
+        .detail-page .detail-summary-card.is-primary {
+            grid-column: span 12;
+        }
+
+        .detail-page .detail-summary-card.is-compact,
+        .detail-page .detail-summary-card.is-response,
+        .detail-page .detail-summary-card.is-deadline {
+            grid-column: span 4;
+        }
+
+        .detail-page .detail-info-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .detail-page .detail-hero {
+            padding: 1.4rem;
+            border-radius: 22px;
+        }
+
+        .detail-page .detail-hero h2 {
+            font-size: 1.55rem;
+        }
+
+        .detail-page .detail-info-grid,
+        .detail-page .detail-summary-grid,
+        .detail-page .detail-action-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .detail-page .detail-summary-card.is-primary,
+        .detail-page .detail-summary-card.is-compact {
+            grid-column: span 1;
+        }
+
+        .detail-page .detail-extra-toggle {
+            align-items: flex-start;
+        }
+
+        .detail-page .detail-extra-toggle-copy {
+            align-items: flex-start;
+        }
+
+        .detail-page .detail-attachment-item {
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .detail-page .attachment-actions {
+            margin-left: 0;
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="container-fluid mt-4 detail-page">
+    <div class="detail-shell">
+        <div class="detail-hero">
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <h2>{{ correspondencia.numero_radicado|default:titulo_pagina }}</h2>
+                <span class="detail-status-pill {% if correspondencia.estado == 'DISTRIBUIDA_OFICINA' %}text-info-emphasis bg-info-subtle border border-info-subtle{% elif correspondencia.estado == 'LEIDA' %}text-success-emphasis bg-success-subtle border border-success-subtle{% elif correspondencia.estado == 'CON_RESPUESTA_PENDIENTE' %}text-warning-emphasis bg-warning-subtle border border-warning-subtle{% elif correspondencia.estado == 'RADICADA' %}text-primary-emphasis bg-primary-subtle border border-primary-subtle{% else %}text-secondary-emphasis bg-secondary-subtle border border-secondary-subtle{% endif %}">
+                    {{ correspondencia.get_estado_display }}
+                </span>
+            </div>
+            <p>
+                Gestión y seguimiento de correspondencia{% if correspondencia.tipo_radicado %} {{ correspondencia.get_tipo_radicado_display|lower }}{% endif %}
+                recibida el {{ correspondencia.fecha_radicacion|date:"d \d\e F, Y" }}.
+            </p>
+
+        </div>
+
+        <div class="row g-4 detail-content-row">
+            <div class="col-12 col-xl-8">
+                <div class="card shadow-sm mb-4 detail-card-accent">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="section-title"><i class="bi bi-info-circle"></i> Información general</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="detail-summary-grid{% if correspondencia.requiere_respuesta %} has-deadline{% endif %}">
+                            <div class="detail-summary-card is-primary">
+                                <div class="detail-summary-topline">
+                                    <div>
+                                        <div class="detail-overline">Remitente</div>
+                                        <div class="detail-summary-value">{{ correspondencia.remitente|default:"No especificado" }}</div>
+                                        <div class="detail-summary-meta">Asunto: {{ correspondencia.asunto|default:"Sin asunto" }}</div>
+                                    </div>
+                                    <span class="detail-summary-icon">
+                                        <i class="bi bi-person-badge"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="detail-summary-card is-compact">
+                                <div class="detail-overline">Fecha de radicación</div>
+                                <div class="detail-summary-value">{{ correspondencia.fecha_radicacion|date:"d M Y" }}</div>
+                                <div class="detail-summary-meta">{{ correspondencia.fecha_radicacion|date:"h:i A" }}</div>
+                            </div>
+                            {% if correspondencia.requiere_respuesta %}
+                                {% with fecha_limite=correspondencia.fecha_limite_respuesta %}
+                                <div class="detail-summary-card is-compact is-deadline{% if correspondencia.estado == 'RESPONDIDA' %} is-responded{% endif %}">
+                                    <div class="detail-overline">Fecha máxima de respuesta</div>
+                                    {% if fecha_limite %}
+                                        <div class="detail-summary-value">{{ fecha_limite|date:"d M Y" }}</div>
+                                        <div class="detail-summary-meta">{{ fecha_limite|date:"h:i A" }}</div>
+                                    {% else %}
+                                        <div class="detail-summary-value is-missing">Sin definir</div>
+                                        <div class="detail-summary-meta">No se configuró plazo al radicar</div>
+                                    {% endif %}
+                                    {% if correspondencia.estado == 'RESPONDIDA' and salida and salida.fecha_envio %}
+                                        <div class="detail-summary-meta text-success fw-semibold mt-1">
+                                            Respondida el {{ salida.fecha_envio|date:"d M Y" }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% endwith %}
+                            {% endif %}
+                            <div class="detail-summary-card is-response">
+                                <div class="detail-overline">Requiere respuesta</div>
+                                <div class="detail-summary-answer {% if correspondencia.requiere_respuesta %}is-yes{% else %}is-no{% endif %}">{% if correspondencia.requiere_respuesta %}Sí{% else %}No{% endif %}</div>
+                            </div>
+                            <div class="detail-summary-card is-compact is-radicado">
+                                <div class="detail-overline">Radicado</div>
+                                <div class="detail-summary-value">{{ correspondencia.numero_radicado|default:"No disponible" }}</div>
+                            </div>
+                        </div>
+
+                        <button class="btn detail-extra-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#informacionAdicionalCorrespondencia" aria-expanded="false" aria-controls="informacionAdicionalCorrespondencia">
+                            <span class="detail-extra-toggle-copy">
+                                <i class="bi bi-layout-text-sidebar-reverse"></i>
+                                <span>
+                                    Información adicional
+                                    <small>Metadatos, clasificación y trazabilidad del registro</small>
+                                </span>
+                            </span>
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+
+                        <div class="collapse detail-extra-panel" id="informacionAdicionalCorrespondencia">
+                            <div class="detail-info-grid">
+                                <div class="detail-info-item">
+                                    <div class="detail-overline">Tipo radicado</div>
+                                    <div class="detail-value">{{ correspondencia.get_tipo_radicado_display|default:"No definido" }}</div>
+                                </div>
+                                <div class="detail-info-item">
+                                    <div class="detail-overline">Medio de recepción</div>
+                                    <div class="detail-value">{{ correspondencia.get_medio_recepcion_display|default:"No definido" }}</div>
+                                </div>
+                                <div class="detail-info-item">
+                                    <div class="detail-overline">Radicado por</div>
+                                    <div class="detail-value">{{ correspondencia.usuario_radicador.get_full_name|default:correspondencia.usuario_radicador.username|default:"Sistema" }}</div>
+                                </div>
+                                <div class="detail-info-item">
+                                    <div class="detail-overline">Oficina destino</div>
+                                    <div class="detail-value">{{ correspondencia.oficina_destino.nombre|default:"N/A" }}</div>
+                                </div>
+                                <div class="detail-info-item">
+                                    <div class="detail-overline">Leído por oficina</div>
+                                    <div class="detail-value">{% if correspondencia.leido_por_oficina %}Sí{% else %}No{% endif %}</div>
+                                </div>
+                                <div class="detail-info-item">
+                                    <div class="detail-overline">Serie documental</div>
+                                    <div class="detail-value">{{ correspondencia.serie.nombre|default:"N/A" }}</div>
+                                </div>
+                                <div class="detail-info-item">
+                                    <div class="detail-overline">Subserie documental</div>
+                                    <div class="detail-value">{{ correspondencia.subserie.nombre|default:"N/A" }}</div>
+                                </div>
+
+                                {% if correspondencia.requiere_respuesta %}
+                                    <div class="detail-info-item">
+                                        <div class="detail-overline">Fecha máxima de respuesta</div>
+                                        <div class="detail-value">
+                                            {% with fecha_limite=correspondencia.fecha_limite_respuesta %}
+                                                {% if fecha_limite %}
+                                                    {{ fecha_limite|date:"d M Y - h:i A" }}
+                                                {% else %}
+                                                    Sin definir
+                                                {% endif %}
+                                            {% endwith %}
+                                        </div>
+                                        {% if correspondencia.estado == 'RESPONDIDA' and salida and salida.fecha_envio %}
+                                            <div class="detail-subtext text-success">Respondida el {{ salida.fecha_envio|date:"d M Y - h:i A" }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="detail-info-item">
+                                        <div class="detail-overline">Plazo de respuesta</div>
+                                        <div class="detail-value">
+                                            {% if correspondencia.plazo_respuesta_dias %}
+                                                {{ correspondencia.plazo_respuesta_dias }} días hábiles
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        </div>
+                                        {% if correspondencia.plazo_respuesta_dias %}
+                                            <div class="detail-subtext">Origen: {{ correspondencia.get_plazo_origen_display }}</div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+
+                                <div class="detail-info-item detail-info-item-wide">
+                                    <div class="detail-overline">Asunto</div>
+                                    <div class="detail-value">{{ correspondencia.asunto|default:"Sin asunto" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="section-title"><i class="bi bi-paperclip"></i> Archivos adjuntos</h5>
+                        <span class="section-link">{{ adjuntos|length }} archivo{{ adjuntos|length|pluralize }}</span>
+                    </div>
+                    <div class="card-body">
+                        {% if adjuntos %}
+                            <div class="detail-attachment-list">
+                                {% for adj in adjuntos %}
+                                    <div class="detail-attachment-item">
+                                        <div class="attachment-icon {% if adj.archivo.name|lower|slice:'-4:' == '.pdf' %}bg-danger-subtle text-danger{% elif adj.archivo.name|lower|slice:'-5:' == '.docx' or adj.archivo.name|lower|slice:'-4:' == '.doc' %}bg-primary-subtle text-primary{% else %}bg-warning-subtle text-warning-emphasis{% endif %}">
+                                            <i class="bi {% if adj.archivo.name|lower|slice:'-4:' == '.pdf' %}bi-filetype-pdf{% elif adj.archivo.name|lower|slice:'-5:' == '.docx' or adj.archivo.name|lower|slice:'-4:' == '.doc' %}bi-file-earmark-word{% else %}bi-image{% endif %}"></i>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="detail-value">{{ adj.nombre_original|default:adj.archivo.name|truncatechars:70 }}</div>
+                                            <div class="detail-subtext">{{ adj.archivo.size|filesizeformat }} • {{ adj.fecha_carga|date:"d M Y - h:i A" }}</div>
+                                        </div>
+                                        <div class="attachment-actions">
+                                            <a href="{{ adj.archivo.url }}" target="_blank" class="btn btn-outline-secondary" title="Visualizar archivo">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ adj.archivo.url }}" target="_blank" class="btn btn-outline-primary" title="Descargar archivo">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-info-circle me-2"></i>
+                                {% if correspondencia.medio_recepcion == 'FISICO' %}
+                                    No hay documentos escaneados adjuntos a esta correspondencia física.
+                                {% else %}
+                                    No hay archivos adjuntos en esta correspondencia electrónica.
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if salida %}
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h5 class="section-title"><i class="bi bi-send"></i> Respuesta enviada</h5>
+                            {% if tiene_rebote %}
+                                <span class="badge bg-danger rounded-pill d-inline-flex align-items-center gap-1">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> Rebote detectado
+                                </span>
+                            {% endif %}
+                        </div>
+                        {% if tiene_rebote %}
+                            <div class="alert alert-danger border-0 rounded-0 mb-0 d-flex align-items-start gap-2" style="border-left: 4px solid #dc3545 !important;">
+                                <i class="bi bi-envelope-x-fill fs-5 mt-1"></i>
+                                <div>
+                                    <strong>Envío rebotado</strong>
+                                    <div class="small mt-1">El correo enviado a los siguientes destinatarios fue rechazado por el servidor destino:</div>
+                                    <ul class="mb-0 mt-1 small">
+                                        {% for dest in destinatarios_salientes %}
+                                            {% if dest.estado == 'REBOTE' %}
+                                                <li>
+                                                    <strong>{{ dest.nombre_snapshot|default:dest.email_snapshot }}</strong>
+                                                    ({{ dest.email_snapshot }})
+                                                    {% if dest.dsn_status %}<span class="text-muted">— DSN {{ dest.dsn_status }}</span>{% endif %}
+                                                    {% if dest.smtp_code %}<span class="text-muted">— SMTP {{ dest.smtp_code }}</span>{% endif %}
+                                                </li>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <div class="detail-info-grid">
+                                <div class="detail-info-item">
+                                    <div class="detail-overline">Radicado de salida</div>
+                                    <div class="detail-value">{{ salida.numero_radicado_salida|default:"No disponible" }}</div>
+                                </div>
+                                <div class="detail-info-item">
+                                    <div class="detail-overline">Fecha de creación</div>
+                                    <div class="detail-value">{{ salida.fecha_creacion|date:"d M Y - h:i A" }}</div>
+                                </div>
+                                <div class="detail-info-item">
+                                    <div class="detail-overline">Estado</div>
+                                    <div class="detail-value">{{ salida.get_estado_display }}</div>
+                                </div>
+                                <div class="detail-info-item">
+                                    <div class="detail-overline">Redactado por</div>
+                                    <div class="detail-value">
+                                        {% if salida.usuario_redactor %}
+                                            {{ salida.usuario_redactor.get_full_name|default:salida.usuario_redactor.username }}
+                                        {% else %}
+                                            No registrado
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="detail-info-item">
+                                    <div class="detail-overline">Aprobado por</div>
+                                    <div class="detail-value">
+                                        {% if salida.usuario_aprobador %}
+                                            {{ salida.usuario_aprobador.get_full_name|default:salida.usuario_aprobador.username }}
+                                        {% else %}
+                                            Pendiente
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="detail-info-item">
+                                    <div class="detail-overline">Email enviado</div>
+                                    <div class="detail-value">{{ salida.destinatario_email|default:"No registrado" }}</div>
+                                </div>
+                                <div class="detail-info-item detail-info-item-wide">
+                                    <div class="detail-overline">Asunto</div>
+                                    <div class="detail-value">{{ salida.asunto|default:"Sin asunto" }}</div>
+                                </div>
+                                <div class="detail-info-item detail-info-item-wide">
+                                    <div class="detail-overline">Destinatario</div>
+                                    <div class="detail-value">
+                                        {% if salida.envio_tipo == 'GRUPO' and salida.envio_grupo %}
+                                            <a href="{% url 'correspondencia:categoria_detalle' salida.envio_grupo.id %}" class="text-decoration-none">
+                                                <i class="bi bi-tags me-1"></i>{{ salida.envio_grupo.nombre }}{% if salida.envio_total_destinatarios and salida.envio_total_destinatarios > 0 %} ({{ salida.envio_total_destinatarios }} contactos){% endif %}
+                                            </a>
+                                        {% elif salida.envio_tipo == 'MULTIPLE_SELECTIVO' %}
+                                            <div class="d-flex flex-column gap-2">
+                                                <div class="text-muted small">
+                                                    <i class="bi bi-people me-1"></i>Envío a {% if salida.envio_total_destinatarios and salida.envio_total_destinatarios > 0 %}{{ salida.envio_total_destinatarios }}{% else %}{{ destinatarios_salientes.count }}{% endif %} destinatarios
+                                                </div>
+                                                <button class="btn btn-sm btn-outline-info align-self-start" type="button" data-bs-toggle="collapse" data-bs-target="#destinatariosLista">
+                                                    <i class="bi bi-list-ul"></i> Ver lista
+                                                </button>
+                                                <div class="collapse mt-1" id="destinatariosLista">
+                                                    <div class="detail-modal-card p-3">
+                                                        <h6 class="mb-3 fw-bold">Destinatarios</h6>
+                                                        <div class="destinatarios-lista">
+                                                            {% with destinatarios_list=destinatarios_salientes|slice:":7" %}
+                                                                {% for destinatario in destinatarios_list %}
+                                                                    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                                                                        <span>{{ destinatario.contacto.nombre_completo }}</span>
+                                                                        <button class="btn btn-sm btn-outline-primary"
+                                                                                data-bs-toggle="modal"
+                                                                                data-bs-target="#modalDetalleContacto"
+                                                                                data-contacto-id="{{ destinatario.contacto.id }}"
+                                                                                data-contacto-nombre="{{ destinatario.contacto.nombre_completo }}"
+                                                                                data-contacto-email="{{ destinatario.contacto.correo_electronico|default:'' }}"
+                                                                                data-contacto-telefono="{{ destinatario.contacto.telefono_contacto|default:'' }}"
+                                                                                data-contacto-cargo="{{ destinatario.contacto.cargo|default:'' }}"
+                                                                                data-contacto-entidad="{{ destinatario.contacto.entidad_externa.nombre|default:'' }}">
+                                                                            <i class="bi bi-eye"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                {% endfor %}
+                                                            {% endwith %}
+                                                        </div>
+
+                                                        {% if destinatarios_salientes|length > 7 %}
+                                                            <div class="mt-3">
+                                                                <nav aria-label="Paginación de destinatarios">
+                                                                    <ul class="pagination pagination-sm justify-content-center mb-0" id="paginacionDestinatarios">
+                                                                        <li class="page-item active">
+                                                                            <a class="page-link" href="#" data-page="1">1</a>
+                                                                        </li>
+                                                                        {% if destinatarios_salientes|length > 14 %}
+                                                                            <li class="page-item">
+                                                                                <a class="page-link" href="#" data-page="2">2</a>
+                                                                            </li>
+                                                                            {% if destinatarios_salientes|length > 21 %}
+                                                                                <li class="page-item">
+                                                                                    <a class="page-link" href="#" data-page="3">3</a>
+                                                                                </li>
+                                                                                {% if destinatarios_salientes|length > 28 %}
+                                                                                    <li class="page-item">
+                                                                                        <span class="page-link">...</span>
+                                                                                    </li>
+                                                                                    <li class="page-item">
+                                                                                        <a class="page-link" href="#" data-page="{{ destinatarios_salientes|length|add:"-1"|divisibleby:7|add:1 }}">{{ destinatarios_salientes|length|add:"-1"|divisibleby:7|add:1 }}</a>
+                                                                                    </li>
+                                                                                {% endif %}
+                                                                            {% endif %}
+                                                                        {% endif %}
+                                                                    </ul>
+                                                                </nav>
+                                                                <div class="text-center mt-2">
+                                                                    <small class="text-muted" id="infoPaginacion">Mostrando 1-7 de {{ destinatarios_salientes|length }} destinatarios</small>
+                                                                </div>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% elif salida.destinatario_contacto %}
+                                            <a href="#" class="text-decoration-none"
+                                               data-bs-toggle="modal"
+                                               data-bs-target="#modalDetalleContacto"
+                                               data-contacto-id="{{ salida.destinatario_contacto.id }}"
+                                               data-contacto-nombre="{{ salida.destinatario_contacto.nombre_completo }}"
+                                               data-contacto-email="{{ salida.destinatario_contacto.correo_electronico|default:'' }}"
+                                               data-contacto-telefono="{{ salida.destinatario_contacto.telefono_contacto|default:'' }}"
+                                               data-contacto-cargo="{{ salida.destinatario_contacto.cargo|default:'' }}"
+                                               data-contacto-entidad="{{ salida.destinatario_contacto.entidad_externa.nombre|default:'' }}">
+                                                <i class="bi bi-person-lines-fill me-1"></i>{{ salida.destinatario_contacto.nombre_completo }} ({{ salida.destinatario_contacto.entidad_externa.nombre }})
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <div class="detail-overline mb-3">Adjuntos de la respuesta</div>
+                                {% if salida.adjuntos.all %}
+                                    <div class="detail-attachment-list">
+                                        {% for adj in salida.adjuntos.all %}
+                                            <div class="detail-attachment-item">
+                                                <div class="attachment-icon bg-success-subtle text-success-emphasis">
+                                                    <i class="bi bi-file-earmark-text"></i>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <div class="detail-value">{{ adj.nombre_original|default:adj.archivo.name|truncatechars:70 }}</div>
+                                                    <div class="detail-subtext">{{ adj.archivo.size|filesizeformat }} • {{ adj.fecha_carga|date:"d M Y" }}</div>
+                                                </div>
+                                                <div class="attachment-actions">
+                                                    <a href="{{ adj.archivo.url }}" target="_blank" class="btn btn-outline-primary" title="Ver archivo">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-light border mb-0">No hay archivos adjuntos en la correspondencia de salida.</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="col-12 col-xl-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-white border-bottom-0">
+                        <h6 class="section-title"><i class="bi bi-lightning-charge"></i> Acciones rápidas</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="detail-action-grid">
+                            {% if puede_compartir %}
+                                <button type="button" class="detail-action-tile" data-bs-toggle="modal" data-bs-target="#modalCompartirCorrespondencia">
+                                    <i class="bi bi-share"></i>
+                                    <span>Compartir con oficina</span>
+                                </button>
+                            {% endif %}
+
+                            {% if correo_origen_obj %}
+                                <button type="button" class="detail-action-tile" data-bs-toggle="modal" data-bs-target="#modalCuerpoCorreoOrigen">
+                                    <i class="bi bi-envelope-open"></i>
+                                    <span>Ver correo asociado</span>
+                                </button>
+                            {% endif %}
+
+                            <button type="button" class="detail-action-tile" data-bs-toggle="modal" data-bs-target="#modalCrearContactoDashboard">
+                                <i class="bi bi-person-plus"></i>
+                                <span>Crear contacto global</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                class="detail-action-tile"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalRedistribuirOficinas"
+                                {% if not puede_redistribuir %}title="No tienes permisos para redistribuir esta correspondencia"{% endif %}>
+                                <i class="bi bi-arrow-left-right"></i>
+                                <span>Redistribuir</span>
+                            </button>
+                        </div>
+
+                        {% if acceso_interoficina and acceso_interoficina.solo_lider and request.user|has_group:"Lider" %}
+                            <form method="post" action="{% url 'correspondencia:lider_compartir_con_oficina' pk=correspondencia.pk %}" class="mt-3" id="formCompartirOficinaLider">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning w-100 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="bi bi-people-fill fs-5"></i> Compartir con mi oficina
+                                </button>
+                            </form>
+                            <script>
+                                document.getElementById('formCompartirOficinaLider')?.addEventListener('submit', async function(e) {
+                                    e.preventDefault();
+                                    const confirmed = await showConfirm('¿Deseas compartir esta correspondencia con toda tu oficina?', 'Compartir con Oficina');
+                                    if (confirmed) {
+                                        this.submit();
+                                    }
+                                });
+                            </script>
+                        {% endif %}
+
+                        {% if correspondencia.requiere_respuesta and puede_responder or puede_respuesta_discrecional %}
+                            {% with respuesta_pendiente=correspondencia.respuestas_salientes.first %}
+                                {% if not respuesta_pendiente or respuesta_pendiente.estado == 'RECHAZADA' %}
+                                    <button type="button" class="btn detail-primary-cta w-100 d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#modalResponderCorrespondencia">
+                                        <i class="bi bi-reply-fill fs-5"></i>
+                                        {% if respuesta_pendiente %}
+                                            Reintentar respuesta
+                                        {% elif puede_respuesta_discrecional %}
+                                            Responder discrecionalmente
+                                        {% else %}
+                                            Responder radicado
+                                        {% endif %}
+                                    </button>
+                                {% else %}
+                                    {% if respuesta_pendiente.estado == 'BORRADOR' %}
+                                        <button class="detail-status-cta is-draft" disabled aria-label="Borrador de respuesta guardado">
+                                            <i class="bi bi-file-earmark-text fs-5"></i>
+                                            Borrador de respuesta guardado
+                                        </button>
+                                    {% elif respuesta_pendiente.estado == 'PENDIENTE_APROBACION' %}
+                                        <button class="detail-status-cta is-pending" disabled aria-label="Respuesta pendiente de aprobación">
+                                            <i class="bi bi-hourglass-split fs-5"></i>
+                                            Respuesta pendiente de aprobación
+                                        </button>
+                                    {% elif respuesta_pendiente.estado == 'APROBADA' %}
+                                        <button class="detail-status-cta is-approved" disabled aria-label="Respuesta aprobada, pendiente de envío">
+                                            <i class="bi bi-patch-check-fill fs-5"></i>
+                                            Respuesta aprobada, pendiente de envío
+                                        </button>
+                                    {% elif respuesta_pendiente.estado == 'ENVIADA' %}
+                                        <button class="detail-status-cta is-sent" disabled aria-label="Respuesta enviada">
+                                            <i class="bi bi-send-check-fill fs-5"></i>
+                                            Respuesta enviada
+                                        </button>
+                                    {% elif respuesta_pendiente.estado == 'ERROR_ENVIO' %}
+                                        <button class="detail-status-cta is-error" disabled aria-label="Error de envío en la respuesta">
+                                            <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                                            Error de envío en la respuesta
+                                        </button>
+                                    {% else %}
+                                        <button class="detail-status-cta is-pending" disabled aria-label="Respuesta en proceso">
+                                            <i class="bi bi-hourglass-split fs-5"></i>
+                                            Respuesta en proceso ({{ respuesta_pendiente.get_estado_display }})
+                                        </button>
+                                    {% endif %}
+
+                                    <a href="{% url 'correspondencia:detalle_respuesta_salida' respuesta_id=respuesta_pendiente.pk %}"
+                                       class="btn btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-2 mt-2"
+                                       style="border-radius: 16px; font-weight: 700;">
+                                        <i class="bi bi-eye fs-5"></i> Ver detalle de respuesta
+                                    </a>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+
+                        {% if not puede_redistribuir %}
+                            <div class="detail-note">
+                                Solo los usuarios asignados a la oficina destino pueden redistribuir esta correspondencia.
+                            </div>
+                        {% endif %}
+
+                        <div class="mt-3">
+                            {% if request.user|has_group:"Ventanilla" %}
+                                <a href="{% url 'correspondencia:pendientes_distribuir' %}" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="bi bi-arrow-left fs-5"></i> Volver a pendientes
+                                </a>
+                            {% else %}
+                                <a href="{% url 'correspondencia:bandeja_personal' %}" class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="bi bi-arrow-left fs-5"></i> Volver a mi bandeja
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2 bg-white border-bottom-0">
+                        <h6 class="section-title"><i class="bi bi-clock-history"></i> Seguimiento</h6>
+                        <span class="detail-inline-pill {% if correspondencia.leido_por_oficina %}text-success-emphasis bg-success-subtle{% else %}text-warning-emphasis bg-warning-subtle{% endif %}">
+                            {% if correspondencia.leido_por_oficina %}Leído{% else %}Pendiente{% endif %}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="detail-timeline">
+                            {% for evento in historial|slice:":3" %}
+                                <div class="detail-timeline-item {% if not forloop.first %}is-muted{% endif %}">
+                                    <span class="detail-timeline-dot"></span>
+                                    <div class="detail-timeline-title">{{ evento.get_evento_display }}</div>
+                                    <div class="detail-timeline-time">{{ evento.fecha_hora|date:"d M Y • h:i A" }}</div>
+                                    <div class="detail-timeline-text">
+                                        {% if evento.descripcion %}
+                                            {{ evento.descripcion|truncatechars:120 }}
+                                        {% else %}
+                                            Registrado por {% if evento.usuario %}{{ evento.usuario.get_full_name|default:evento.usuario.username }}{% else %}Sistema{% endif %}.
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="detail-note mt-0">No hay eventos registrados para esta correspondencia.</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="detail-read-card">
+                            <div class="detail-overline mb-3">Información de lectura</div>
+                            <div class="detail-read-box">
+                                <div class="detail-read-icon">
+                                    <i class="bi bi-eye"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    {% if usuarios_que_leyeron %}
+                                        <div class="detail-value">{{ usuarios_que_leyeron.0.get_full_name|default:usuarios_que_leyeron.0.username }}</div>
+                                        <div class="detail-subtext">Consulta el detalle completo de lectores en la ventana de lectura.</div>
+                                    {% else %}
+                                        <div class="detail-value">Sin lecturas registradas</div>
+                                        <div class="detail-subtext">Aún no hay destinatarios que hayan abierto este radicado.</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="button" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#modalHistorialEventos">
+                                <i class="bi bi-clock-history fs-5"></i> Historial de eventos
+                            </button>
+                            <button type="button" class="btn btn-outline-info d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#modalEstadoLectura">
+                                <i class="bi bi-check2-all fs-5"></i> Estado de lectura
+                            </button>
+                            {% if accesos_oficinas %}
+                                <button type="button" class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#modalEstadisticasOficinas">
+                                    <i class="bi bi-buildings fs-5"></i> Oficinas con acceso
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    {# Modal de confirmación para compartir correspondencia #}
+    {% include 'correspondencia/partials/modals/modal_compartir.html' with modal_id='modalCompartirCorrespondencia' %}
+    {% include 'correspondencia/partials/modals/modal_redistribuir_oficinas.html' with modal_id='modalRedistribuirOficinas' form=form_redistribuir accesos=accesos_oficinas correspondencia=correspondencia %}
+{% include 'correspondencia/partials/modals/modal_estadisticas_oficinas.html' with modal_id='modalEstadisticasOficinas' accesos=accesos_oficinas correspondencia=correspondencia %}
+
+{% if correo_origen_obj %}
+<!-- Modal Correo Asociado -->
+<div class="modal fade" id="modalCuerpoCorreoOrigen" tabindex="-1" aria-labelledby="modalCuerpoCorreoOrigenLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+        <div class="modal-content" style="border: none; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25); overflow: hidden;">
+            <div class="modal-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%); border-bottom: 1px solid #dbeafe; padding: 1.25rem 1.5rem;">
+                <h5 class="modal-title d-flex align-items-center gap-2 m-0" id="modalCuerpoCorreoOrigenLabel" style="font-weight: 700; color: #1d4ed8; font-size: 1.15rem;">
+                    <div class="bg-primary text-white d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 36px; height: 36px;">
+                        <i class="bi bi-envelope-open fs-5"></i>
+                    </div>
+                    Correo asociado
+                </h5>
+                <button type="button" class="btn-close shadow-sm bg-white border" data-bs-dismiss="modal" aria-label="Close" style="border-radius: 50%; opacity: 1;"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <div class="detail-modal-card p-3 p-md-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-chat-left-text text-primary fs-4"></i>
+                        <h6 class="mb-0 fw-bold text-dark">Contenido del correo</h6>
+                    </div>
+
+                    {% if mostrar_cuerpo_correo_origen %}
+                        {% if cuerpo_html_renderizado %}
+                            <div class="correo-viewer">
+                                {{ cuerpo_html_renderizado|safe }}
+                            </div>
+                        {% elif correo_origen_obj.cuerpo_texto %}
+                            <div class="correo-viewer text-dark" style="white-space: pre-wrap;">
+                                {{ correo_origen_obj.cuerpo_texto|linebreaksbr }}
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-secondary mb-0">
+                            No hay contenido disponible para este correo asociado.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-top" style="padding: 1rem 1.5rem;">
+                <button type="button" class="btn btn-light border px-4 rounded-pill fw-medium text-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal Historial de Eventos -->
+<div class="modal fade" id="modalHistorialEventos" tabindex="-1" aria-labelledby="modalHistorialEventosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="border: none; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25); overflow: hidden;">
+            <div class="modal-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; padding: 1.25rem 1.5rem;">
+                <h5 class="modal-title d-flex align-items-center gap-2 m-0" id="modalHistorialEventosLabel" style="font-weight: 700; color: #0f172a; font-size: 1.15rem;">
+                    <div class="bg-primary text-white d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 36px; height: 36px;">
+                        <i class="bi bi-clock-history fs-5"></i>
+                    </div>
+                    Historial de Eventos
+                </h5>
+                <button type="button" class="btn-close shadow-sm bg-white border" data-bs-dismiss="modal" aria-label="Close" style="border-radius: 50%; opacity: 1;"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <div class="timeline ps-3" style="border-left: 2px solid #cbd5e1;">
+                    {% for evento in historial %}
+                    <div class="timeline-item mb-4 position-relative">
+                        <div class="timeline-marker bg-{% if evento.evento == 'RADICACION' %}primary{% elif evento.evento == 'DISTRIBUCION' %}info{% elif evento.evento == 'LECTURA' %}success{% elif evento.evento == 'RESPUESTA' %}warning{% else %}secondary{% endif %} rounded-circle position-absolute" style="width: 14px; height: 14px; left: -24px; top: 4px; box-shadow: 0 0 0 4px #f8fafc;"></div>
+                        <div class="timeline-content card border-0 shadow-sm p-3" style="border-radius: 12px;">
+                            <div class="timeline-header d-flex justify-content-between align-items-center mb-2">
+                                  <span class="badge fw-bold px-3 py-2 rounded-pill border"
+                                      {% if evento.evento == 'RADICACION' %}style="background-color: #dbeafe; color: #1d4ed8; border-color: #bfdbfe;"
+                                      {% elif evento.evento == 'DISTRIBUCION' %}style="background-color: #e0f2fe; color: #0369a1; border-color: #bae6fd;"
+                                      {% elif evento.evento == 'LECTURA' %}style="background-color: #dcfce7; color: #166534; border-color: #bbf7d0;"
+                                      {% elif evento.evento == 'RESPUESTA' %}style="background-color: #fef3c7; color: #92400e; border-color: #fde68a;"
+                                      {% else %}style="background-color: #e2e8f0; color: #334155; border-color: #cbd5e1;"
+                                      {% endif %}>
+                                    {{ evento.get_evento_display }}
+                                </span>
+                                <small class="text-muted fw-medium d-flex align-items-center gap-1"><i class="bi bi-clock"></i> {{ evento.fecha_hora|date:"Y-m-d H:i:s" }}</small>
+                            </div>
+                            <div class="timeline-body mt-2">
+                                <p class="mb-1 fw-bold text-dark d-flex align-items-center gap-1"><i class="bi bi-person text-muted"></i> {{ evento.usuario.username|default:"Sistema" }}</p>
+                                {% if evento.descripcion %}
+                                <p class="mb-0 text-secondary small bg-light p-2 rounded" style="white-space: pre-line;">{{ evento.descripcion }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-folder2-open text-muted fs-1 mb-2"></i>
+                        <p class="text-muted mb-0">No hay eventos registrados.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-top" style="padding: 1rem 1.5rem;">
+                <button type="button" class="btn btn-light border px-4 rounded-pill fw-medium text-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Estado de Lectura -->
+<div class="modal fade" id="modalEstadoLectura" tabindex="-1" aria-labelledby="modalEstadoLecturaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="border: none; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25); overflow: hidden;">
+            <div class="modal-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #f0fdfa 0%, #f1f5f9 100%); border-bottom: 1px solid #ccfbf1; padding: 1.25rem 1.5rem;">
+                <h5 class="modal-title d-flex align-items-center gap-2 m-0" id="modalEstadoLecturaLabel" style="font-weight: 700; color: #0f766e; font-size: 1.15rem;">
+                    <div class="bg-info text-white d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 36px; height: 36px;">
+                        <i class="bi bi-check2-all fs-5"></i>
+                    </div>
+                    Estado de Lectura
+                </h5>
+                <button type="button" class="btn-close shadow-sm bg-white border" data-bs-dismiss="modal" aria-label="Close" style="border-radius: 50%; opacity: 1;"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="mb-0 fw-bold text-success d-flex align-items-center gap-2"><i class="bi bi-check-circle fs-5"></i> Leído por</h6>
+                    </div>
+                    <ul class="list-group list-group-flush" style="border-radius: 0 0 16px 16px;">
+                        {% if usuarios_que_leyeron %}
+                            {% for usuario in usuarios_que_leyeron %}
+                                <li class="list-group-item px-4 py-3 d-flex align-items-center gap-3">
+                                    <div class="bg-success bg-opacity-10 text-success p-2 rounded-circle"><i class="bi bi-person"></i></div>
+                                    <span class="fw-medium text-dark">{{ usuario.get_full_name|default:usuario.username }}</span>
+                                </li>
+                            {% endfor %}
+                        {% else %}
+                            <li class="list-group-item px-4 py-4 text-center text-muted">
+                                <em>Aún no ha sido leído por ningún destinatario.</em>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                {% with todos_destinatarios=correspondencia.distribuciones_internas.all %}
+                {% if todos_destinatarios %}
+                <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="mb-0 fw-bold text-warning d-flex align-items-center gap-2"><i class="bi bi-hourglass-split fs-5"></i> Pendiente por leer</h6>
+                    </div>
+                    <ul class="list-group list-group-flush" style="border-radius: 0 0 16px 16px;">
+                        {% for distribucion in todos_destinatarios %}
+                            {% if not distribucion.leido %}
+                            <li class="list-group-item px-4 py-3 d-flex align-items-center gap-3">
+                                <div class="bg-warning bg-opacity-10 text-warning p-2 rounded-circle"><i class="bi bi-person-x"></i></div>
+                                <span class="fw-medium text-dark">{{ distribucion.usuario_asignado.get_full_name|default:distribucion.usuario_asignado.username }}</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% endwith %}
+            </div>
+            <div class="modal-footer bg-light border-top" style="padding: 1rem 1.5rem;">
+                <button type="button" class="btn btn-light border px-4 rounded-pill fw-medium text-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear contacto de oficina -->
+
+<!-- Modal para responder correspondencia -->
+{% include 'correspondencia/partials/modals/modal_responder_correspondencia.html' with modal_id='modalResponderCorrespondencia' %}
+
+{# Modal Detalle de Contacto reutilizable #}
+<div class="modal fade" id="modalDetalleContacto" tabindex="-1" aria-labelledby="modalDetalleContactoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border: none; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25); overflow: hidden;">
+            <div class="modal-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%); border-bottom: 1px solid #dbeafe; padding: 1.25rem 1.5rem;">
+                <h5 class="modal-title d-flex align-items-center gap-2 m-0" id="modalDetalleContactoLabel" style="font-weight: 700; color: #1d4ed8; font-size: 1.1rem;">
+                    <div class="bg-primary text-white d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 36px; height: 36px;">
+                        <i class="bi bi-person-circle fs-5"></i>
+                    </div>
+                    Detalle del Contacto
+                </h5>
+                <button type="button" class="btn-close shadow-sm bg-white border" data-bs-dismiss="modal" aria-label="Close" style="border-radius: 50%; opacity: 1;"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="detail-modal-card p-3 h-100">
+                            <h6 class="text-primary mb-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-person"></i>Información Personal
+                            </h6>
+                            <div class="mb-2">
+                                <strong>Nombre:</strong>
+                                <span id="modal-nombre" class="ms-2"></span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Cargo:</strong>
+                                <span id="modal-cargo" class="ms-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-modal-card p-3 h-100">
+                            <h6 class="text-primary mb-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-buildings"></i>Información de Entidad
+                            </h6>
+                            <div class="mb-2">
+                                <strong>Entidad:</strong>
+                                <span id="modal-entidad" class="ms-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="detail-modal-card p-3 h-100">
+                            <h6 class="text-primary mb-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-envelope"></i>Información de Contacto
+                            </h6>
+                            <div class="mb-2">
+                                <strong>Email:</strong>
+                                <span id="modal-email" class="ms-2"></span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Teléfono:</strong>
+                                <span id="modal-telefono" class="ms-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detail-modal-card p-3 h-100">
+                            <h6 class="text-primary mb-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-info-circle"></i>Información Adicional
+                            </h6>
+                            <div class="mb-2">
+                                <strong>ID:</strong>
+                                <span id="modal-id" class="ms-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-top" style="padding: 1rem 1.5rem;">
+                <button type="button" class="btn btn-light border px-4 rounded-pill fw-medium text-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+ </div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'correspondencia/js/modals/core-modals.js' %}"></script>
+<!-- Asegurar que notificaciones-toast.js se cargue antes de responder-correspondencia.js -->
+<script>
+    // Verificar que las funciones de notificación estén disponibles
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof window.showSuccess === 'function') {
+            console.log('[Debug] showSuccess está disponible');
+        } else {
+            console.warn('[Debug] showSuccess NO está disponible - el script notificaciones-toast.js podría no haberse cargado');
+        }
+    });
+</script>
+<script src="{% static 'correspondencia/js/modals/blocked-recipients.js' %}"></script>
+<script src="{% static 'correspondencia/js/modals/responder-correspondencia.js' %}"></script>
+
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar inmediatamente si el modal ya está abierto
+    inicializarNuevoModalResponder();
+    
+    // También inicializar cuando se abra el modal
+    const modalResponder = document.getElementById('modalResponderCorrespondencia');
+    if (modalResponder) {
+        modalResponder.addEventListener('shown.bs.modal', function() {
+            inicializarNuevoModalResponder();
+        });
+    }
+
+    // Inicializar modal de detalle de contacto (apertura y llenado)
+    const modalDetalleContacto = document.getElementById('modalDetalleContacto');
+    if (modalDetalleContacto) {
+        modalDetalleContacto.addEventListener('show.bs.modal', function (event) {
+            const trigger = event.relatedTarget;
+            if (!trigger) return;
+            const contactoId = trigger.getAttribute('data-contacto-id');
+            const contactoNombre = trigger.getAttribute('data-contacto-nombre');
+            const contactoEmail = trigger.getAttribute('data-contacto-email');
+            const contactoTelefono = trigger.getAttribute('data-contacto-telefono');
+            const contactoCargo = trigger.getAttribute('data-contacto-cargo');
+            const contactoEntidad = trigger.getAttribute('data-contacto-entidad');
+
+            const setText = (id, value, fallback = 'No especificado') => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = (value && value.trim()) ? value : fallback;
+            };
+
+            setText('modal-id', contactoId || 'N/A', 'N/A');
+            setText('modal-nombre', contactoNombre);
+            setText('modal-cargo', contactoCargo);
+            setText('modal-entidad', contactoEntidad);
+            setText('modal-email', contactoEmail);
+            setText('modal-telefono', contactoTelefono);
+        });
+    }
+
+    // Paginación de destinatarios
+    const paginacionContainer = document.getElementById('paginacionDestinatarios');
+    if (paginacionContainer) {
+        paginacionContainer.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (e.target.classList.contains('page-link') && e.target.hasAttribute('data-page')) {
+                const pagina = parseInt(e.target.getAttribute('data-page'));
+                cambiarPaginaDestinatarios(pagina);
+            }
+        });
+    }
+
+    function cambiarPaginaDestinatarios(pagina) {
+        // Función simplificada - por ahora solo actualiza la paginación visual
+        const paginacionLinks = document.querySelectorAll('#paginacionDestinatarios .page-link');
+        const infoPaginacion = document.getElementById('infoPaginacion');
+        
+        // Actualizar paginación
+        paginacionLinks.forEach(link => {
+            link.parentElement.classList.remove('active');
+            if (link.getAttribute('data-page') == pagina) {
+                link.parentElement.classList.add('active');
+            }
+        });
+
+        // Actualizar información
+        if (infoPaginacion) {
+            const totalDestinatarios = Number('{{ destinatarios_salientes|length }}');
+            const itemsPorPagina = 7;
+            const inicio = (pagina - 1) * itemsPorPagina;
+            const fin = Math.min(inicio + itemsPorPagina, totalDestinatarios);
+            infoPaginacion.textContent = `Mostrando ${inicio + 1}-${fin} de ${totalDestinatarios} destinatarios`;
+        }
+    }
+});
+</script>
+{% endblock %}

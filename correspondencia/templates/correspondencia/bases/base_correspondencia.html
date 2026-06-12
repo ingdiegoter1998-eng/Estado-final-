@@ -1,0 +1,429 @@
+{% load static auth_extras %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Correspondencia{% endblock %} | Hospital del Sarare</title>
+  <link rel="icon" type="image/svg+xml" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+  <link rel="shortcut icon" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+  <link rel="apple-touch-icon" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+
+  <!-- 1. Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
+  <!-- 2. Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- 3. DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
+  <!-- 4. Select2 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css">
+
+  <!-- 5. CSS Personalizado -->
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <!-- 6. Estilos específicos para correspondencia admin -->
+  <link rel="stylesheet" href="{% static 'correspondencia/css/base_correspondencia.css' %}">
+
+  <!-- 7. HTMX -->
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+  <!-- 8. Bloque para CSS adicional de páginas hijas -->
+  {% block extra_css %}{% endblock %}
+
+  <style>
+    /* ========== REDISEÑO COMPLETO DEL SIDEBAR (sin scroll horizontal) ========== */
+    .content-wrapper { 
+      min-height: 100vh; 
+      display: flex;
+    }
+    
+    /* Contenedor principal del sidebar */
+    #sidebarMenu {
+      position: sticky !important;
+      top: 0;
+      height: 100vh;
+      width: 250px !important;
+      min-width: 250px !important;
+      max-width: 250px !important;
+      flex-shrink: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      overflow: hidden !important;
+      box-sizing: border-box !important;
+      padding: 1rem 0.75rem !important;
+      background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%) !important;
+      border-right: 1px solid #e5e7eb !important;
+    }
+    
+    /* Header del sidebar */
+    #sidebarMenu .sidebar-header {
+      flex-shrink: 0;
+      margin-bottom: 1rem !important;
+      padding: 0 0.5rem 1rem 0.5rem !important;
+      border-bottom: 1px solid #e5e7eb !important;
+    }
+    
+    #sidebarMenu .sidebar-header .navbar-brand {
+      font-size: 1.1rem !important;
+      font-weight: 700 !important;
+      color: #1f2937 !important;
+      text-decoration: none !important;
+      display: flex !important;
+      align-items: center !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+    
+    #sidebarMenu .sidebar-header .navbar-brand i {
+      font-size: 1.3rem !important;
+      color: #2563eb !important;
+      flex-shrink: 0 !important;
+      margin-right: 0.5rem !important;
+    }
+    
+    /* Área scrollable del menú */
+    #sidebarMenu .nav { 
+      flex: 1 1 auto !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      list-style: none !important;
+      display: block !important;
+    }
+    
+    /* Items del menú */
+    #sidebarMenu .nav-item { 
+      margin: 0 !important;
+      padding: 0 !important;
+      min-width: 0 !important;
+      width: 100% !important;
+    }
+    
+    /* Separadores de sección */
+    #sidebarMenu .nav-link.disabled {
+      font-size: 0.7rem !important;
+      font-weight: 600 !important;
+      text-transform: uppercase !important;
+      color: #9ca3af !important;
+      letter-spacing: 0.05em !important;
+      padding: 0.75rem 0.5rem 0.25rem 0.5rem !important;
+      margin-top: 0.5rem !important;
+      cursor: default !important;
+      pointer-events: none !important;
+    }
+    
+    /* Enlaces del menú */
+    #sidebarMenu .nav-link { 
+      display: flex !important;
+      align-items: center !important;
+      gap: 0.5rem !important;
+      padding: 0.5rem 0.75rem !important;
+      margin: 0.15rem 0 !important;
+      font-size: 0.85rem !important;
+      font-weight: 500 !important;
+      color: #374151 !important;
+      text-decoration: none !important;
+      border-radius: 0.375rem !important;
+      transition: all 0.15s ease !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      min-width: 0 !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    
+    #sidebarMenu .nav-link:not(.disabled):hover {
+      background-color: #f3f4f6 !important;
+      color: #2563eb !important;
+      transform: translateX(2px) !important;
+    }
+    
+    #sidebarMenu .nav-link.active {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+      color: #ffffff !important;
+      font-weight: 600 !important;
+      box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2) !important;
+    }
+    
+    /* Iconos */
+    #sidebarMenu .nav-link i {
+      font-size: 0.95rem !important;
+      width: 1rem !important;
+      flex-shrink: 0 !important;
+      text-align: center !important;
+      margin: 0 !important;
+    }
+    
+    /* Footer del sidebar */
+    #sidebarMenu .sidebar-footer {
+      flex-shrink: 0 !important;
+      margin-top: auto !important;
+      padding-top: 1rem !important;
+      border-top: 1px solid #e5e7eb !important;
+    }
+    
+    #sidebarMenu .sidebar-footer .small {
+      font-size: 0.75rem !important;
+      color: #6b7280 !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      margin-bottom: 0.5rem !important;
+    }
+    
+    #sidebarMenu .sidebar-footer .small strong {
+      color: #1f2937 !important;
+      display: inline-block !important;
+      max-width: 140px !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      vertical-align: bottom !important;
+    }
+    
+    #sidebarMenu .sidebar-footer .btn {
+      font-size: 0.8rem !important;
+      padding: 0.5rem 0.75rem !important;
+      white-space: nowrap !important;
+    }
+    
+    /* Scrollbar personalizada para el menú */
+    #sidebarMenu .nav::-webkit-scrollbar {
+      width: 5px;
+    }
+    
+    #sidebarMenu .nav::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    #sidebarMenu .nav::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 10px;
+    }
+    
+    #sidebarMenu .nav::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+
+    /* Deshabilita transiciones mientras se restaura el estado guardado */
+    #sidebarMenu.no-transition,
+    #sidebarMenu.no-transition * {
+      transition: none !important;
+    }
+    
+    /* Contenido principal */
+    .main-content {
+      flex: 1 1 auto !important;
+      min-width: 0 !important;
+    }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+  <!-- Botón de colapso del sidebar -->
+  <button id="sidebarToggle" class="btn btn-outline-primary d-lg-none d-block m-2" type="button" aria-label="Mostrar/Ocultar menú">
+      <i class="bi bi-list" style="font-size: 1.5rem;"></i>
+  </button>
+  <div class="content-wrapper d-flex">
+
+    <!-- Sidebar -->
+    <div class="sidebar p-3 border-end" id="sidebarMenu">
+      <div class="sidebar-header mb-4">
+        <a href="/" class="navbar-brand d-flex align-items-center">
+          <i class="bi bi-hospital text-primary me-2" style="font-size:1.5rem;"></i>
+          Hospital Sarare
+        </a>
+      </div>
+
+      <ul class="nav flex-column flex-grow-1 overflow-auto">
+        <!-- Sección Correspondencia -->
+        <li class="nav-item mb-2">
+          <span class="nav-link disabled text-muted text-uppercase">Correspondencia</span>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'correspondencia:pendientes_distribuir' %}" class="nav-link {% if request.resolver_match.url_name == 'pendientes_distribuir' %}active{% endif %}">
+            <i class="bi bi-inbox-fill me-1"></i> Pendientes Distribuir
+          </a>
+        </li>
+
+        <!-- Sección Contactos -->
+        <li class="nav-item mt-3 mb-2">
+          <span class="nav-link disabled text-muted text-uppercase">Contactos</span>
+        </li>
+        <li class="nav-item">
+          <a href="{% url 'correspondencia:listar_contactos' %}" class="nav-link {% if request.resolver_match.url_name == 'listar_contactos' %}active{% endif %}">
+            <i class="bi bi-person-lines-fill me-1"></i> Gestionar Contactos
+          </a>
+        </li>
+
+
+        <!-- Sección Entidades Externas -->
+        <li class="nav-item mt-3 mb-2">
+          <span class="nav-link disabled text-muted text-uppercase">Entidades</span>
+        </li>
+        <li class="nav-item">
+          <a href="{% url 'correspondencia:listar_entidades' %}" class="nav-link {% if request.resolver_match.url_name == 'listar_entidades' %}active{% endif %}">
+            <i class="bi bi-building me-1"></i> Ver Entidades
+          </a>
+        </li>
+
+
+        <!-- Sección Ventanilla -->
+        {% if request.user|has_group:"Ventanilla" %}
+        <li class="nav-item mt-3 mb-2">
+          <span class="nav-link disabled text-muted text-uppercase">Gestión Correos</span>
+        </li>
+        <li class="nav-item">
+          <a href="{% url 'correspondencia:dashboard_ventanilla' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard_ventanilla' %}active{% endif %}">
+            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{% url 'correspondencia:bandeja_correos_pendientes' %}" class="nav-link {% if request.resolver_match.url_name == 'bandeja_correos_pendientes' or request.resolver_match.url_name == 'detalle_correo_entrante' %}active{% endif %} d-flex align-items-center justify-content-between">
+            <span><i class="bi bi-envelope-paper-fill me-1"></i> Correos Entrantes</span>
+            {% if correos_pendientes_count|default:0 > 0 %}
+              <span class="badge bg-primary rounded-pill ms-1" title="{{ correos_pendientes_count }} correo(s) pendiente(s)">
+                {% if correos_pendientes_count > 10 %}10+{% else %}{{ correos_pendientes_count }}{% endif %}
+              </span>
+            {% endif %}
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{% url 'correspondencia:bandeja_respuestas_pendientes' %}" class="nav-link {% if request.resolver_match.url_name == 'bandeja_respuestas_pendientes' or request.resolver_match.url_name == 'revisar_respuesta' %}active{% endif %}">
+            <i class="bi bi-envelope-check-fill me-1"></i> Aprobar Respuestas
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{% url 'correspondencia:historial_correspondencia' %}" class="nav-link {% if request.resolver_match.url_name == 'historial_correspondencia' %}active{% endif %}">
+            <i class="bi bi-clock-history me-1"></i> Historial General
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{% url 'correspondencia:bandeja_radicacion_rapida' %}" class="nav-link {% if request.resolver_match.url_name == 'bandeja_radicacion_rapida' %}active{% endif %}">
+            <i class="bi bi-lightning-fill me-1"></i> Historial de Radicación Rápida
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="/calendario" class="nav-link" target="_blank" rel="noopener noreferrer">
+            <i class="bi bi-calendar3 me-1"></i> Calendario de Informes
+          </a>
+        </li>
+          <li class="nav-item">
+            <a href="{% url 'login' %}?next={{ request.scheme }}://{{ request.get_host }}/monitoreo/chat" class="nav-link">
+              <i class="bi bi-chat-dots-fill me-1"></i> Tickets y Soporte
+            </a>
+          </li>
+        {% endif %}
+      </ul>
+
+      <!-- Footer -->
+      <div class="sidebar-footer mt-auto pt-4 border-top">
+        {% if request.user.is_authenticated %}
+          <div class="small mb-2">
+            <i class="bi bi-person-circle me-1"></i> Usuario: <strong>{{ request.user.get_full_name|default:request.user.username }}</strong>
+          </div>
+          <a href="{% url 'logout' %}" class="btn btn-outline-secondary btn-sm w-100">
+            <i class="bi bi-box-arrow-right"></i> Cerrar sesión
+          </a>
+        {% else %}
+          <a href="{% url 'login' %}" class="btn btn-primary btn-sm w-100">
+            <i class="bi bi-box-arrow-in-right"></i> Iniciar sesión
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content flex-grow-1 p-4">
+      <div class="content-header d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h3 mb-0">{% block page_title %}Título de la Página{% endblock %}</h1>
+        <div class="d-flex align-items-center gap-2">
+          {% block page_actions %}{% endblock %}
+        </div>
+      </div>
+
+      {% if messages %}
+      <div class="messages-container mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {% if message.tags == 'success' %}
+            <i class="bi bi-check-circle-fill me-2"></i>
+          {% elif message.tags == 'danger' %}
+            <i class="bi bi-x-octagon-fill me-2"></i>
+          {% elif message.tags == 'warning' %}
+            <i class="bi bi-exclamation-diamond-fill me-2"></i>
+          {% else %}
+            <i class="bi bi-info-circle-fill me-2"></i>
+          {% endif %}
+          <span>{{ message }}</span>
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% block content %}
+      <p>Contenido principal.</p>
+      {% endblock %}
+    </div>
+  </div>
+  {# cierra .content-wrapper #}
+
+  <!-- 6. jQuery (si usas Select2) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- 7. Bootstrap Bundle (JS + Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- 8. Select2 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <!-- 9. Sistema de Notificaciones Toast -->
+  <script src="{% static 'correspondencia/js/notificaciones-toast.js' %}"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const sidebar = document.getElementById('sidebarMenu');
+      const toggleBtn = document.getElementById('sidebarToggle');
+      const SIDEBAR_STATE_KEY = 'ventanillaSidebarCollapsed';
+
+      if (sidebar) {
+        sidebar.classList.add('no-transition');
+
+        try {
+          const storedState = localStorage.getItem(SIDEBAR_STATE_KEY);
+          if (storedState === '1') {
+            sidebar.classList.add('collapsed');
+          } else if (storedState === '0') {
+            sidebar.classList.remove('collapsed');
+          }
+        } catch (e) {}
+
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => sidebar.classList.remove('no-transition'));
+        });
+      }
+
+      if (sidebar && toggleBtn) {
+        toggleBtn.addEventListener('click', function() {
+          const isCollapsed = sidebar.classList.toggle('collapsed');
+          try {
+            localStorage.setItem(SIDEBAR_STATE_KEY, isCollapsed ? '1' : '0');
+          } catch (e) {}
+        });
+      }
+    });
+  </script>
+
+  {# Aquí inyectamos los scripts específicos de cada template #}
+  {% block extra_scripts %}{% endblock %}
+
+</body>
+
+</html>

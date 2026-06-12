@@ -1,0 +1,447 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .card-header-primary {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        color: #ffffff;
+    }
+
+    .badge-status {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.8rem;
+    }
+
+    .form-label-required::after {
+        content: " *";
+        color: #dc3545;
+    }
+
+    .char-counter {
+        font-size: 0.875rem;
+    }
+
+    .card-summary {
+        background: linear-gradient(135deg, #e7f1ff 0%, #f3e7ff 100%);
+        border: 2px solid #0d6efd;
+    }
+
+    .collapse-icon {
+        transition: transform 0.3s ease;
+    }
+
+    .collapsed .collapse-icon {
+        transform: rotate(-180deg);
+    }
+
+    .list-group-item {
+        cursor: pointer;
+    }
+
+    .card-summary p {
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <form method="post" id="formDistribucion">
+        {% csrf_token %}
+
+        <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                <button class="btn btn-link w-100 text-start text-decoration-none p-0 d-flex align-items-center justify-content-between"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#infoCorrespondencia"
+                        aria-expanded="true"
+                        aria-controls="infoCorrespondencia">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-file-text text-primary fs-5"></i>
+                        <h5 class="mb-0 fw-semibold text-dark">Información de la correspondencia</h5>
+                    </div>
+                    <i class="bi bi-chevron-up collapse-icon"></i>
+                </button>
+                </div>
+            <div class="collapse show" id="infoCorrespondencia">
+                <div class="card-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <small class="text-muted">Número de radicado</small>
+                            <p class="mb-0 fw-semibold font-monospace">{{ correspondencia.numero_radicado }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">Fecha de radicación</small>
+                            <p class="mb-0">
+                                <i class="bi bi-calendar3 text-muted me-1"></i>
+                                {{ correspondencia.fecha_radicacion|date:"Y-m-d H:i" }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Remitente</small>
+                        <p class="mb-0">
+                            <i class="bi bi-person text-muted me-1"></i>
+                            {% if correspondencia.remitente %}
+                                {{ correspondencia.remitente.nombre_completo }}
+                                {% if correspondencia.remitente.entidad_externa %}
+                                    - {{ correspondencia.remitente.entidad_externa.nombre }}
+                                {% endif %}
+                            {% else %}
+                                ---
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Asunto</small>
+                        <p class="mb-0">{{ correspondencia.asunto }}</p>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <small class="text-muted">Oficina destino</small>
+                            <p class="mb-0">
+                                <i class="bi bi-building text-muted me-1"></i>
+                                {{ correspondencia.oficina_destino.nombre }}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">Usuario radicador</small>
+                            <p class="mb-0">
+                                {% if correspondencia.usuario_radicador %}
+                                    {{ correspondencia.usuario_radicador.get_full_name|default:correspondencia.usuario_radicador.username }}
+                                {% else %}
+                                    Ventanilla
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <span class="badge bg-primary badge-status">
+                            {{ correspondencia.get_estado_display|default:correspondencia.estado }}
+                        </span>
+                        <span class="badge bg-secondary badge-status">
+                            {{ correspondencia.get_medio_recepcion_display|default:correspondencia.medio_recepcion }}
+                        </span>
+                        {% if correspondencia.requiere_respuesta %}
+                            <span class="badge bg-success badge-status">
+                                <i class="bi bi-clock me-1"></i>
+                                {{ correspondencia.plazo_respuesta_dias|default:"-" }} días hábiles
+                            </span>
+                        {% else %}
+                            <span class="badge bg-info badge-status">
+                                No requiere respuesta
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                        </div>
+                    </div>
+
+        <div class="card shadow-sm border-primary border-2 mb-4">
+            <div class="card-header card-header-primary">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-person-check fs-5"></i>
+                    <h5 class="mb-0 fw-semibold">Asignación principal</h5>
+                    <span class="badge bg-light text-primary ms-2">Obligatorio</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <label for="usuarioDestino" class="form-label fw-semibold form-label-required">Usuario destino</label>
+                    <small class="text-muted ms-2">({{ usuarios_oficina|length }} usuarios disponibles en {{ correspondencia.oficina_destino.nombre }})</small>
+                    <select class="form-select" id="usuarioDestino" name="usuario" required>
+                                <option value="">Seleccione un usuario...</option>
+                                {% for usuario in usuarios_oficina %}
+                            {% with nombre_usuario=usuario.get_full_name|default:usuario.username %}
+                                <option value="{{ usuario.id }}"
+                                    {% if selected_usuario == usuario.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ nombre_usuario }}
+                                    {% if usuario.perfil.cargo %}
+                                        - {{ usuario.perfil.cargo }}
+                                    {% endif %}
+                                    </option>
+                            {% endwith %}
+                        {% endfor %}
+                    </select>
+                    <div class="invalid-feedback">
+                        Debe seleccionar un usuario destino.
+                    </div>
+                    <div class="alert alert-info mt-2 py-2 px-3 d-flex align-items-start">
+                        <i class="bi bi-info-circle me-2 mt-1"></i>
+                        <small>Usuario responsable principal: podrá ver, responder y gestionar la correspondencia.</small>
+                    </div>
+                </div>
+                <div>
+                    <label for="observaciones" class="form-label fw-semibold">Observaciones</label>
+                    <textarea class="form-control" id="observaciones" name="observaciones" maxlength="500" rows="4"
+                              placeholder="Observaciones sobre la asignación...">{{ observaciones_text }}</textarea>
+                    <div class="d-flex justify-content-between mt-1">
+                        <small class="text-muted char-counter">
+                            <span id="charCount">500</span> caracteres restantes
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <button class="btn btn-link w-100 text-start text-decoration-none p-0 d-flex align-items-center justify-content-between"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#opcionesDistribucion">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-send text-primary fs-5"></i>
+                        <h5 class="mb-0 fw-semibold text-dark">Opciones de distribución</h5>
+                        <span class="badge bg-secondary ms-2">Opcional</span>
+                    </div>
+                    <i class="bi bi-chevron-down collapse-icon"></i>
+                </button>
+            </div>
+            <div class="collapse" id="opcionesDistribucion">
+                <div class="card-body">
+                <div class="mb-4">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="compartirOficina" name="compartir_oficina"
+                            {% if compartir_oficina_checked %}checked{% endif %}>
+                        <label class="form-check-label fw-semibold" for="compartirOficina">
+                            Compartir con toda la oficina
+                        </label>
+                    </div>
+                    <small class="text-muted ms-4 d-block">
+                        Todos los usuarios de la oficina destino podrán ver y responder esta correspondencia.
+                    </small>
+                    <div id="infoCompartir"
+                         class="alert alert-primary mt-2 py-2 px-3 d-none">
+                        <i class="bi bi-people-fill me-2"></i>
+                        <small>
+                            <strong>{{ usuarios_oficina|length }}</strong> usuarios de {{ correspondencia.oficina_destino.nombre }}
+                            podrán ver esta correspondencia.
+                        </small>
+                    </div>
+                </div>
+
+                <div class="border-top pt-4">
+                    <label class="form-label fw-semibold">Pre-redistribuir a otras oficinas (solo lectura)</label>
+                    <p class="text-muted small mb-3">
+                        Las oficinas seleccionadas tendrán acceso de solo lectura. No podrán responder.
+                    </p>
+                    {% if otras_oficinas_opciones %}
+                        <div class="list-group">
+                            {% for oficina in otras_oficinas_opciones %}
+                                <div class="list-group-item list-group-item-action p-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <input class="form-check-input flex-shrink-0 oficina-selector" 
+                                               type="checkbox"
+                                           name="otras_oficinas"
+                                           value="{{ oficina.id }}"
+                                               id="off_{{ oficina.id }}"
+                                           {% if oficina.id|stringformat:"s" in selected_oficinas %}checked{% endif %}>
+                                        
+                                        <i class="bi bi-building text-muted"></i>
+                                        
+                                        <div class="flex-grow-1">
+                                            <label class="fw-semibold mb-0 cursor-pointer" for="off_{{ oficina.id }}">
+                                                {{ oficina.nombre }}
+                                            </label>
+                                            <small class="text-muted d-block">
+                                                {{ oficina.unidad_administrativa.nombre }}
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    <!-- Opción secundaria: Compartir con todos -->
+                                    <div class="ms-5 mt-2 collapse options-sub {{ oficina.id }} {% if oficina.id|stringformat:'s' in selected_oficinas %}show{% endif %}" id="opts_{{ oficina.id }}">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" 
+                                                   type="checkbox" 
+                                                   name="share_all_{{ oficina.id }}" 
+                                                   id="share_all_{{ oficina.id }}">
+                                            <label class="form-check-label small text-muted" for="share_all_{{ oficina.id }}">
+                                                Compartir con toda la oficina (Por defecto solo Líderes)
+                                            </label>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" 
+                                                   type="checkbox" 
+                                                   name="puede_responder_{{ oficina.id }}" 
+                                                   id="puede_responder_{{ oficina.id }}">
+                                            <label class="form-check-label small text-muted" for="puede_responder_{{ oficina.id }}">
+                                                <i class="bi bi-reply-fill me-1"></i>Permitir responder
+                                    </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted mb-0">No hay otras oficinas disponibles para pre-redistribuir.</p>
+                        {% endif %}
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <div class="card card-summary shadow mb-4">
+            <div class="card-header">
+                <button class="btn btn-link w-100 text-start text-decoration-none p-0 d-flex align-items-center justify-content-between"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#resumenAcciones">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-list-check text-primary fs-5"></i>
+                        <h5 class="mb-0 fw-semibold text-dark">Resumen de acciones</h5>
+                    </div>
+                    <i class="bi bi-chevron-up collapse-icon"></i>
+                </button>
+            </div>
+            <div class="collapse show" id="resumenAcciones">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">Usuario asignado</small>
+                            <p class="fw-semibold mb-0" id="resumenUsuario">Ninguno</p>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">Compartir con oficina</small>
+                            <p class="fw-semibold mb-0" id="resumenCompartir">No</p>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted d-block">Pre-redistribución</small>
+                            <p class="fw-semibold mb-0" id="resumenOficinas">0 oficina(s)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-3">
+            <button type="submit" class="btn btn-primary btn-lg flex-grow-1" id="btnAsignar">
+                <i class="bi bi-check-circle me-2"></i>Asignar correspondencia
+            </button>
+            <a href="{% url 'correspondencia:pendientes_distribuir' %}" class="btn btn-outline-secondary btn-lg">
+                <i class="bi bi-x-circle me-2"></i>Cancelar
+            </a>
+    </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const maxChars = parseInt(document.querySelector('#observaciones').getAttribute('maxlength'), 10) || 500;
+        const $usuarioDestino = $('#usuarioDestino');
+        const $observaciones = $('#observaciones');
+        const $charCount = $('#charCount');
+        const $compartirSwitch = $('#compartirOficina');
+        const $infoCompartir = $('#infoCompartir');
+        const $checkboxOficinas = $('input[name="otras_oficinas"]');
+        const $resumenUsuario = $('#resumenUsuario');
+        const $resumenCompartir = $('#resumenCompartir');
+        const $resumenOficinas = $('#resumenOficinas');
+
+        function actualizarCharCounter() {
+            const remaining = Math.max(maxChars - $observaciones.val().length, 0);
+            $charCount.text(remaining);
+            if (remaining < 50) {
+                $charCount.removeClass('text-muted').addClass('text-warning');
+            } else {
+                $charCount.removeClass('text-warning').addClass('text-muted');
+            }
+        }
+
+        function actualizarResumen() {
+            const usuarioText = $usuarioDestino.find('option:selected').text().trim();
+            $resumenUsuario.text(usuarioText || 'Ninguno');
+            const compartir = $compartirSwitch.is(':checked');
+            $resumenCompartir.text(compartir ? 'Sí' : 'No');
+            if (compartir) {
+                $infoCompartir.removeClass('d-none');
+            } else {
+                $infoCompartir.addClass('d-none');
+            }
+            const oficinasCount = $checkboxOficinas.filter(':checked').length;
+            $resumenOficinas.text(`${oficinasCount} oficina(s)`);
+        }
+
+        if ($.fn.select2) {
+            $usuarioDestino.select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Seleccione un usuario...',
+                allowClear: true,
+                width: '100%'
+            });
+        }
+
+        actualizarCharCounter();
+        actualizarResumen();
+
+        $usuarioDestino.on('change', actualizarResumen);
+        $compartirSwitch.on('change', actualizarResumen);
+        
+        // Manejo mejorado para oficinas y sus sub-opciones
+        $(document).on('change', '.oficina-selector', function() {
+            const officeId = $(this).val();
+            const $subOptions = $(`#opts_${officeId}`); // Usar ID directo es más seguro
+            
+            if ($(this).is(':checked')) {
+                $subOptions.collapse('show');
+            } else {
+                $subOptions.collapse('hide');
+                // Desmarcar el hijo
+                $(`#share_all_${officeId}`).prop('checked', false);
+            }
+            actualizarResumen();
+        });
+
+        // Inicializar collapse de Bootstrap para los que ya vienen marcados (si no funcionó la clase show)
+        $('.oficina-selector:checked').each(function() {
+             const officeId = $(this).val();
+             $(`#opts_${officeId}`).collapse('show');
+        });
+
+        $observaciones.on('input', actualizarCharCounter);
+
+        $('#formDistribucion').on('submit', function () {
+            $('#btnAsignar').prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Asignando...');
+        });
+
+        $('#infoCorrespondencia').on('show.bs.collapse hide.bs.collapse', function (e) {
+            const icon = $(this).prev().find('.collapse-icon');
+            if (e.type === 'show') {
+                icon.removeClass('bi-chevron-down').addClass('bi-chevron-up');
+            } else {
+                icon.removeClass('bi-chevron-up').addClass('bi-chevron-down');
+            }
+        });
+
+        $('#resumenAcciones').on('show.bs.collapse hide.bs.collapse', function (e) {
+            const icon = $(this).prev().find('.collapse-icon');
+            if (e.type === 'show') {
+                icon.removeClass('bi-chevron-down').addClass('bi-chevron-up');
+            } else {
+                icon.removeClass('bi-chevron-up').addClass('bi-chevron-down');
+            }
+        });
+
+        $('#opcionesDistribucion').on('show.bs.collapse hide.bs.collapse', function (e) {
+            const icon = $(this).prev().find('.collapse-icon');
+            if (e.type === 'show') {
+                icon.removeClass('bi-chevron-down').addClass('bi-chevron-up');
+            } else {
+                icon.removeClass('bi-chevron-up').addClass('bi-chevron-down');
+            }
+        });
+    });
+</script>
+{% endblock %} 

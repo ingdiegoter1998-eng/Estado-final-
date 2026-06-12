@@ -1,0 +1,154 @@
+{% load static auth_extras %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de Gestión de Correspondencia - Hospital del Sarare">
+    <meta name="theme-color" content="#2563eb">
+    <title>{% block title %}Bandeja{% endblock %} | Hospital del Sarare</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+    <link rel="shortcut icon" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+    <link rel="apple-touch-icon" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+
+    <!-- Bootstrap CSS (local) -->
+    <link href="{% static 'correspondencia/vendor/css/bootstrap.min.css' %}" rel="stylesheet">
+    <!-- Bootstrap Icons (local) -->
+    <link href="{% static 'correspondencia/vendor/css/bootstrap-icons.min.css' %}" rel="stylesheet">
+    <!-- DataTables CSS (local) -->
+    <link rel="stylesheet" href="{% static 'correspondencia/vendor/css/dataTables.bootstrap5.min.css' %}">
+    <link rel="stylesheet" href="{% static 'correspondencia/vendor/css/responsive.bootstrap5.min.css' %}">
+    
+    <!-- Select2 CSS (local) -->
+    <link rel="stylesheet" href="{% static 'correspondencia/vendor/css/select2.min.css' %}">
+    <link rel="stylesheet" href="{% static 'correspondencia/vendor/css/select2-bootstrap-5-theme.min.css' %}">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{% static 'correspondencia/css/modern-layout.css' %}?v=20260531-sidebar-stable">
+    <link rel="stylesheet" href="{% static 'correspondencia/css/datatables-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'correspondencia/css/modal-comunicacion-interna.css' %}">
+    <link rel="stylesheet" href="{% static 'correspondencia/css/notificaciones.css' %}?v=20260531-notif-unified">
+    <link rel="stylesheet" href="{% static 'correspondencia/css/chatbot-mvp.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="modern-layout">
+    <div class="app-container">
+        <!-- Sidebar -->
+        {% include 'correspondencia/partials/sidebar_usuario.html' %}
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Header -->
+            {% include 'correspondencia/partials/header_usuario.html' %}
+
+            <!-- Page Content -->
+            <main class="page-content">
+                <div class="container-fluid px-0">
+                    <!-- Messages -->
+                    <div class="px-3">
+                        {% include 'correspondencia/partials/messages.html' %}
+                    </div>
+
+                    <!-- Main Content Block -->
+                    {% block content %}
+                    <div class="content-placeholder">
+                        <div class="placeholder-icon">
+                            <i class="bi bi-inbox"></i>
+                        </div>
+                        <h3>Bienvenido al Sistema</h3>
+                        <p>Selecciona una opción del menú para comenzar a gestionar tu correspondencia.</p>
+                    </div>
+                    {% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="{% static 'correspondencia/vendor/js/jquery-3.7.0.min.js' %}"></script>
+    <script src="{% static 'correspondencia/vendor/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'correspondencia/vendor/js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'correspondencia/vendor/js/dataTables.bootstrap5.min.js' %}"></script>
+    <script src="{% static 'correspondencia/vendor/js/dataTables.responsive.min.js' %}"></script>
+    <script src="{% static 'correspondencia/vendor/js/responsive.bootstrap5.min.js' %}"></script>
+    
+    <!-- Select2 JS (local) -->
+    <script src="{% static 'correspondencia/vendor/js/select2.min.js' %}"></script>
+    
+    <!-- Custom Scripts -->
+    <script src="{% static 'correspondencia/js/modern-layout.js' %}?v=20260531-sidebar-stable"></script>
+    <script src="{% static 'correspondencia/js/datatables-modern.js' %}"></script>
+    <script src="{% static 'correspondencia/js/modals/blocked-recipients.js' %}"></script>
+    <script src="{% static 'correspondencia/js/modals/correspondencia-salida.js' %}"></script>
+    <script src="{% static 'correspondencia/js/modals/comunicacion-interna.js' %}"></script>
+    <script src="{% static 'correspondencia/js/notificaciones.js' %}?v=20260531-notif-unified"></script>
+    <script src="{% static 'correspondencia/js/notificaciones-toast.js' %}"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Initialize modern layout
+            if (window.ModernLayout) {
+                window.ModernLayout.init();
+            }
+            
+            // Initialize DataTables with modern configuration
+            if (window.ModernDataTables) {
+                window.ModernDataTables.init();
+            }
+        });
+
+        // Función para abrir modal de correspondencia salida desde sidebar
+        function openCorrespondenciaSalidaModal(event) {
+            event.preventDefault();
+            
+            // Verificar si estamos en el dashboard
+            if (window.location.pathname.includes('/registros/correspondencia/dashboard/')) {
+                // Si ya estamos en el dashboard, solo abrir el modal
+                const modal = new bootstrap.Modal(document.getElementById('modalCorrespondenciaSalida'));
+                modal.show();
+            } else {
+                // Si no estamos en el dashboard, redirigir con parámetro para abrir modal
+                window.location.href = '{% url "correspondencia:dashboard_usuario" %}?open_modal=correspondencia_salida';
+            }
+        }
+
+        // Verificar si se debe abrir el modal al cargar la página
+        $(document).ready(function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('open_modal') === 'correspondencia_salida') {
+                // Esperar un momento para que la página cargue completamente
+                setTimeout(function() {
+                    const modal = new bootstrap.Modal(document.getElementById('modalCorrespondenciaSalida'));
+                    modal.show();
+                    
+                    // Limpiar el parámetro de la URL sin recargar la página
+                    const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                    window.history.replaceState({path: newUrl}, '', newUrl);
+                }, 500);
+            }
+        });
+    </script>
+
+    <!-- Modal de correspondencia salida -->
+    {% include 'correspondencia/partials/modals/modal_correspondencia_salida.html' %}
+
+    <!-- Modal global para crear contactos -->
+    {% include 'correspondencia/partials/modals/modal_contacto_dashboard.html' %}
+
+    <!-- Modal selector ampliado de contactos -->
+    {% include 'correspondencia/partials/modals/modal_agenda_contactos.html' %}
+
+    <!-- Tutorial para envio por Drive cuando los adjuntos superan 25MB -->
+    {% include 'correspondencia/partials/modals/modal_tutorial_adjuntos_drive.html' %}
+
+    <!-- Asistente IA global: modal + script -->
+    {% include 'correspondencia/partials/modals/modal_asistente_chatbot.html' with chatbot_modal_id='modalAsistenteChatbot' chatbot_modal_title='Asistente documental' %}
+    <script src="{% static 'correspondencia/js/chatbot-mvp.js' %}"></script>
+
+    {% block extra_scripts %}{% endblock %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 

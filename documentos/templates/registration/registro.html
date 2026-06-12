@@ -1,0 +1,860 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro de Usuario - Hospital del Sarare</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+    <link rel="shortcut icon" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+    <link rel="apple-touch-icon" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+    <style>
+        :root {
+            --reg-navy: #0c2440;
+            --reg-blue: #1c5fd4;
+            --reg-cyan: #5db8d8;
+            --reg-gold: #d6a346;
+            --reg-ink: #112235;
+            --reg-muted: #627388;
+            --reg-shadow: 0 30px 84px rgba(12, 36, 64, 0.16);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            min-height: 100%;
+            margin: 0;
+        }
+
+        body.registration-page {
+            font-family: "Trebuchet MS", "Lucida Grande", "Segoe UI", sans-serif;
+            color: var(--reg-ink);
+            background:
+                radial-gradient(circle at 8% 10%, rgba(93, 184, 216, 0.2), transparent 24%),
+                radial-gradient(circle at 90% 16%, rgba(28, 95, 212, 0.16), transparent 22%),
+                linear-gradient(145deg, #edf5ff 0%, #f7fafc 46%, #eef2f7 100%);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body.registration-page::before,
+        body.registration-page::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        body.registration-page::before {
+            background-image:
+                linear-gradient(rgba(12, 36, 64, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(12, 36, 64, 0.03) 1px, transparent 1px);
+            background-size: 62px 62px;
+            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent 94%);
+        }
+
+        body.registration-page::after {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.42));
+        }
+
+        .register-shell {
+            width: min(1480px, 95vw);
+            margin: 0 auto;
+            padding: 1.6rem 0 1.35rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .register-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .register-topbar-chip,
+        .register-topbar-note {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.78rem 1rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid rgba(12, 36, 64, 0.08);
+            color: var(--reg-muted);
+            backdrop-filter: blur(14px);
+            font-size: 0.92rem;
+        }
+
+        .register-topbar-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--reg-gold), #efc46c);
+            box-shadow: 0 0 0 6px rgba(214, 163, 70, 0.16);
+        }
+
+        .register-stage {
+            display: grid;
+            grid-template-columns: minmax(300px, 0.76fr) minmax(0, 1.24fr);
+            gap: 1.2rem;
+            align-items: start;
+        }
+
+        .register-story {
+            position: sticky;
+            top: 1rem;
+            border-radius: 32px;
+            overflow: hidden;
+            background: linear-gradient(160deg, rgba(12, 36, 64, 0.96), rgba(23, 56, 91, 0.92));
+            color: #f7fbff;
+            box-shadow: var(--reg-shadow);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 2.3rem 2rem;
+            isolation: isolate;
+        }
+
+        .register-story::before {
+            content: "";
+            position: absolute;
+            inset: 18px;
+            border-radius: 26px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .register-story > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .register-kicker,
+        .register-pill,
+        .section-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.42rem 0.88rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .register-kicker {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(247, 251, 255, 0.92);
+        }
+
+        .register-kicker::before,
+        .register-pill::before,
+        .section-chip::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--reg-gold), #f0ca74);
+            flex: 0 0 auto;
+        }
+
+        .register-story h1,
+        .register-panel-heading h2,
+        .section-title,
+        .story-stat-value,
+        .register-footer strong {
+            font-family: Georgia, "Times New Roman", serif;
+            letter-spacing: -0.03em;
+        }
+
+        .register-story h1 {
+            margin: 1rem 0 0;
+            font-size: clamp(2.4rem, 4vw, 3.6rem);
+            line-height: 1.02;
+            max-width: 12ch;
+        }
+
+        .register-story p {
+            margin: 1rem 0 0;
+            color: rgba(226, 232, 240, 0.82);
+            line-height: 1.75;
+        }
+
+        .story-stats {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.9rem;
+            margin: 1.8rem 0;
+        }
+
+        .story-stat {
+            padding: 1rem;
+            border-radius: 22px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .story-stat-label {
+            display: block;
+            color: rgba(226, 232, 240, 0.72);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .story-stat-value {
+            display: block;
+            margin-top: 0.55rem;
+            color: #ffffff;
+            font-size: 1.4rem;
+        }
+
+        .story-stat-copy {
+            display: block;
+            margin-top: 0.3rem;
+            color: rgba(226, 232, 240, 0.72);
+            font-size: 0.9rem;
+            line-height: 1.55;
+        }
+
+        .story-panel,
+        .story-timeline {
+            border-radius: 24px;
+            padding: 1.2rem 1.15rem;
+            background: rgba(8, 20, 37, 0.22);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .story-panel + .story-timeline {
+            margin-top: 1rem;
+        }
+
+        .story-timeline-list {
+            list-style: none;
+            margin: 1rem 0 0;
+            padding: 0;
+            display: grid;
+            gap: 0.85rem;
+        }
+
+        .story-timeline-list li {
+            display: grid;
+            grid-template-columns: 1.9rem 1fr;
+            gap: 0.7rem;
+            color: rgba(226, 232, 240, 0.8);
+            line-height: 1.6;
+        }
+
+        .story-step {
+            width: 1.9rem;
+            height: 1.9rem;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+
+        .register-panel {
+            border-radius: 32px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            box-shadow: var(--reg-shadow);
+            overflow: hidden;
+            backdrop-filter: blur(16px);
+        }
+
+        .register-panel-header {
+            padding: 2rem 2rem 1.35rem;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(244, 248, 253, 0.96));
+            border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+        }
+
+        .register-panel-heading {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .register-pill {
+            background: rgba(28, 95, 212, 0.08);
+            color: var(--reg-blue);
+            border: 1px solid rgba(28, 95, 212, 0.12);
+        }
+
+        .register-pill::before,
+        .section-chip::before {
+            background: linear-gradient(135deg, var(--reg-cyan), #9de7f3);
+        }
+
+        .register-panel-heading h2 {
+            margin: 0.65rem 0 0.35rem;
+            font-size: clamp(2rem, 3.6vw, 2.8rem);
+            color: var(--reg-ink);
+        }
+
+        .register-panel-heading p {
+            margin: 0;
+            color: var(--reg-muted);
+            line-height: 1.75;
+            max-width: 760px;
+        }
+
+        .register-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.9rem;
+            margin-top: 1.35rem;
+        }
+
+        .register-meta-card {
+            padding: 1rem 1.05rem;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #ffffff 0%, #f5f8fc 100%);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+        }
+
+        .register-meta-card strong {
+            display: block;
+            color: var(--reg-ink);
+            margin-bottom: 0.25rem;
+        }
+
+        .register-meta-card span {
+            color: var(--reg-muted);
+            font-size: 0.92rem;
+            line-height: 1.55;
+        }
+
+        .register-body {
+            padding: 1.4rem 2rem 2rem;
+        }
+
+        .register-alert {
+            border: none;
+            border-radius: 18px;
+            padding: 0.95rem 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .register-form {
+            display: grid;
+            gap: 1.1rem;
+        }
+
+        .register-section {
+            border-radius: 26px;
+            border: 1px solid rgba(226, 232, 240, 0.94);
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.05);
+            overflow: hidden;
+        }
+
+        .register-section-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: flex-start;
+            padding: 1.35rem 1.4rem 1rem;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.88);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(245, 248, 252, 0.9));
+        }
+
+        .section-chip {
+            color: var(--reg-blue);
+            background: rgba(28, 95, 212, 0.08);
+            border: 1px solid rgba(28, 95, 212, 0.1);
+        }
+
+        .section-title {
+            margin: 0.55rem 0 0.3rem;
+            font-size: 1.5rem;
+            color: var(--reg-ink);
+        }
+
+        .section-description {
+            margin: 0;
+            color: var(--reg-muted);
+            line-height: 1.7;
+        }
+
+        .register-section-body {
+            padding: 1.25rem 1.4rem 1.5rem;
+        }
+
+        .register-form .row {
+            --bs-gutter-x: 1rem;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: #274060;
+            margin-bottom: 0.45rem;
+        }
+
+        .form-control,
+        .form-select {
+            min-height: 52px;
+            border-radius: 18px;
+            border: 1px solid rgba(148, 163, 184, 0.26);
+            padding: 0.85rem 1rem;
+            background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+            color: var(--reg-ink);
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: rgba(28, 95, 212, 0.45);
+            box-shadow: 0 0 0 0.28rem rgba(28, 95, 212, 0.12);
+            background: #ffffff;
+        }
+
+        .form-text {
+            display: block;
+            margin-top: 0.45rem;
+            color: var(--reg-muted);
+            font-size: 0.84rem;
+            line-height: 1.55;
+        }
+
+        .errorlist {
+            list-style: none;
+            padding: 0;
+            margin: 0.55rem 0 0;
+            color: #ab1f1f;
+            font-size: 0.84rem;
+            line-height: 1.5;
+        }
+
+        .errorlist.nonfield {
+            margin-bottom: 1rem;
+            padding: 0.95rem 1rem;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #fff0f0 0%, #ffe6e6 100%);
+            border: 1px solid rgba(220, 38, 38, 0.14);
+        }
+
+        .register-check-card {
+            display: flex;
+            gap: 0.95rem;
+            align-items: flex-start;
+            padding: 1rem 1.05rem;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #f8fbff 0%, #f3f7fb 100%);
+            border: 1px solid rgba(226, 232, 240, 0.95);
+        }
+
+        .form-check {
+            margin: 0;
+            min-height: auto;
+        }
+
+        .form-check-input {
+            width: 1.15rem;
+            height: 1.15rem;
+            margin-top: 0.2rem;
+            border-radius: 0.35rem;
+            border-color: rgba(71, 85, 105, 0.4);
+        }
+
+        .form-check-input:checked {
+            background-color: var(--reg-blue);
+            border-color: var(--reg-blue);
+        }
+
+        .form-check-label {
+            margin-left: 0.5rem;
+            color: #274060;
+            font-weight: 700;
+            line-height: 1.6;
+        }
+
+        .register-check-copy {
+            color: var(--reg-muted);
+            font-size: 0.88rem;
+            line-height: 1.55;
+        }
+
+        .register-actions {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: center;
+            padding-top: 0.35rem;
+        }
+
+        .btn-register-primary,
+        .btn-register-secondary {
+            min-height: 54px;
+            padding: 0.85rem 1.35rem;
+            border-radius: 18px;
+            font-weight: 800;
+        }
+
+        .btn-register-primary {
+            border: none;
+            background: linear-gradient(135deg, #133a73 0%, #1c5fd4 58%, #3389e4 100%);
+            color: #ffffff;
+            box-shadow: 0 18px 28px rgba(28, 95, 212, 0.22);
+        }
+
+        .btn-register-secondary {
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            background: linear-gradient(180deg, #ffffff 0%, #f5f8fc 100%);
+            color: #274060;
+            text-decoration: none;
+        }
+
+        .register-login-card {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: center;
+            padding: 1rem 1.05rem;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #f7faff 0%, #f2f6fb 100%);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+        }
+
+        .register-login-card p {
+            margin: 0;
+            color: var(--reg-muted);
+            line-height: 1.55;
+        }
+
+        .register-link {
+            color: var(--reg-blue);
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        .register-link:hover {
+            color: #153f8e;
+            text-decoration: underline;
+        }
+
+        .register-footer {
+            width: min(1480px, 95vw);
+            color: rgba(236, 244, 251, 0.86);
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .register-footer p {
+            margin: 0.2rem 0 0;
+            font-size: 0.9rem;
+            color: rgba(226, 232, 240, 0.76);
+        }
+
+        .register-footer-meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.7rem;
+            padding: 0.72rem 0.95rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            font-size: 0.88rem;
+        }
+
+        @media (max-width: 1120px) {
+            .register-stage {
+                grid-template-columns: 1fr;
+            }
+
+            .register-story {
+                position: relative;
+                top: auto;
+            }
+
+            .register-meta-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .register-shell,
+            .register-footer {
+                width: min(100%, calc(100vw - 1rem));
+            }
+
+            .register-topbar,
+            .register-panel-heading,
+            .register-section-head,
+            .register-actions,
+            .register-login-card,
+            .register-footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .register-meta-grid,
+            .story-stats,
+            .register-stage {
+                grid-template-columns: 1fr;
+            }
+
+            .register-panel-header,
+            .register-body,
+            .register-story {
+                padding-left: 1.2rem;
+                padding-right: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body class="registration-page">
+    <main class="register-shell">
+        <div class="register-topbar">
+            <div class="register-topbar-chip">Hospital del Sarare · Solicitud de acceso</div>
+            <div class="register-topbar-note">
+                <span class="register-topbar-dot" aria-hidden="true"></span>
+                Registro institucional con validacion y aprobacion interna
+            </div>
+        </div>
+
+        <div class="register-stage">
+            <aside class="register-story" aria-label="Contexto del registro">
+                <span class="register-kicker">Registro institucional</span>
+                <h1>Solicita tu acceso con una captura clara y ordenada.</h1>
+                <p>El formulario mantiene la informacion necesaria para crear usuarios con oficina, rol y control documental. La presentacion mejora la lectura sin alterar la logica del proceso actual.</p>
+
+                <div class="story-stats">
+                    <article class="story-stat">
+                        <span class="story-stat-label">Cobertura</span>
+                        <strong class="story-stat-value">Perfil + oficina</strong>
+                        <span class="story-stat-copy">Relaciona al usuario con su dependencia productora y su informacion base.</span>
+                    </article>
+                    <article class="story-stat">
+                        <span class="story-stat-label">Revision</span>
+                        <strong class="story-stat-value">Acceso controlado</strong>
+                        <span class="story-stat-copy">La activacion sigue el flujo institucional de aprobacion ya definido.</span>
+                    </article>
+                </div>
+
+                <section class="story-panel">
+                    <span class="register-kicker">Que vas a registrar</span>
+                    <p>Datos personales, datos laborales y credenciales de cuenta en un mismo recorrido, con ayudas visuales y agrupacion mas limpia para reducir errores de captura.</p>
+                </section>
+
+                <section class="story-timeline">
+                    <span class="register-kicker">Ruta de aprobacion</span>
+                    <ul class="story-timeline-list">
+                        <li><span class="story-step">1</span><span>Completa la informacion personal y laboral con tu oficina productora.</span></li>
+                        <li><span class="story-step">2</span><span>Define tu usuario y contrasena para dejar lista la solicitud.</span></li>
+                        <li><span class="story-step">3</span><span>El equipo administrador revisa y habilita el acceso institucional.</span></li>
+                    </ul>
+                </section>
+            </aside>
+
+            <section class="register-panel" aria-label="Formulario de registro">
+                <div class="register-panel-header">
+                    <div class="register-panel-heading">
+                        <div>
+                            <span class="register-pill">Alta de usuario</span>
+                            <h2>Registro de usuario</h2>
+                            <p>Completa la solicitud de acceso al sistema documental. Se mantienen los campos y validaciones actuales, pero con una jerarquia visual mas clara para captura en escritorio y mobile.</p>
+                        </div>
+                    </div>
+
+                    <div class="register-meta-grid">
+                        <article class="register-meta-card">
+                            <strong>Datos personales</strong>
+                            <span>Identificacion, nombres, contacto y fecha de nacimiento.</span>
+                        </article>
+                        <article class="register-meta-card">
+                            <strong>Datos laborales</strong>
+                            <span>Oficina productora, cargo y solicitud de liderazgo cuando aplique.</span>
+                        </article>
+                        <article class="register-meta-card">
+                            <strong>Cuenta de acceso</strong>
+                            <span>Usuario, contrasena y terminos para habilitar la solicitud.</span>
+                        </article>
+                    </div>
+                </div>
+
+                <div class="register-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} register-alert" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    {% if form.non_field_errors %}
+                        <div class="errorlist nonfield">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <form method="post" id="registroForm" class="register-form">
+                        {% csrf_token %}
+
+                        <section class="register-section">
+                            <div class="register-section-head">
+                                <div>
+                                    <span class="section-chip">Bloque 1</span>
+                                    <h3 class="section-title">Datos personales</h3>
+                                    <p class="section-description">Identifica al solicitante y agrega la informacion basica necesaria para el perfil institucional.</p>
+                                </div>
+                            </div>
+                            <div class="register-section-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.first_name.id_for_label }}" class="form-label">{{ form.first_name.label }} <span class="text-danger">*</span></label>
+                                        {{ form.first_name }}
+                                        {{ form.first_name.errors }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.last_name.id_for_label }}" class="form-label">{{ form.last_name.label }} <span class="text-danger">*</span></label>
+                                        {{ form.last_name }}
+                                        {{ form.last_name.errors }}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.tipo_documento.id_for_label }}" class="form-label">{{ form.tipo_documento.label }} <span class="text-danger">*</span></label>
+                                        {{ form.tipo_documento }}
+                                        {{ form.tipo_documento.errors }}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.numero_documento.id_for_label }}" class="form-label">{{ form.numero_documento.label }} <span class="text-danger">*</span></label>
+                                        {{ form.numero_documento }}
+                                        {{ form.numero_documento.errors }}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">{{ form.fecha_nacimiento.label }}</label>
+                                        {{ form.fecha_nacimiento }}
+                                        {{ form.fecha_nacimiento.errors }}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-8 mb-3">
+                                        <label for="{{ form.direccion.id_for_label }}" class="form-label">{{ form.direccion.label }}</label>
+                                        {{ form.direccion }}
+                                        {{ form.direccion.errors }}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.telefono.id_for_label }}" class="form-label">{{ form.telefono.label }}</label>
+                                        {{ form.telefono }}
+                                        {{ form.telefono.errors }}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-12 mb-0">
+                                        <label for="{{ form.email.id_for_label }}" class="form-label">{{ form.email.label }}</label>
+                                        {{ form.email }}
+                                        <small class="form-text">Opcional, pero recomendado para recuperacion de contrasena y notificaciones del proceso.</small>
+                                        {{ form.email.errors }}
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="register-section">
+                            <div class="register-section-head">
+                                <div>
+                                    <span class="section-chip">Bloque 2</span>
+                                    <h3 class="section-title">Datos laborales</h3>
+                                    <p class="section-description">Relaciona el usuario con la oficina productora y el contexto de operacion dentro del sistema.</p>
+                                </div>
+                            </div>
+                            <div class="register-section-body">
+                                <div class="row">
+                                    <div class="col-md-8 mb-3">
+                                        <label for="{{ form.oficina.id_for_label }}" class="form-label">{{ form.oficina.label }} <span class="text-danger">*</span></label>
+                                        {{ form.oficina }}
+                                        <small class="form-text">Selecciona la oficina productora a la que perteneces para mantener la trazabilidad correcta.</small>
+                                        {{ form.oficina.errors }}
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.cargo.id_for_label }}" class="form-label">{{ form.cargo.label }}</label>
+                                        {{ form.cargo }}
+                                        {{ form.cargo.errors }}
+                                    </div>
+                                </div>
+                                <div class="register-check-card">
+                                    <div class="form-check">
+                                        {{ form.solicita_lider }}
+                                        <label class="form-check-label" for="{{ form.solicita_lider.id_for_label }}">{{ form.solicita_lider.label }}</label>
+                                    </div>
+                                    <div class="register-check-copy">Los lideres pueden asumir aprobaciones y acciones adicionales dentro del flujo documental. Marca esta opcion solo si corresponde a tu rol real.</div>
+                                </div>
+                                {{ form.solicita_lider.errors }}
+                            </div>
+                        </section>
+
+                        <section class="register-section">
+                            <div class="register-section-head">
+                                <div>
+                                    <span class="section-chip">Bloque 3</span>
+                                    <h3 class="section-title">Informacion de cuenta</h3>
+                                    <p class="section-description">Define las credenciales con las que se procesara la solicitud de acceso a la plataforma.</p>
+                                </div>
+                            </div>
+                            <div class="register-section-body">
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }} <span class="text-danger">*</span></label>
+                                        {{ form.username }}
+                                        <small class="form-text">{{ form.username.help_text }}</small>
+                                        {{ form.username.errors }}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.password1.id_for_label }}" class="form-label">{{ form.password1.label }} <span class="text-danger">*</span></label>
+                                        {{ form.password1 }}
+                                        <small class="form-text">{{ form.password1.help_text }}</small>
+                                        {{ form.password1.errors }}
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="{{ form.password2.id_for_label }}" class="form-label">{{ form.password2.label }} <span class="text-danger">*</span></label>
+                                        {{ form.password2 }}
+                                        <small class="form-text">{{ form.password2.help_text }}</small>
+                                        {{ form.password2.errors }}
+                                    </div>
+                                </div>
+                                <div class="register-check-card">
+                                    <div class="form-check">
+                                        {{ form.acepta_terminos }}
+                                        <label class="form-check-label" for="{{ form.acepta_terminos.id_for_label }}">{{ form.acepta_terminos.label }} <span class="text-danger">*</span></label>
+                                    </div>
+                                    <div class="register-check-copy">Al registrarte, aceptas que tus datos serán utilizados exclusivamente para la gestión documental institucional del Hospital del Sarare, conforme a la política de tratamiento de datos personales y a la normativa vigente de gestión de archivos y correspondencia.</div>
+                                </div>
+                                {{ form.acepta_terminos.errors }}
+                            </div>
+                        </section>
+
+                        <div class="register-actions">
+                            <a href="{% url 'login' %}" class="btn-register-secondary">Volver al acceso</a>
+                            <button type="submit" class="btn btn-register-primary">Registrar usuario</button>
+                        </div>
+
+                    </form>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="register-footer">
+        <div>
+            <strong>Hospital del Sarare - Central de Archivos del Sarare</strong>
+            <p>© {{ current_year }} Registro institucional para habilitar accesos con control documental y revision administrativa.</p>
+        </div>
+        <div class="register-footer-meta">Solicitud ordenada, legible y compatible con el flujo actual</div>
+    </footer>
+
+    <script src="/static/correspondencia/vendor/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Responsivo -->
+  <title>FUID - Registros Mejorados</title>
+
+  <!-- ==================== HOJAS DE ESTILO ==================== -->
+  <!-- CSS de Bootstrap 5 -->
+  <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+  <!-- Íconos de Bootstrap Icons -->
+  <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="/static/correspondencia/vendor/css/dataTables.bootstrap5.min.css">
+  <!-- colReorder CSS para DataTables (permite reordenar columnas con drag-and-drop) -->
+  <link rel="stylesheet" href="/static/correspondencia/vendor/css/colReorder.bootstrap5.min.css">
+
+  <!--
+    A continuación, se incluye el bloque de estilos proporcionado por la paleta
+    de colores indicada, adaptado a este proyecto. Se añaden comentarios
+    adicionales para mantener un alto nivel de claridad y consistencia.
+  -->
+  <style>
+
+    
+    /* ----------------------------------------------------------------------------------
+       PALETA DE COLORES Y ESTILOS GLOBALES
+       ---------------------------------------------------------------------------------- */
+
+    /* Fuente global */
+
+    #tablaFUID_filter {
+    display: none !important;
+}
+
+th[data-order="asc"]::after {
+  content: " ▲";
+  color: #003366;
+  font-size: 0.75rem;
+}
+th[data-order="desc"]::after {
+  content: " ▼";
+  color: #003366;
+  font-size: 0.75rem;
+}
+
+
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      background: linear-gradient(135deg, #f4f6f8, #e9edf1); /* Fondo limpio y profesional */
+      color: #333; /* Texto en gris oscuro para legibilidad */
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
+
+    /* Ajuste del HTML y body para ocupar toda la pantalla en altura */
+    html, body {
+      height: 100%;
+      display: flex;
+      flex-direction: column; /* Apilar de arriba a abajo */
+    }
+
+    /* El main crecerá para ocupar el espacio restante disponible */
+    main {
+      flex: 1;
+    }
+
+    /* Barra de navegación */
+    .navbar {
+      background-color: #f8f9fa; /* Un tono claro */
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Sombra leve */
+    }
+    .navbar-brand, .navbar-nav .nav-link, .navbar-text a {
+      color: #003366 !important; /* Azul oscuro */
+      font-weight: bold;
+      transition: color 0.2s ease;
+    }
+    .navbar-nav .nav-link:hover {
+      color: #0056b3 !important; /* Azul más vibrante en hover */
+    }
+
+    /* HERO o cabecera grande con título y contexto */
+    .hero {
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      padding: 2rem;
+      margin: 2rem 0; /* Espaciado vertical */
+    }
+    .hero h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #003366;
+      margin-bottom: 1rem;
+    }
+    .hero p {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 0;
+    }
+
+    /* Encabezados de sección con estilo */
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #003366;
+      margin-bottom: 1rem;
+      margin-top: 2rem;
+    }
+
+    /* Tarjeta para agrupar filtros o contenido */
+    .filter-card {
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Estilo de las etiquetas de filtro */
+    .filter-label {
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: inline-block;
+      font-size: 0.9rem;
+      color: #003366;
+    }
+
+    /* Ajustes en inputs para filtros */
+    .filter-input, .form-select {
+      font-size: 0.85rem;
+    }
+
+    /* Contenedor de la tabla */
+    .table-container {
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      padding: 1rem;
+    }
+
+    /* Estilos de la tabla con DataTables */
+    .table {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: auto;
+    }
+    .table th, .table td {
+      font-size: 0.85rem;
+      padding: 12px;
+      border: 1px solid #ddd;
+      text-align: left;
+      white-space: nowrap;     /* Evita que el texto se desborde en múltiples líneas */
+      overflow: hidden;        /* Oculta texto que no cabe */
+      text-overflow: ellipsis; /* Añade "..." si el texto es demasiado largo */
+    }
+    .table thead th {
+      background-color: #f8f9fa; /* Tono claro para distinguir el encabezado */
+      color: #003366;
+      font-weight: 600;
+    }
+    .table-striped tbody tr:nth-of-type(odd) {
+      background-color: #f8f9fa;
+    }
+    .table-striped tbody tr:hover {
+      background-color: #e9ecef;
+    }
+
+    /* Ajustes para DataTables */
+    .dataTables_wrapper .dataTables_filter {
+      float: left !important;
+      text-align: left;
+    }
+    .dataTables_wrapper .dataTables_paginate {
+      float: left !important;
+    }
+    .dataTables_info {
+      font-size: 0.85rem;
+    }
+
+    /* Botones generales */
+    .btn-primary {
+      background-color: #0069d9 !important;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-primary:hover {
+      background-color: #005bb5 !important;
+      transform: scale(1.05);
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .btn-secondary {
+      background-color: #6c757d !important;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-secondary:hover {
+      background-color: #5a6268 !important;
+      transform: scale(1.05);
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Otros botones de ejemplo (Info, Warning) */
+    .btn-warning {
+      background-color: #ffc107 !important;
+      color: #212529;
+      border: none;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-warning:hover {
+      background-color: #e0a800 !important;
+      transform: scale(1.05);
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .btn-info {
+      background-color: #17a2b8 !important;
+      border: none;
+      color: #fff;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-info:hover {
+      background-color: #138496 !important;
+      transform: scale(1.05);
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Pie de página */
+    footer {
+      margin-top: 3rem;
+      padding: 1rem;
+      background: #003366;
+      color: #ffffff;
+      text-align: center;
+      border-radius: 10px 10px 0 0;
+    }
+    footer p {
+      margin: 0;
+      font-size: 0.9rem;
+    }
+
+    /* Media Queries para mayor responsividad */
+    @media (max-width: 992px) {
+      /* Ajustes para pantallas medianas a pequeñas */
+      .filter-card .row > [class*="col-"] {
+        margin-bottom: 0.75rem;
+      }
+    }
+
+    @media (max-width: 576px) {
+      /* Ajustes para pantallas muy pequeñas */
+      .hero h1 {
+        font-size: 1.5rem;
+      }
+      .table thead {
+        display: none; /* Ocultamos el encabezado en pantallas muy pequeñas */
+      }
+      .table, .table tbody, .table tr, .table td {
+        display: block;
+        width: 100%;
+      }
+      .table td {
+        border: none;
+        border-bottom: 1px solid #ddd;
+        position: relative;
+        padding-left: 50%;
+        white-space: normal; /* Permite el salto de línea */
+        text-overflow: initial;
+      }
+      .table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 50%;
+        padding-left: 15px;
+        font-weight: 600;
+        color: #003366;
+        white-space: nowrap;
+      }
+    }
+  </style>
+
+</head>
+<body>
+  <!--
+    ===================================================================================
+    BARRA DE NAVEGACIÓN
+    ===================================================================================
+    Incluimos una barra de navegación superior con estilo Bootstrap para
+    una apariencia profesional y funcional. Enlazamos un nombre de proyecto
+    como ejemplo (FUID Registros).
+  -->
+  <nav class="navbar navbar-light bg-light mb-4 animate__animated animate__fadeInDown animate__delay-1s">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" href="/">
+            <i class="bi bi-archive-fill text-primary me-2" style="font-size:1.5rem;"></i>
+            Hospital del Sarare
+        </a>
+        <span class="navbar-text">
+            {% if request.user.is_authenticated %}
+                Bienvenido, {{ request.user.username }} | <a href="{% url 'logout' %}">Cerrar sesión</a>
+            {% else %}
+                <a href="{% url 'login' %}">Iniciar sesión</a>
+            {% endif %}
+        </span>
+    </div>
+</nav>
+
+  <!--
+    ===================================================================================
+    CONTENIDO PRINCIPAL
+    ===================================================================================
+  -->
+  <div class="container-fluid animate__animated animate__fadeInUp" id="mainContainer">
+  
+    <!-- Título de la Página -->
+    <h1 class="page-title animate__animated animate__fadeInDown text-primary">
+      <i class="bi bi-file-earmark-text-fill"></i> Detalle del FUID #{{ fuid.id }}
+    </h1>
+  
+    <!-- Tarjeta de Información General del FUID -->
+    <div class="filter-card p-3 mt-2 rounded shadow-sm bg-white border animate__animated animate__fadeInUp">
+      <h6 class="text-primary fw-bold"><i class="bi bi-info-circle"></i> Información General del FUID</h6>
+  
+      <!-- Botón de Exportación -->
+      <div class="text-end mb-2">
+        <a href="{% url 'export_fuid_to_excel' fuid.id %}" class="btn btn-success btn-sm">
+          <i class="bi bi-file-earmark-spreadsheet-fill"></i> Exportar a Excel
+        </a>
+      </div>
+  
+      <!-- Contenido de Información -->
+      <div class="row g-3">
+        <div class="col-md-4"><strong>Entidad Productora:</strong> <span>{{ fuid.entidad_productora }}</span></div>
+        <div class="col-md-4"><strong>Unidad Administrativa:</strong> <span>{{ fuid.unidad_administrativa }}</span></div>
+        <div class="col-md-4"><strong>Oficina Productora:</strong> <span>{{ fuid.oficina_productora }}</span></div>
+        <div class="col-md-4"><strong>Objeto:</strong> <span>{{ fuid.objeto }}</span></div>
+        <div class="col-md-4"><strong>Fecha de Creación:</strong> <span>{{ fuid.fecha_creacion|date:"Y-m-d H:i" }}</span></div>
+      </div>
+    </div>
+  
+    <!-- Tarjeta de Responsables -->
+    <div class="filter-card p-3 mt-3 rounded shadow-sm bg-white border animate__animated animate__fadeInUp animate__delay-1s">
+      <h6 class="text-primary fw-bold"><i class="bi bi-people"></i> Responsables</h6>
+      <div class="row g-3">
+        <!-- Elaborado Por -->
+        <div class="col-md-4">
+          <div class="person-block border rounded p-2 shadow-sm">
+            <h6 class="person-title text-secondary"><i class="bi bi-pencil-square"></i> Elaborado Por</h6>
+            <p><strong>Nombre:</strong> {{ fuid.elaborado_por_nombre }}</p>
+            <p><strong>Cargo:</strong> {{ fuid.elaborado_por_cargo }}</p>
+            <p><strong>Lugar:</strong> {{ fuid.elaborado_por_lugar }}</p>
+            <p><strong>Fecha:</strong> {{ fuid.elaborado_por_fecha }}</p>
+          </div>
+        </div>
+        <!-- Entregado Por -->
+        <div class="col-md-4">
+          <div class="person-block border rounded p-2 shadow-sm">
+            <h6 class="person-title text-secondary"><i class="bi bi-arrow-right-square"></i> Entregado Por</h6>
+            <p><strong>Nombre:</strong> {{ fuid.entregado_por_nombre }}</p>
+            <p><strong>Cargo:</strong> {{ fuid.entregado_por_cargo }}</p>
+            <p><strong>Lugar:</strong> {{ fuid.entregado_por_lugar }}</p>
+            <p><strong>Fecha:</strong> {{ fuid.entregado_por_fecha }}</p>
+          </div>
+        </div>
+        <!-- Recibido Por -->
+        <div class="col-md-4">
+          <div class="person-block border rounded p-2 shadow-sm">
+            <h6 class="person-title text-secondary"><i class="bi bi-check2-square"></i> Recibido Por</h6>
+            <p><strong>Nombre:</strong> {{ fuid.recibido_por_nombre }}</p>
+            <p><strong>Cargo:</strong> {{ fuid.recibido_por_cargo }}</p>
+            <p><strong>Lugar:</strong> {{ fuid.recibido_por_lugar }}</p>
+            <p><strong>Fecha:</strong> {{ fuid.recibido_por_fecha }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+
+  
+  </div>
+  
+
+
+  
+  <!-- contenidofuid -->
+  <main class="container-fluid my-4"><div class="hero">
+      <h1 class="h5 text-primary">Registros FUID - Gestión Documental</h1>
+      <p class="small text-muted">Filtra y encuentra registros de forma eficiente.</p>
+      <button id="toggleFiltros" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-funnel"></i> Mostrar Filtros
+      </button>
+    </div>
+    
+    <!-- Tarjeta de Filtros Compacta con Tabs -->
+    <div class="filter-card p-3 mt-2 rounded shadow-sm bg-white border" id="contenedorFiltros" style="display: none;">
+      <h6 class="text-primary fw-bold text-center mb-3"><i class="bi bi-funnel"></i> Filtros</h6>
+    
+      <!-- Pestañas de filtros -->
+      <ul class="nav nav-tabs mb-2" id="filtroTabs">
+        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#filtroFecha">Fechas</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#filtroIdentificacion">Identificación</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#filtroUbicacion">Ubicación</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#filtroSoportes">Soportes</a></li>
+        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#filtroEstado">Estado</a></li>
+      </ul>
+    
+      <!-- Contenido de cada pestaña -->
+      <div class="tab-content">
+    
+        <!-- Pestaña Fechas -->
+        <div class="tab-pane fade show active" id="filtroFecha">
+          <h6 class="text-muted text-center small fw-bold mb-2">Filtrar por Fechas</h6>
+          <div class="row g-2">
+            <div class="col-6"><label class="small text-muted">Fecha Archivo</label><input type="date" id="filtroFechaArchivo" class="form-control form-control-sm filtro-auto-close"></div>
+            <div class="col-6"><label class="small text-muted">Fecha Inicial</label><input type="date" id="filtroFechaInicial" class="form-control form-control-sm filtro-auto-close"></div>
+            <div class="col-6"><label class="small text-muted">Fecha Final</label><input type="date" id="filtroFechaFinal" class="form-control form-control-sm filtro-auto-close"></div>
+            <div class="col-6"><label class="small text-muted">Fecha Creación</label><input type="datetime-local" id="filtroFechaCreacion" class="form-control form-control-sm filtro-auto-close"></div>
+          </div>
+        </div>
+    
+        <!-- Pestaña Identificación -->
+        <div class="tab-pane fade" id="filtroIdentificacion">
+          <h6 class="text-muted text-center small fw-bold mb-2">Identificación</h6>
+          <div class="row g-2">
+            <div class="col-6"><input type="text" id="filtroNumeroOrden" class="form-control form-control-sm filtro-auto-close" placeholder="N° Orden"></div>
+            <div class="col-6"><input type="text" id="filtroCodigo" class="form-control form-control-sm filtro-auto-close" placeholder="Código"></div>
+            <div class="col-6"><input type="text" id="filtroSerie" class="form-control form-control-sm filtro-auto-close" placeholder="Serie"></div>
+            <div class="col-6"><input type="text" id="filtroSubserie" class="form-control form-control-sm filtro-auto-close" placeholder="Subserie"></div>
+            <div class="col-6"><input type="text" id="filtroUnidadDocumental" class="form-control form-control-sm filtro-auto-close" placeholder="Unidad Doc."></div>
+            <div class="col-6"><input type="text" id="filtroIdentificadorDoc" class="form-control form-control-sm filtro-auto-close" placeholder="ID Doc."></div>
+            <div class="col-6"><input type="text" id="filtroNotas" class="form-control form-control-sm filtro-auto-close" placeholder="Notas"></div>
+          </div>
+        </div>
+    
+        <!-- Pestaña Ubicación -->
+        <div class="tab-pane fade" id="filtroUbicacion">
+          <h6 class="text-muted text-center small fw-bold mb-2">Ubicación</h6>
+          <div class="row g-2">
+            <div class="col-6"><input type="text" id="filtroCaja" class="form-control form-control-sm filtro-auto-close" placeholder="Caja"></div>
+            <div class="col-6"><input type="text" id="filtroCarpeta" class="form-control form-control-sm filtro-auto-close" placeholder="Carpeta"></div>
+            <div class="col-6"><input type="text" id="filtroTomoLegajo" class="form-control form-control-sm filtro-auto-close" placeholder="Tomo/Legajo"></div>
+            <div class="col-6"><input type="text" id="filtroUbicacion" class="form-control form-control-sm filtro-auto-close" placeholder="Ubicación"></div>
+          </div>
+        </div>
+    
+        <!-- Pestaña Soportes -->
+        <div class="tab-pane fade" id="filtroSoportes">
+          <h6 class="text-muted text-center small fw-bold mb-2">Soportes</h6>
+          <div class="row g-2">
+            <div class="col-6">
+              <select id="filtroSoporteFisico" class="form-select form-select-sm filtro-auto-close">
+                <option value="">Sop. Físico</option>
+                <option value="✔">✔</option>
+                <option value="✖">✖</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <select id="filtroSoporteElectronico" class="form-select form-select-sm filtro-auto-close">
+                <option value="">Sop. Electrónico</option>
+                <option value="✔">✔</option>
+                <option value="✖">✖</option>
+              </select>
+            </div>
+          </div>
+        </div>
+    
+        <!-- Pestaña Estado -->
+        <div class="tab-pane fade" id="filtroEstado">
+          <h6 class="text-muted text-center small fw-bold mb-2">Estado</h6>
+          <div class="row g-2">
+            <div class="col-6">
+              <select id="filtroEstadoArchivo" class="form-select form-select-sm filtro-auto-close">
+                <option value="">Estado</option>
+                <option value="✔">✔</option>
+                <option value="✖">✖</option>
+              </select>
+            </div>
+            <div class="col-6"><input type="text" id="filtroCreadoPor" class="form-control form-control-sm filtro-auto-close" placeholder="Creado Por"></div>
+          </div>
+        </div>
+    
+      </div>
+    
+      <!-- Botones de acción -->
+      <div class="d-flex justify-content-center mt-2">
+        <button id="btnBuscar" class="btn btn-primary btn-sm me-2">
+          <i class="bi bi-search"></i> Buscar
+        </button>
+        <button id="btnLimpiar" class="btn btn-secondary btn-sm">
+          <i class="bi bi-x-circle"></i> Limpiar
+        </button>
+      </div>
+    </div>
+    
+    
+
+    <!--
+      ===================================================================================
+      TABLA DE REGISTROS
+      ===================================================================================
+      Se presenta dentro de un contenedor estilizado (table-container).
+      La tabla está configurada con:
+        - DataTables (serverSide y processing a través de AJAX).
+        - colReorder: true (para permitir reordenar columnas).
+        - Columnas con data-label para la versión responsiva en pantallas muy pequeñas.
+    -->
+        <!--  -->
+    <!-- <div class="table-container">
+      <div class="d-flex gap-2 mb-3">
+        <button id="ordenarCodigo" class="btn btn-sm btn-outline-primary" data-order="asc">
+          <i class="bi bi-sort-alpha-down"></i> Ordenar por Código
+        </button>
+        <button id="ordenarFecha" class="btn btn-sm btn-outline-primary" data-order="asc">
+          <i class="bi bi-sort-numeric-down"></i> Ordenar por Fecha
+        </button>
+      </div> -->
+
+      <!-- Botón para abrir modal de agregar registro -->
+      <div class="text-end mb-2">
+        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarRegistro">
+          <i class="bi bi-plus-circle"></i> Agregar Registro
+        </button>
+      </div>
+      <h2 class="section-title">Listado de Registros</h2>
+      <div class="table-responsive">
+        <table id="tablaFUID" class="table table-striped table-bordered" style="width:100%">
+          <thead>
+            <tr>
+              <!--
+                Cada th corresponde a una columna, y su contenido textual
+                sirve para la versión de desktop. Para la versión móvil,
+                utilizaremos data-label en los td del tbody que generará DataTables.
+              -->
+              <th style="min-width: 70px;">N° Orden</th>
+              <th style="min-width: 70px;">Código</th>
+              <th style="min-width: 130px;">Serie</th>
+              <th style="min-width: 130px;">Subserie</th>
+              <th style="min-width: 100px;">Unidad Doc</th>
+              <th style="min-width: 130px;">Identificador Doc</th>
+              <th style="min-width: 90px;">F. Inicial</th>
+              <th style="min-width: 90px;">F. Final</th>
+              <th style="min-width: 80px;">Sop. Físico</th>
+              <th style="min-width: 90px;">Sop. Electrónico</th>
+              <th style="min-width: 70px; cursor: pointer;" data-campo="caja">Caja</th>
+              <th style="min-width: 70px;">Carpeta</th>
+              <th style="min-width: 110px;">Tomo Legajo</th>
+              <th style="min-width: 80px;">N° Folios</th>
+              <th style="min-width: 70px;">Tipo</th>
+              <th style="min-width: 70px;">Cant.</th>
+              <th style="min-width: 100px;">Ubicación</th>
+              <th style="min-width: 90px;">Cant. Elec.</th>
+              <th style="min-width: 110px;">Tamaño Elec.</th>
+              <th style="min-width: 80px;">Notas</th>
+              <th style="min-width: 90px;">Creado Por</th>
+              <th style="min-width: 110px;">F. Creación</th>
+              <th style="min-width: 90px;">F. Archivo</th>
+              <th style="min-width: 110px;">F. Edición</th>
+              <th style="min-width: 90px;">Editado Por</th>
+              <th style="min-width: 60px;">Estado</th>
+              <th style="min-width: 100px;">Documento</th>  <!-- Sin filtro -->
+              <th style="min-width: 100px;">Acciones</th>    <!-- Sin filtro -->
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Contenido generado vía Ajax con DataTables. 
+                 Cada <td> se inyectará dinámicamente, pero 
+                 para la responsividad en móviles, se requiere 
+                 data-label en el render del servidor. EJEMPLO:
+                 <td data-label="N° Orden"> ... </td>
+                 Sin embargo, al ser serverSide, ese markup se maneja 
+                 en la respuesta. Aquí no es imprescindible colocarlo manualmente. -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    
+
+  </main> <!-- Fin de main -->
+
+  <!--
+    ===================================================================================
+    PIE DE PÁGINA
+    ===================================================================================
+  -->
+  <footer>
+    <p>© 2025 Gestión FUID - Todos los derechos reservados.</p>
+  </footer>
+
+  <!--
+    ===================================================================================
+    SCRIPTS
+    ===================================================================================
+    Se incluyen las librerías necesarias en el orden recomendado:
+      1) jQuery
+      2) Bootstrap JavaScript
+      3) DataTables
+      4) DataTables Bootstrap Integration
+      5) colReorder (para permitir reordenar columnas)
+      6) Nuestro script de configuración
+    ===================================================================================
+  -->
+  <!-- jQuery -->
+  <script src="/static/correspondencia/vendor/js/jquery-3.7.0.min.js"></script>
+  <!-- Bootstrap Bundle (incluye Popper) -->
+  <script src="/static/correspondencia/vendor/js/bootstrap.bundle.min.js"></script>
+  <!-- DataTables -->
+  <script src="/static/correspondencia/vendor/js/jquery.dataTables.min.js"></script>
+  <script src="/static/correspondencia/vendor/js/dataTables.bootstrap5.min.js"></script>
+  <!-- colReorder para DataTables (reordenar columnas) -->
+  <script src="/static/correspondencia/vendor/js/dataTables.colReorder.min.js"></script>
+
+<script>
+$(document).ready(function() {
+
+  // 1) Inicializa DataTable con serverSide=true para FILTROS y ORDENAMIENTO EN EL SERVIDOR
+  const csrftoken = document.cookie.split('; ').find(r => r.startsWith('csrftoken='))?.split('=')[1];
+  window.table = $('#tablaFUID').DataTable({
+    processing: true,
+    serverSide: true,
+    pageLength: 30,
+    ordering: true,   // <-- Activamos ordenación server-side
+    ajax: {
+      url: "/registros/fuids/{{ fuid.id }}/registros/",
+      type: "POST",
+      headers: { 'X-CSRFToken': csrftoken },
+      data: function(d) {
+        // Filtros (funcionan tal cual en tu vista actual)
+        d.filtro_numero_orden            = $('#filtroNumeroOrden').val();
+        d.filtro_codigo                  = $('#filtroCodigo').val();
+        d.filtro_serie                   = $('#filtroSerie').val();
+        d.filtro_subserie                = $('#filtroSubserie').val();
+        d.filtro_unidad_documental       = $('#filtroUnidadDocumental').val();
+        d.filtro_identificador_documento = $('#filtroIdentificadorDoc').val();
+        d.filtro_fecha_archivo          = $('#filtroFechaArchivo').val();
+        d.filtro_fecha_inicial          = $('#filtroFechaInicial').val();
+        d.filtro_fecha_final            = $('#filtroFechaFinal').val();
+        d.filtro_soporte_fisico         = $('#filtroSoporteFisico').val();
+        d.filtro_soporte_electronico    = $('#filtroSoporteElectronico').val();
+        d.filtro_caja                   = $('#filtroCaja').val();
+        d.filtro_carpeta                = $('#filtroCarpeta').val();
+        d.filtro_tomo_legajo_libro      = $('#filtroTomoLegajo').val();
+        d.filtro_numero_folios          = $('#filtroNumFolios').val();
+        d.filtro_tipo                   = $('#filtroTipo').val();
+        d.filtro_cantidad               = $('#filtroCant').val();
+        d.filtro_ubicacion              = $('#filtroUbicacion').val();
+        d.filtro_cant_elec              = $('#filtroCantElec').val();
+        d.filtro_tamano_elec            = $('#filtroTamanoElec').val();
+        d.filtro_notas                  = $('#filtroNotas').val();
+        d.filtro_creado_por             = $('#filtroCreadoPor').val();
+        d.filtro_fecha_creacion         = $('#filtroFechaCreacion').val();
+        d.filtro_estado_archivo         = $('#filtroEstadoArchivo').val();
+      }
+    },
+    columns: [
+      { data: "numero_orden",                     width: "70px" },
+      { data: "codigo",                           width: "70px" },
+      { data: "nombre_serie",                     width: "130px" },
+      { data: "nombre_subserie",                  width: "130px" },
+      { data: "unidad_documental",                width: "100px" },
+      { data: "identificador_documento",          width: "130px" },
+      { data: "fecha_inicial",                    width: "90px" },
+      { data: "fecha_final",                      width: "90px" },
+      { data: "soporte_fisico",                   width: "80px" },
+      { data: "soporte_electronico",              width: "90px" },
+      { data: "caja",                             width: "70px" },
+      { data: "carpeta",                          width: "70px" },
+      { data: "tomo_legajo_libro",                width: "110px" },
+      { data: "numero_folios",                    width: "80px" },
+      { data: "tipo",                             width: "70px" },
+      { data: "cantidad",                         width: "70px" },
+      { data: "ubicacion",                        width: "100px" },
+      { data: "cantidad_documentos_electronicos", width: "90px" },
+      { data: "tamano_documentos_electronicos",   width: "110px" },
+      { data: "notas",                            width: "80px" },
+      { data: "creado_por",                       width: "90px" },
+      { data: "fecha_creacion",                   width: "110px" },
+      { data: "fecha_archivo",                    width: "90px" },
+      { data: "fecha_edicion",                    width: "110px" },
+      { data: "editado_por",                      width: "90px" },
+      { data: "Estado_archivo",                   width: "60px" },
+      {
+        data: "documento",
+        orderable: false,
+        searchable: false,
+        width: "100px"
+      },
+      {
+        data: "acciones",
+        orderable: false,
+        searchable: false,
+        width: "100px"
+      }
+    ],
+    language: {
+      url: "/static/correspondencia/vendor/js/es-ES.json"
+    }
+  });
+
+
+  // 2) Al hacer clic en "Buscar", recargamos la tabla del servidor con los nuevos filtros
+  $('#btnBuscar').on('click', function(){
+    table.ajax.reload(); 
+  });
+
+  // 3) Al hacer clic en "Limpiar", limpia los campos de filtro y recarga la tabla
+  $('#btnLimpiar').on('click', function(){
+    $('input[type="text"], input[type="date"], input[type="datetime-local"]').val('');
+    $('select').val('');
+    table.ajax.reload();
+  });
+
+});
+</script>
+
+    
+
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const btnToggle = document.getElementById("toggleFiltros");
+    const contenedorFiltros = document.getElementById("contenedorFiltros");
+    const toggleButtons = document.querySelectorAll(".filtro-toggle");
+    const autoCloseInputs = document.querySelectorAll(".filtro-auto-close");
+
+    // Mostrar/Ocultar el panel de filtros principal
+    btnToggle.addEventListener("click", function() {
+      if (contenedorFiltros.style.display === "none") {
+        contenedorFiltros.style.display = "block";
+        btnToggle.innerHTML = '<i class="bi bi-x-circle"></i> Ocultar Filtros';
+      } else {
+        contenedorFiltros.style.display = "none";
+        btnToggle.innerHTML = '<i class="bi bi-funnel"></i> Mostrar Filtros';
+      }
+    });
+
+    // Manejo de subcategorías colapsables
+    toggleButtons.forEach(btn => {
+      btn.addEventListener("click", function() {
+        let target = document.getElementById(btn.dataset.target);
+        if (target.style.display === "none" || target.style.display === "") {
+          target.style.display = "block";
+        } else {
+          target.style.display = "none";
+        }
+      });
+    });
+
+    // Auto-retraer filtros al seleccionar un valor
+    autoCloseInputs.forEach(input => {
+      input.addEventListener("change", function() {
+        let parentGroup = input.closest(".filtro-content");
+        if (parentGroup) {
+          parentGroup.style.display = "none";
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MODAL: AGREGAR REGISTRO AL FUID
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="modalAgregarRegistro" tabindex="-1" aria-labelledby="modalAgregarRegistroLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <!-- Header -->
+      <div class="modal-header" style="background: linear-gradient(135deg, #003366 0%, #005599 50%, #0077cc 100%); color: white;">
+        <h5 class="modal-title" id="modalAgregarRegistroLabel">
+          <i class="bi bi-file-plus me-2"></i>Agregar Registro al FUID #{{ fuid.id }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body" style="background: #f8f9fa;">
+        <!-- Alertas -->
+        <div id="modal-alertas"></div>
+
+        <form id="formAgregarRegistro" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          <!-- ── Datos principales ── -->
+          <div class="card shadow-sm mb-3">
+            <div class="card-header py-2" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-bottom: 2px solid #e1e8ed;">
+              <h6 class="mb-0 fw-bold" style="color: #003366;">
+                <i class="bi bi-info-circle me-2"></i>Datos del Registro
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Código</label>
+                  <input type="text" name="codigo" class="form-control form-control-sm" placeholder="Código">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Serie <span class="text-danger">*</span></label>
+                  <select name="codigo_serie" id="modal_codigo_serie" class="form-select form-select-sm" required>
+                    <option value="">-- Seleccione serie --</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Subserie</label>
+                  <select name="codigo_subserie" id="modal_codigo_subserie" class="form-select form-select-sm">
+                    <option value="">Seleccione una serie primero</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Unidad Documental <span class="text-danger">*</span></label>
+                  <input type="text" name="unidad_documental" id="modal_unidad_documental" class="form-control form-control-sm" required>
+                </div>
+              </div>
+
+              <div class="row g-2 mt-1">
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Fecha Inicial</label>
+                  <input type="date" name="fecha_inicial" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Fecha Final</label>
+                  <input type="date" name="fecha_final" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Fecha Archivo</label>
+                  <input type="date" name="fecha_archivo" class="form-control form-control-sm">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Tipo de soporte ── -->
+          <div class="card shadow-sm mb-3">
+            <div class="card-header py-2" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-bottom: 2px solid #e1e8ed;">
+              <h6 class="mb-0 fw-bold" style="color: #003366;">
+                <i class="bi bi-check-square me-2"></i>Tipo de Soporte
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="soporte_fisico" id="modal_soporte_fisico">
+                    <label class="form-check-label small" for="modal_soporte_fisico">Soporte Físico</label>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="soporte_electronico" id="modal_soporte_electronico">
+                    <label class="form-check-label small" for="modal_soporte_electronico">Soporte Electrónico</label>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="modal_toggle_opcionales" style="border: 2px solid #000;">
+                    <label class="form-check-label small" for="modal_toggle_opcionales">Campos opcionales</label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Campos opcionales -->
+              <div id="modal_campos_opcionales" class="border rounded p-3 mt-2" style="display: none; background: #fff;">
+                <h6 class="mb-2 text-secondary small"><i class="bi bi-person-badge me-1"></i> Detalles Específicos</h6>
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold small" style="color: #003366;">
+                      Identificador Documental
+                      <i class="bi bi-info-circle" title="Solo para Historia Clínica u otros documentos que lo requieran."></i>
+                    </label>
+                    <input type="text" name="identificador_documento" class="form-control form-control-sm">
+                  </div>
+                  <div class="col-md-6">
+                    <div class="form-check mt-4">
+                      <input class="form-check-input" type="checkbox" name="Estado_archivo" id="modal_estado_archivo" checked>
+                      <label class="form-check-label small" for="modal_estado_archivo">Registro vigente</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Soporte Físico (oculto por defecto) ── -->
+          <div id="modal_soporte_fisico_fields" class="card shadow-sm mb-3" style="display: none;">
+            <div class="card-header py-2" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-bottom: 2px solid #e1e8ed;">
+              <h6 class="mb-0 fw-bold" style="color: #003366;">
+                <i class="bi bi-archive me-2"></i>Datos de Soporte Físico
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="row g-2">
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Caja</label>
+                  <input type="number" name="caja" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Carpeta</label>
+                  <input type="number" name="carpeta" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Tomo/Legajo/Libro</label>
+                  <select id="modal_tomo_legajo_select" class="form-select form-select-sm">
+                    <option value="">Seleccione</option>
+                    <option value="Tomo">Tomo</option>
+                    <option value="Legajo">Legajo</option>
+                    <option value="Libro">Libro</option>
+                  </select>
+                  <input type="hidden" name="tomo_legajo_libro" id="modal_tomo_legajo_hidden">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label fw-semibold small" style="color: #003366;">N° Folios</label>
+                  <input type="number" name="numero_folios" class="form-control form-control-sm">
+                </div>
+              </div>
+              <div class="row g-2 mt-1">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Tipo</label>
+                  <input type="text" name="tipo" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Cantidad</label>
+                  <input type="number" name="cantidad" class="form-control form-control-sm">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Soporte Electrónico (oculto por defecto) ── -->
+          <div id="modal_soporte_electronico_fields" class="card shadow-sm mb-3" style="display: none;">
+            <div class="card-header py-2" style="background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-bottom: 2px solid #e1e8ed;">
+              <h6 class="mb-0 fw-bold" style="color: #003366;">
+                <i class="bi bi-file-earmark-arrow-up me-2"></i>Datos de Soporte Electrónico
+              </h6>
+            </div>
+            <div class="card-body">
+              <div class="row g-2">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Ubicación</label>
+                  <input type="text" name="ubicacion" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Cant. Doc. Electrónicos</label>
+                  <input type="number" name="cantidad_documentos_electronicos" class="form-control form-control-sm">
+                </div>
+              </div>
+              <div class="row g-2 mt-1">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Tamaño del Documento</label>
+                  <div class="input-group input-group-sm">
+                    <input type="number" id="modal_tamano_valor" class="form-control" placeholder="Valor" min="0" step="any">
+                    <select id="modal_tamano_unidad" class="form-select" style="max-width: 80px;">
+                      <option value="KB">KB</option>
+                      <option value="MB" selected>MB</option>
+                      <option value="GB">GB</option>
+                    </select>
+                  </div>
+                  <input type="hidden" name="tamano_documentos_electronicos" id="modal_tamano_hidden">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold small" style="color: #003366;">Adjuntar Documento</label>
+                  <input type="file" name="archivo" class="form-control form-control-sm">
+                  <small class="form-text text-muted">Máx. 10 MB</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Notas ── -->
+          <div class="mb-2">
+            <label class="form-label fw-semibold small" style="color: #003366;">Notas</label>
+            <textarea name="notas" class="form-control form-control-sm" rows="2" maxlength="250"></textarea>
+          </div>
+        </form>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
+          <i class="bi bi-x-circle me-1"></i>Cancelar
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" id="btnGuardarRegistroModal" style="background: linear-gradient(135deg, #28a745, #20c997); border: none;">
+          <i class="bi bi-save me-1"></i>Guardar Registro
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     JS: LÓGICA DEL MODAL AGREGAR REGISTRO
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script>
+$(document).ready(function() {
+
+  // ── Cargar series al abrir el modal ──────────────────────────────────
+  const serieSelect = document.getElementById('modal_codigo_serie');
+  const subserieSelect = document.getElementById('modal_codigo_subserie');
+
+  // Cargar series via AJAX (reutilizando endpoint de cargar_series o directamente)
+  fetch('/registros/cargar_series/')
+    .then(r => r.json())
+    .then(data => {
+      serieSelect.innerHTML = '<option value="">-- Seleccione serie --</option>';
+      data.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = s.nombre;
+        serieSelect.appendChild(opt);
+      });
+    })
+    .catch(() => {
+      serieSelect.innerHTML = '<option value="">Error al cargar series</option>';
+    });
+
+  // ── Cargar subseries al cambiar serie ────────────────────────────────
+  serieSelect.addEventListener('change', function() {
+    const serieId = this.value;
+    if (!serieId) {
+      subserieSelect.innerHTML = '<option value="">Seleccione una serie primero</option>';
+      actualizarUnidadModal();
+      return;
+    }
+    fetch('/registros/cargar_subseries/?serie_id=' + serieId)
+      .then(r => r.json())
+      .then(data => {
+        subserieSelect.innerHTML = '<option value="">Seleccione una subserie</option>';
+        if (data.length > 0) {
+          data.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = s.nombre;
+            subserieSelect.appendChild(opt);
+          });
+        } else {
+          subserieSelect.innerHTML = '<option value="">No hay subseries</option>';
+        }
+        actualizarUnidadModal();
+      })
+      .catch(() => {
+        subserieSelect.innerHTML = '<option value="">Error al cargar</option>';
+      });
+  });
+
+  // ── Auto-rellenar Unidad Documental ─────────────────────────────────
+  const unidadInput = document.getElementById('modal_unidad_documental');
+  let unidadAutoFill = true;
+
+  function soloNombre(txt) {
+    return txt.split('-').slice(1).join('-').trim() || txt.trim();
+  }
+
+  function actualizarUnidadModal() {
+    if (!unidadAutoFill) return;
+    const serieText = serieSelect.options[serieSelect.selectedIndex]?.text || '';
+    const subserieText = subserieSelect.options[subserieSelect.selectedIndex]?.text || '';
+    const sN = soloNombre(serieText);
+    const ssN = soloNombre(subserieText);
+    const hasSerie = serieSelect.value && sN && sN !== '-- Seleccione serie --';
+    const hasSub = subserieSelect.value && ssN
+                   && ssN !== 'Seleccione una subserie'
+                   && ssN !== 'Seleccione una serie primero'
+                   && ssN !== 'No hay subseries'
+                   && ssN !== 'Error al cargar';
+    unidadInput.value = hasSerie ? (hasSub ? sN + ' - ' + ssN : sN) : '';
+  }
+
+  subserieSelect.addEventListener('change', actualizarUnidadModal);
+  unidadInput.addEventListener('input', function() { unidadAutoFill = false; });
+
+  // ── Toggle soportes ─────────────────────────────────────────────────
+  const chkFisico = document.getElementById('modal_soporte_fisico');
+  const chkElectronico = document.getElementById('modal_soporte_electronico');
+  const divFisico = document.getElementById('modal_soporte_fisico_fields');
+  const divElectronico = document.getElementById('modal_soporte_electronico_fields');
+
+  chkFisico.addEventListener('change', function() {
+    divFisico.style.display = this.checked ? 'block' : 'none';
+    divFisico.querySelectorAll('input, select').forEach(el => el.disabled = !this.checked);
+  });
+  chkElectronico.addEventListener('change', function() {
+    divElectronico.style.display = this.checked ? 'block' : 'none';
+    divElectronico.querySelectorAll('input, select').forEach(el => el.disabled = !this.checked);
+  });
+
+  // Inicializar: deshabilitar campos ocultos
+  divFisico.querySelectorAll('input, select').forEach(el => el.disabled = true);
+  divElectronico.querySelectorAll('input, select').forEach(el => el.disabled = true);
+
+  // ── Toggle campos opcionales ────────────────────────────────────────
+  const chkOpcionales = document.getElementById('modal_toggle_opcionales');
+  const divOpcionales = document.getElementById('modal_campos_opcionales');
+
+  chkOpcionales.addEventListener('change', function() {
+    divOpcionales.style.display = this.checked ? 'block' : 'none';
+    divOpcionales.querySelectorAll('input').forEach(el => el.disabled = !this.checked);
+  });
+  divOpcionales.querySelectorAll('input').forEach(el => el.disabled = true);
+
+  // ── Tomo/Legajo hidden ──────────────────────────────────────────────
+  const tomoSelect = document.getElementById('modal_tomo_legajo_select');
+  const tomoHidden = document.getElementById('modal_tomo_legajo_hidden');
+  tomoSelect.addEventListener('change', function() { tomoHidden.value = this.value; });
+
+  // ── Tamaño doc electrónico ──────────────────────────────────────────
+  const tamValor = document.getElementById('modal_tamano_valor');
+  const tamUnidad = document.getElementById('modal_tamano_unidad');
+  const tamHidden = document.getElementById('modal_tamano_hidden');
+
+  function actualizarTamano() {
+    const v = tamValor.value.trim();
+    tamHidden.value = (v && !isNaN(v)) ? parseFloat(v) + ' ' + tamUnidad.value : '';
+  }
+  tamValor.addEventListener('input', actualizarTamano);
+  tamUnidad.addEventListener('change', actualizarTamano);
+
+  // ── Enviar formulario via AJAX ──────────────────────────────────────
+  const btnGuardar = document.getElementById('btnGuardarRegistroModal');
+  const form = document.getElementById('formAgregarRegistro');
+  const alertas = document.getElementById('modal-alertas');
+
+  btnGuardar.addEventListener('click', function() {
+    // Limpiar alertas previas
+    alertas.innerHTML = '';
+
+    // Validación básica cliente
+    if (!serieSelect.value) {
+      alertas.innerHTML = '<div class="alert alert-warning alert-sm py-1 small"><i class="bi bi-exclamation-triangle me-1"></i>Seleccione una serie documental.</div>';
+      serieSelect.focus();
+      return;
+    }
+    if (!unidadInput.value.trim()) {
+      alertas.innerHTML = '<div class="alert alert-warning alert-sm py-1 small"><i class="bi bi-exclamation-triangle me-1"></i>La unidad documental es obligatoria.</div>';
+      unidadInput.focus();
+      return;
+    }
+
+    const formData = new FormData(form);
+
+    // Deshabilitar botón
+    btnGuardar.disabled = true;
+    btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando...';
+
+    fetch('/registros/fuids/{{ fuid.id }}/agregar_registro_ajax/', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(r => r.json().then(data => ({ status: r.status, data })))
+    .then(({ status, data }) => {
+      if (data.ok) {
+        // Éxito: mostrar mensaje, cerrar modal, recargar tabla
+        alertas.innerHTML = '<div class="alert alert-success py-1 small"><i class="bi bi-check-circle me-1"></i>' + data.message + '</div>';
+
+        setTimeout(function() {
+          // Cerrar modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('modalAgregarRegistro'));
+          modal.hide();
+
+          // Limpiar formulario
+          form.reset();
+          subserieSelect.innerHTML = '<option value="">Seleccione una serie primero</option>';
+          divFisico.style.display = 'none';
+          divElectronico.style.display = 'none';
+          divOpcionales.style.display = 'none';
+          unidadAutoFill = true;
+          alertas.innerHTML = '';
+
+          // Recargar DataTable
+          if (typeof table !== 'undefined') {
+            table.ajax.reload(null, false);
+          }
+        }, 1000);
+      } else {
+        // Errores de validación
+        let html = '<div class="alert alert-danger py-2 small"><i class="bi bi-x-circle me-1"></i><strong>Errores:</strong><ul class="mb-0 mt-1">';
+        if (data.errores) {
+          Object.values(data.errores).forEach(function(msgs) {
+            msgs.forEach(function(msg) {
+              html += '<li>' + msg + '</li>';
+            });
+          });
+        } else {
+          html += '<li>' + (data.message || 'Error desconocido') + '</li>';
+        }
+        html += '</ul></div>';
+        alertas.innerHTML = html;
+      }
+
+      // Re-habilitar botón
+      btnGuardar.disabled = false;
+      btnGuardar.innerHTML = '<i class="bi bi-save me-1"></i>Guardar Registro';
+    })
+    .catch(function(err) {
+      alertas.innerHTML = '<div class="alert alert-danger py-1 small"><i class="bi bi-x-circle me-1"></i>Error de conexión: ' + err + '</div>';
+      btnGuardar.disabled = false;
+      btnGuardar.innerHTML = '<i class="bi bi-save me-1"></i>Guardar Registro';
+    });
+  });
+
+});
+</script>
+
+</body>
+</html>

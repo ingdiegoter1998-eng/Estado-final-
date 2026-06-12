@@ -1,0 +1,751 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .office-page {
+            --office-surface: #ffffff;
+            --office-surface-muted: #f8fafc;
+            --office-border: #e2e8f0;
+            --office-muted: #64748b;
+            --office-title: #0f172a;
+            --office-primary: var(--bs-primary, #0d6efd);
+            --office-shadow: 0 18px 42px -28px rgba(15, 23, 42, 0.28);
+            --office-radius: 24px;
+        }
+
+        .office-page .office-shell {
+            width: 95%;
+            margin: 0 auto 2rem;
+        }
+
+        .office-page .filters-card,
+        .office-page .table-card,
+        .office-page .alert-card {
+            border: 1px solid var(--office-border);
+            border-radius: var(--office-radius);
+            background: var(--office-surface);
+            box-shadow: var(--office-shadow);
+        }
+
+        .office-page .filters-card {
+            padding: 1.35rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .office-page .section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .office-page .section-head h2,
+        .office-page .table-card-head h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--office-title);
+        }
+
+        .office-page .section-head p,
+        .office-page .table-card-head p {
+            margin: 0.25rem 0 0;
+            color: var(--office-muted);
+        }
+
+        .office-page .filtros-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .office-page .toggle-icon {
+            transition: transform .2s ease;
+        }
+
+        .office-page .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+
+        .office-page .view-switch {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            justify-content: flex-end;
+        }
+
+        .office-page .view-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.72rem 0.95rem;
+            border-radius: 16px;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            color: #475569;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all .2s ease;
+        }
+
+        .office-page .view-link:hover,
+        .office-page .view-link.is-active {
+            color: var(--office-primary);
+            border-color: rgba(13, 110, 253, 0.24);
+            background: rgba(13, 110, 253, 0.08);
+        }
+
+        .office-page .alert-card {
+            padding: 1rem 1.2rem;
+            margin-bottom: 1rem;
+            color: #991b1b;
+            background: linear-gradient(180deg, #fff7f7 0%, #fff1f2 100%);
+            border-color: rgba(248, 113, 113, 0.35);
+        }
+
+        .office-page .table-card {
+            overflow: hidden;
+        }
+
+        .office-page .table-card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.35rem 1.4rem 1rem;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        }
+
+        .office-page .table-wrap {
+            padding: 0 1rem 1rem;
+        }
+
+        .office-page .page-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 0.95rem;
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(255, 255, 255, 0.9);
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .office-page .table-modern {
+            margin-bottom: 0;
+            --bs-table-bg: transparent;
+        }
+
+        .office-page .table-modern thead th {
+            border-bottom-width: 1px;
+            border-color: rgba(226, 232, 240, 0.9);
+            color: var(--office-muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 800;
+            padding: 1rem 0.9rem;
+            background: var(--office-surface-muted);
+        }
+
+        .office-page .table-modern tbody td {
+            padding: 1rem 0.9rem;
+            border-color: rgba(226, 232, 240, 0.8);
+            vertical-align: middle;
+        }
+
+        .office-page .table-modern tbody tr:hover {
+            background: rgba(248, 250, 252, 0.7);
+        }
+
+        .office-page .table-modern tbody tr.row-unread {
+            background: rgba(13, 110, 253, 0.05);
+        }
+
+        .office-page .col-radicado {
+            min-width: 190px;
+            width: 220px;
+            white-space: nowrap;
+        }
+
+        .office-page .col-asunto {
+            min-width: 240px;
+        }
+
+        .office-page .radicado-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 0.9rem;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.12), rgba(13, 110, 253, 0.18));
+            color: var(--office-primary);
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        .office-page .radicado-link:hover {
+            color: #0b5ed7;
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.16), rgba(13, 110, 253, 0.24));
+        }
+
+        .office-page .person-text,
+        .office-page .subject-title {
+            color: var(--office-title);
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        .office-page .muted-text {
+            color: var(--office-muted);
+        }
+
+        .office-page .access-badge,
+        .office-page .status-pill,
+        .office-page .days-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            border-radius: 999px;
+            padding: 0.5rem 0.8rem;
+            font-weight: 700;
+            font-size: 0.78rem;
+        }
+
+        .office-page .access-badge.is-readonly {
+            background: rgba(245, 158, 11, 0.18);
+            color: #92400e;
+        }
+
+        .office-page .access-badge.is-office {
+            background: rgba(14, 165, 233, 0.14);
+            color: #075985;
+        }
+
+        .office-page .btn-lectura-detalle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            min-width: 94px;
+            border-radius: 999px;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            padding: 0.45rem 0.75rem;
+            font-weight: 700;
+        }
+
+        .office-page .btn-lectura-detalle:hover {
+            border-color: rgba(13, 110, 253, 0.25);
+            background: rgba(13, 110, 253, 0.05);
+        }
+
+        .office-page .estado-vencido {
+            background: rgba(239, 68, 68, 0.16);
+            color: #991b1b;
+        }
+
+        .office-page .estado-por-vencer {
+            background: rgba(245, 158, 11, 0.18);
+            color: #92400e;
+        }
+
+        .office-page .estado-en-tramite {
+            background: rgba(34, 197, 94, 0.12);
+            color: #166534;
+        }
+
+        .office-page .estado-informativo {
+            background: rgba(59, 130, 246, 0.14);
+            color: #1d4ed8;
+        }
+
+        .office-page .days-pill.is-danger {
+            background: rgba(239, 68, 68, 0.16);
+            color: #991b1b;
+        }
+
+        .office-page .days-pill.is-warning {
+            background: rgba(245, 158, 11, 0.18);
+            color: #92400e;
+        }
+
+        .office-page .days-pill.is-success {
+            background: rgba(34, 197, 94, 0.12);
+            color: #166534;
+        }
+
+        .office-page .empty-state {
+            padding: 2rem 1rem;
+        }
+
+        .office-page .pagination {
+            padding: 0 1rem 1.25rem;
+            margin: 0;
+        }
+
+        .office-page .page-link {
+            border-radius: 12px;
+            margin: 0 0.15rem;
+            border-color: rgba(226, 232, 240, 0.9);
+            color: #334155;
+            font-weight: 700;
+        }
+
+        .office-page .page-item.active .page-link {
+            background: var(--office-primary);
+            border-color: var(--office-primary);
+        }
+
+        #modalLecturaDetalle .modal-content {
+            border: 1px solid var(--office-border, #e2e8f0);
+            border-radius: 24px;
+            box-shadow: var(--office-shadow, 0 18px 42px -28px rgba(15, 23, 42, 0.28));
+        }
+
+        #modalLecturaDetalle .modal-header,
+        #modalLecturaDetalle .modal-footer {
+            border-color: rgba(226, 232, 240, 0.85);
+        }
+
+        #modalLecturaDetalle .reading-summary {
+            padding: 0.9rem 1rem;
+            border-radius: 16px;
+            background: rgba(13, 110, 253, 0.06);
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+
+        #modalLecturaDetalle .reading-title {
+            color: var(--office-title, #0f172a);
+            font-weight: 800;
+            margin: 0.75rem 0;
+        }
+
+        #modalLecturaDetalle .list-group-item {
+            border-radius: 16px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            margin-bottom: 0.65rem;
+            padding: 0.9rem 1rem;
+        }
+
+        @media (max-width: 991.98px) {
+            .office-page .section-head,
+            .office-page .table-card-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .office-page .view-switch {
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .office-page .office-shell {
+                width: 100%;
+            }
+
+            .office-page .table-wrap {
+                padding: 0 0.5rem 0.75rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="office-page">
+    <div class="office-shell">
+        {% if not load_success %}
+            <div class="alert-card" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                Hubo un problema al cargar la bandeja de la oficina. Contacte al administrador.
+            </div>
+        {% endif %}
+
+        <section class="filters-card" id="filtros-panel-oficina">
+            <div class="section-head filtros-toggle">
+                <div>
+                    <h2><i class="bi bi-funnel-fill me-2"></i>Filtros de búsqueda</h2>
+                    <p>Refina la bandeja compartida de tu oficina por radicado, remitente, entidad, lectura y prioridad de plazo.</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="view-switch" onclick="event.stopPropagation()">
+                        <a href="{% url 'correspondencia:bandeja_personal' %}" class="view-link" title="Tu bandeja personal"><i class="bi bi-person-fill"></i>Mi Bandeja</a>
+                        <span class="view-link is-active" title="Correspondencia de tu oficina"><i class="bi bi-building"></i>Bandeja Oficina</span>
+                        <a href="{% url 'correspondencia:bandeja_interoficina' %}" class="view-link" title="Correspondencia compartida entre oficinas"><i class="bi bi-diagram-3"></i>Bandeja Interoficina</a>
+                    </div>
+                    <i class="bi bi-chevron-down toggle-icon"></i>
+                </div>
+            </div>
+            <div class="filtros-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-12 col-lg-5">
+                        <label for="search_term" class="form-label">Búsqueda</label>
+                        <input type="text" class="form-control" id="search_term" name="search_term"
+                               value="{{ filtro_search_term }}"
+                               placeholder="Radicado, asunto, remitente, entidad...">
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="remitente" class="form-label">Remitente</label>
+                        <input type="text" class="form-control" id="remitente" name="remitente"
+                               value="{{ filtro_remitente }}" placeholder="Nombre, apellido o email">
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <label for="entidad" class="form-label">Entidad</label>
+                        <input type="text" class="form-control" id="entidad" name="entidad"
+                               value="{{ filtro_entidad }}" placeholder="Nombre de la entidad">
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="estado_plazo" class="form-label">Estado de plazo</label>
+                        <select id="estado_plazo" name="estado_plazo" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="proximo" {% if filtro_estado_plazo == 'proximo' %}selected{% endif %}>Próximo</option>
+                            <option value="ok" {% if filtro_estado_plazo == 'ok' %}selected{% endif %}>En trámite</option>
+                            <option value="urgente" {% if filtro_estado_plazo == 'urgente' %}selected{% endif %}>Urgente</option>
+                            <option value="critico" {% if filtro_estado_plazo == 'critico' %}selected{% endif %}>Crítico</option>
+                            <option value="vencido" {% if filtro_estado_plazo == 'vencido' %}selected{% endif %}>Vencido</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="estado_lectura" class="form-label">Estado de lectura</label>
+                        <select id="estado_lectura" name="estado_lectura" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="leidos" {% if filtro_estado_lectura == 'leidos' %}selected{% endif %}>Leídos</option>
+                            <option value="no_leidos" {% if filtro_estado_lectura == 'no_leidos' %}selected{% endif %}>No leídos</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="fecha_radicacion_desde" class="form-label">Fecha Radicación Desde</label>
+                        <input type="date" class="form-control" id="fecha_radicacion_desde" name="fecha_radicacion_desde"
+                               value="{{ filtro_fecha_radicacion_desde }}">
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="fecha_radicacion_hasta" class="form-label">Fecha Radicación Hasta</label>
+                        <input type="date" class="form-control" id="fecha_radicacion_hasta" name="fecha_radicacion_hasta"
+                               value="{{ filtro_fecha_radicacion_hasta }}">
+                    </div>
+
+                    <div class="col-12 d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search me-2"></i>Aplicar filtros
+                        </button>
+                        <a href="{% url 'correspondencia:bandeja_oficina' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-counterclockwise me-2"></i>Limpiar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="table-card">
+            <div class="table-card-head">
+                <div>
+                    <h2><i class="bi bi-buildings me-2"></i>Correspondencia visible para la oficina</h2>
+                    <p>Revisa los radicados compartidos entre miembros de la oficina y valida el acceso, lectura y plazo de respuesta.</p>
+                </div>
+                <span class="page-chip"><i class="bi bi-list-ul"></i> Página {{ correspondencias_page.number|default:1 }}{% if correspondencias_page %} de {{ correspondencias_page.paginator.num_pages }}{% endif %}</span>
+            </div>
+            <div class="table-wrap">
+                {% if load_success %}
+                    <div class="table-responsive">
+                        <table class="table table-modern table-hover align-middle" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th class="col-fecha">Recibido</th>
+                                    <th class="col-radicado">No. Radicado</th>
+                                    <th class="col-acceso">Acceso</th>
+                                    <th class="col-remitente">Remitente</th>
+                                    <th class="col-asunto">Asunto</th>
+                                    <th class="col-estado">Estado Lectura</th>
+                                    <th class="col-estado">Estado Plazo</th>
+                                    <th class="col-estado">Respuesta</th>
+                                    <th class="col-dias">Días Restantes</th>
+                                    <th>Asignado Inicial</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in correspondencias %}
+                                <tr class="{% if not item.leido_por_oficina %}row-unread{% endif %}">
+                                    <td class="col-fecha">
+                                        <div class="muted-text small text-uppercase fw-semibold">Recibido</div>
+                                        <div class="fw-semibold">{{ item.fecha_radicacion|date:"Y-m-d" }}</div>
+                                        <small class="muted-text">{{ item.fecha_radicacion|date:"H:i" }}</small>
+                                    </td>
+                                    <td class="col-radicado">
+                                        <a href="{% url 'correspondencia:detalle_correspondencia' item.pk %}"
+                                           class="radicado-link"
+                                           title="Ver Detalles"
+                                           data-bs-toggle="tooltip">
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                            {{ item.numero_radicado }}
+                                        </a>
+                                    </td>
+                                    <td class="col-acceso text-center">
+                                        {% if item.acceso_solo_lectura %}
+                                            <span class="access-badge is-readonly">Solo lectura</span>
+                                        {% else %}
+                                            <span class="access-badge is-office">Oficina destino</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-remitente">
+                                        <div class="person-text">{{ item.remitente.nombre_completo|default:"-" }}</div>
+                                    </td>
+                                    <td class="col-asunto">
+                                        <div class="subject-title" title="{{ item.asunto }}">{{ item.asunto|truncatechars:90 }}</div>
+                                    </td>
+                                    <td class="col-estado text-center">
+                                        {% if item.total_destinatarios > 0 %}
+                                            <button type="button"
+                                                    class="btn btn-lectura-detalle"
+                                                    data-correspondencia-id="{{ item.id }}"
+                                                    title="Ver detalle de lectura: {{ item.total_leidos }} de {{ item.total_destinatarios }} leído(s)">
+                                                {% if item.total_leidos == item.total_destinatarios %}
+                                                    <i class="bi bi-envelope-open-fill text-success"></i>
+                                                    <small class="text-success">{{ item.total_leidos }}/{{ item.total_destinatarios }}</small>
+                                                {% elif item.total_leidos > 0 %}
+                                                    <i class="bi bi-envelope-open text-info"></i>
+                                                    <small class="text-info">{{ item.total_leidos }}/{{ item.total_destinatarios }}</small>
+                                                {% else %}
+                                                    <i class="bi bi-envelope-fill text-secondary"></i>
+                                                    <small class="text-secondary">{{ item.total_leidos }}/{{ item.total_destinatarios }}</small>
+                                                {% endif %}
+                                            </button>
+                                        {% else %}
+                                            <span class="muted-text small">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-estado text-center">
+                                        {% if item.requiere_respuesta %}
+                                            {% if item.fue_respondida %}
+                                                {% if item.respondida_a_tiempo %}
+                                                    <span class="status-pill estado-en-tramite"><i class="bi bi-check-circle-fill"></i> A tiempo</span>
+                                                {% elif item.estado_respuesta_bandeja == 'sin_plazo' %}
+                                                    <span class="status-pill estado-informativo"><i class="bi bi-check-circle-fill"></i> Respondida</span>
+                                                {% else %}
+                                                    <span class="status-pill estado-vencido"><i class="bi bi-exclamation-circle-fill"></i> Fuera de plazo</span>
+                                                {% endif %}
+                                            {% else %}
+                                                {% with estado_plazo=item.estado_plazo %}
+                                                    {% if estado_plazo == 'vencido' %}
+                                                        <span class="status-pill estado-vencido">Vencido</span>
+                                                    {% elif estado_plazo == 'critico' %}
+                                                        <span class="status-pill estado-vencido">Crítico</span>
+                                                    {% elif estado_plazo == 'urgente' %}
+                                                        <span class="status-pill estado-por-vencer">Urgente</span>
+                                                    {% elif estado_plazo == 'proximo' %}
+                                                        <span class="status-pill estado-por-vencer">Próximo</span>
+                                                    {% elif estado_plazo == 'ok' %}
+                                                        <span class="status-pill estado-en-tramite">En trámite</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="muted-text small">No requiere</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-estado text-center">
+                                        {% if item.estado_respuesta_bandeja == 'no_requiere' %}
+                                            <span class="muted-text small">No requiere</span>
+                                        {% elif item.estado_respuesta_bandeja == 'pendiente' %}
+                                            <span class="status-pill estado-por-vencer">Pendiente</span>
+                                        {% elif item.estado_respuesta_bandeja == 'a_tiempo' %}
+                                                <span class="status-pill estado-en-tramite">Respondida a tiempo</span>
+                                            <div class="muted-text small mt-1">{{ item.respuesta_registrada_en|date:"Y-m-d H:i" }}</div>
+                                        {% elif item.estado_respuesta_bandeja == 'fuera_tiempo' %}
+                                            <span class="status-pill estado-vencido">Fuera de tiempo</span>
+                                            <div class="muted-text small mt-1">{{ item.respuesta_registrada_en|date:"Y-m-d H:i" }}</div>
+                                        {% elif item.estado_respuesta_bandeja == 'sin_plazo' %}
+                                            <span class="status-pill estado-informativo">Respondida</span>
+                                            <div class="muted-text small mt-1">Sin plazo</div>
+                                        {% else %}
+                                            <span class="muted-text small">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-dias text-center">
+                                        {% if item.requiere_respuesta %}
+                                            {% with dias=item.dias_restantes %}
+                                                {% if dias is not None %}
+                                                    <span class="days-pill {% if dias < 0 %}is-danger{% elif dias <= 3 %}is-warning{% else %}is-success{% endif %}">
+                                                        {{ dias }} día{% if dias != 1 %}s{% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="muted-text">N/A</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                            <span class="muted-text">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="muted-text">{{ item.usuario_destino_inicial.get_full_name|default:item.usuario_destino_inicial.username|default:"-" }}</small>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="10" class="text-center py-4">
+                                        <div class="empty-state">
+                                            <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                                            <p class="mt-2 text-muted">No hay correspondencia compartida en esta oficina. Solo se muestran documentos compartidos con múltiples usuarios.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        {% if correspondencias_page and correspondencias_page.has_other_pages %}
+                            <nav aria-label="Paginación de correspondencias" class="mt-3">
+                                <ul class="pagination justify-content-center">
+                                    {% if correspondencias_page.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% if filtro_search_term %}search_term={{ filtro_search_term }}&{% endif %}{% if filtro_remitente %}remitente={{ filtro_remitente }}&{% endif %}{% if filtro_entidad %}entidad={{ filtro_entidad }}&{% endif %}{% if filtro_fecha_radicacion_desde %}fecha_radicacion_desde={{ filtro_fecha_radicacion_desde }}&{% endif %}{% if filtro_fecha_radicacion_hasta %}fecha_radicacion_hasta={{ filtro_fecha_radicacion_hasta }}&{% endif %}{% if filtro_estado_lectura %}estado_lectura={{ filtro_estado_lectura }}&{% endif %}{% if filtro_estado_plazo %}estado_plazo={{ filtro_estado_plazo }}&{% endif %}page={{ correspondencias_page.previous_page_number }}">Anterior</a>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for num in correspondencias_page.paginator.page_range %}
+                                        {% if num == correspondencias_page.number %}
+                                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                        {% elif num > correspondencias_page.number|add:'-3' and num < correspondencias_page.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?{% if filtro_search_term %}search_term={{ filtro_search_term }}&{% endif %}{% if filtro_remitente %}remitente={{ filtro_remitente }}&{% endif %}{% if filtro_entidad %}entidad={{ filtro_entidad }}&{% endif %}{% if filtro_fecha_radicacion_desde %}fecha_radicacion_desde={{ filtro_fecha_radicacion_desde }}&{% endif %}{% if filtro_fecha_radicacion_hasta %}fecha_radicacion_hasta={{ filtro_fecha_radicacion_hasta }}&{% endif %}{% if filtro_estado_lectura %}estado_lectura={{ filtro_estado_lectura }}&{% endif %}{% if filtro_estado_plazo %}estado_plazo={{ filtro_estado_plazo }}&{% endif %}page={{ num }}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if correspondencias_page.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% if filtro_search_term %}search_term={{ filtro_search_term }}&{% endif %}{% if filtro_remitente %}remitente={{ filtro_remitente }}&{% endif %}{% if filtro_entidad %}entidad={{ filtro_entidad }}&{% endif %}{% if filtro_fecha_radicacion_desde %}fecha_radicacion_desde={{ filtro_fecha_radicacion_desde }}&{% endif %}{% if filtro_fecha_radicacion_hasta %}fecha_radicacion_hasta={{ filtro_fecha_radicacion_hasta }}&{% endif %}{% if filtro_estado_lectura %}estado_lectura={{ filtro_estado_lectura }}&{% endif %}{% if filtro_estado_plazo %}estado_plazo={{ filtro_estado_plazo }}&{% endif %}page={{ correspondencias_page.next_page_number }}">Siguiente</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning m-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        No se pudo cargar la información de la bandeja de oficina.
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const panel = document.getElementById('filtros-panel-oficina');
+    if (!panel) return;
+    const header = panel.querySelector('.filtros-toggle');
+    const body = panel.querySelector('.filtros-body');
+    const icon = panel.querySelector('.toggle-icon');
+    const storageKey = 'bandeja_oficina_filtros_collapsed';
+
+    try {
+        const collapsed = localStorage.getItem(storageKey) === '1';
+        if (collapsed) {
+            body.classList.add('d-none');
+            icon.classList.add('rotated');
+        }
+    } catch (e) {}
+
+    header.addEventListener('click', function(event) {
+        if (event.target.closest('button, a, input, select, label')) return;
+        body.classList.toggle('d-none');
+        icon.classList.toggle('rotated');
+        try { localStorage.setItem(storageKey, body.classList.contains('d-none') ? '1' : '0'); } catch (e) {}
+    });
+
+    const modalHtml = `
+<div class="modal fade" id="modalLecturaDetalle" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Detalle de lectura</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div id="lecturaDetalleContenido">
+          <div class="text-center text-muted">Cargando...</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>`;
+
+    if (!document.getElementById('modalLecturaDetalle')) {
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    const modalEl = document.getElementById('modalLecturaDetalle');
+    const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+    const contenido = () => document.getElementById('lecturaDetalleContenido');
+
+    function renderDetalle(data) {
+        const badge = (ok) => ok ? '<span class="badge bg-success">Leído</span>' : '<span class="badge bg-secondary">No leído</span>';
+        const formatFecha = (isoStr) => {
+            if (!isoStr) return '';
+            const fecha = new Date(isoStr);
+            return fecha.toLocaleString('es-CO', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+        };
+        const lista = (arr) => arr.length ? '<ul class="list-group mb-3">' + arr.map(u => `
+            <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>${u.nombre}</span>
+                    ${badge(u.leido)}
+                </div>
+                ${u.fecha_lectura ? `<small class="text-muted"><i class="bi bi-clock"></i> ${formatFecha(u.fecha_lectura)}</small>` : ''}
+            </li>
+        `).join('') + '</ul>' : '<p class="text-muted">Ninguno</p>';
+        return `
+          <div class="reading-summary mb-3">Total: ${data.totales.destinatarios} • Leídos: ${data.totales.leidos}</div>
+          <h6 class="reading-title">Leídos</h6>
+          ${lista(data.leidos)}
+          <h6 class="reading-title">No leídos</h6>
+          ${lista(data.no_leidos)}
+        `;
+    }
+
+    document.querySelectorAll('.btn-lectura-detalle').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            if (!modal) return;
+            contenido().innerHTML = '<div class="text-center text-muted">Cargando...</div>';
+            modal.show();
+            const id = this.getAttribute('data-correspondencia-id');
+            try {
+                const resp = await fetch(`{% url 'correspondencia:lectura_detalle_ajax' 0 %}`.replace('/0/', `/${id}/`));
+                const data = await resp.json();
+                if (data.ok) {
+                    contenido().innerHTML = renderDetalle(data);
+                } else {
+                    contenido().innerHTML = `<div class='text-danger'>${data.error || 'Error al cargar'}</div>`;
+                }
+            } catch (e) {
+                contenido().innerHTML = `<div class='text-danger'>Error de red</div>`;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

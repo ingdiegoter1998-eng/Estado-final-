@@ -1,0 +1,58 @@
+<div class="modal fade" id="{{ modal_id|default:'modalEstadisticasOficinas' }}" tabindex="-1" aria-labelledby="{{ modal_id|default:'modalEstadisticasOficinas' }}Label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content" style="border: none; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25); overflow: hidden;">
+            <div class="modal-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid #e2e8f0; padding: 1.25rem 1.5rem;">
+                <h5 class="modal-title d-flex align-items-center gap-2 m-0" id="{{ modal_id|default:'modalEstadisticasOficinas' }}Label" style="font-weight: 700; color: #0f172a; font-size: 1.15rem;">
+                    <div class="bg-primary text-white d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 36px; height: 36px;">
+                        <i class="bx bx-bar-chart-alt-2 fs-5"></i>
+                    </div>
+                    Accesos de Oficinas
+                </h5>
+                <button type="button" class="btn-close shadow-sm bg-white border" data-bs-dismiss="modal" aria-label="Close" style="border-radius: 50%; opacity: 1;"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                {% if accesos %}
+                    <div class="text-center mb-4">
+                        <p class="text-muted small mb-0 px-3">
+                            Oficinas que actualmente tienen acceso de solo lectura al radicado <strong>{{ correspondencia.numero_radicado }}</strong>.
+                        </p>
+                    </div>
+                    <div class="card border-0 shadow-sm" style="border-radius: 16px; overflow: hidden;">
+                        <ul class="list-group list-group-flush">
+                            {% for acceso in accesos %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center p-3 border-bottom" style="border-color: #f1f5f9 !important;">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                            <i class="bx bx-building text-primary"></i>
+                                        </div>
+                                        <span class="fw-medium text-dark" style="font-size: 0.95rem;">{{ acceso.oficina.nombre }}</span>
+                                    </div>
+                                    {% if acceso.leido %}
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="border-radius: 6px;"><i class="bx bx-check-double me-1"></i> Visto</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1" style="border-radius: 6px;"><i class="bx bx-time-five me-1"></i> Pendiente</span>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="bg-blue-50 text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px; background-color: #eff6ff; border: 2px solid #dbeafe;">
+                            <i class="bx bx-folder-open fs-1" style="color: #3b82f6;"></i>
+                        </div>
+                        <h6 class="fw-bold text-dark mb-1">Sin Registros</h6>
+                        <p class="text-muted mb-0 mx-auto small" style="max-width: 250px;">
+                            No hay accesos de otras oficinas para este radicado aún.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer bg-light border-top justify-content-center" style="padding: 1rem 1.5rem;">
+                <button type="button" class="btn btn-light border px-5 py-2 rounded-pill fw-medium text-secondary hover-shadow-sm" data-bs-dismiss="modal">
+                    <i class="bx bx-x me-1"></i> Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

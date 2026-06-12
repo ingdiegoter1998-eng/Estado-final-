@@ -1,0 +1,240 @@
+{% load correspondencia_extras %}
+<!-- Modal para responder correspondencia (rediseñado) -->
+<div class="modal fade" id="{{ modal_id }}" tabindex="-1" aria-labelledby="{{ modal_id }}Label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content" style="border: none; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25); overflow: hidden;">
+            <div class="modal-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #f0fdf4 0%, #fcfdfd 100%); border-bottom: 1px solid #bbf7d0; padding: 1.25rem 1.5rem;">
+                <h5 class="modal-title d-flex align-items-center gap-2 m-0" id="{{ modal_id }}Label" style="font-weight: 700; color: #166534; font-size: 1.15rem;">
+                    <div class="bg-success text-white d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 36px; height: 36px;">
+                        <i class="bx bx-reply-all fs-5"></i>
+                    </div>
+                    {% if es_respuesta_discrecional %}Respuesta Discrecional{% else %}Responder Correspondencia{% endif %} <span class="badge text-white ms-2" style="background-color: #16a34a; font-size: 0.8rem; border-radius: 8px;">{{ correspondencia.numero_radicado }}</span>
+                </h5>
+                <button type="button" class="btn-close shadow-sm bg-white border" data-bs-dismiss="modal" aria-label="Close" style="border-radius: 50%;"></button>
+            </div>
+            <form id="formResponderCorrespondencia" method="post" enctype="multipart/form-data" data-responder-endpoint="{% url 'correspondencia:responder_correspondencia_ajax' %}" data-buscar-contactos-endpoint="{% url 'correspondencia:buscar_contactos_ajax' %}" data-buscar-grupos-endpoint="{% url 'correspondencia:buscar_grupos_ajax' %}" data-grupo-detalle-endpoint="{% url 'correspondencia:grupo_agenda_detalle_ajax' 0 %}" data-buscar-categorias-endpoint="{% url 'correspondencia:buscar_categorias_ajax' %}" data-categoria-detalle-endpoint="{% url 'correspondencia:categoria_detalle_ajax' 0 %}" data-buscar-entidades-endpoint="{% url 'correspondencia:buscar_entidades_ajax' %}" data-es-respuesta-discrecional="{{ es_respuesta_discrecional|yesno:'1,0' }}" data-adjuntos-upload-max-bytes="{{ outbound_adjuntos_upload_bytes }}" data-adjuntos-postmark-max-bytes="{{ outbound_adjuntos_postmark_bytes }}" data-envio-postmark="{{ outbound_envio_usa_postmark|yesno:'1,0' }}" data-blocked-recipient-emails="{{ blocked_recipient_emails|join:',' }}" data-blocked-recipient-message="{{ blocked_recipient_message|escape }}">
+                {% csrf_token %}
+                <input type="hidden" name="correspondencia_entrada_id" value="{{ correspondencia.id }}">
+                <input type="hidden" name="categoria_contacto_id" id="grupo_agenda_id" value="">
+                <input type="hidden" name="tipo_respuesta" value="{% if es_respuesta_discrecional %}DISCRECIONAL{% else %}OBLIGATORIA{% endif %}">
+                <!-- Enviar siempre a aprobación (sin mostrar controles de configuración) -->
+                <input type="hidden" name="enviar_inmediatamente" value="on">
+                <div class="modal-body p-4 bg-light" style="max-height: 75vh; overflow-y: auto;">
+                    <div class="alert alert-success border-success m-0 mb-3 p-4" style="border-radius: 16px; background-color: #dcfce7; border-color: #bbf7d0;" role="alert">
+                        <i class="bx bx-info-circle me-2" style="color: #166534;"></i>
+                        <strong style="color: #166534;">Respondiendo a:</strong><span style="color: #15803d;"> {{ correspondencia.numero_radicado }} - {{ correspondencia.asunto|truncatechars:100 }}</span>
+                    </div>
+                    {% if es_respuesta_discrecional %}
+                    <div class="alert alert-warning border-0 mb-3" style="border-radius: 16px; background: #fff4d6; color: #7c5200;" role="alert">
+                        <i class="bx bx-shield-quarter me-2"></i>
+                        Esta respuesta quedará registrada como discrecional porque el radicado original no requería respuesta.
+                    </div>
+                    {% endif %}
+
+                    <div class="row g-3">
+                        <!-- Columna izquierda: redacción -->
+                        <div class="col-lg-8">
+                            <div class="mb-3">
+                                <label for="asunto_respuesta" class="form-label">Asunto de la Respuesta *</label>
+                                <input type="text" class="form-control" id="asunto_respuesta" name="asunto" value="{{ correspondencia.asunto|asunto_respuesta_prefill }}" maxlength="255" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="cuerpo_respuesta" class="form-label">Cuerpo de la Respuesta *</label>
+                                <textarea class="form-control" id="cuerpo_respuesta" name="cuerpo" rows="14" required placeholder="Escriba aquí el contenido de su respuesta..."></textarea>
+                                <div class="form-text">
+                                    <i class="bx bx-bulb me-1"></i>
+                                    <strong>Sugerencia:</strong> Incluya el número de radicado original en su respuesta para referencia.
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="adjuntos_respuesta" class="form-label">
+                                    <i class="bx bx-paperclip me-1"></i>Archivos Adjuntos
+                                </label>
+                                <input type="file" class="form-control" id="adjuntos_respuesta" name="adjuntos" multiple>
+                                <div class="form-text">
+                                    Puede seleccionar múltiples archivos (máx. {{ outbound_adjuntos_upload_mb }} MB en total al cargar).
+                                    {% if outbound_envio_usa_postmark %}
+                                    Postmark solo envía hasta {{ outbound_adjuntos_postmark_mb }} MB en adjuntos.
+                                    {% endif %}
+                                </div>
+                                <div id="respuestaAdjuntosDriveAlert" class="alert alert-warning border-0 mt-3 d-none" style="border-radius: 16px; background: #fff1d6; color: #6c4b12;" role="alert" aria-live="polite"></div>
+                            </div>
+                            {% if es_respuesta_discrecional %}
+                            <div class="mb-3">
+                                <label for="motivo_respuesta_discrecional" class="form-label">Motivo de la respuesta discrecional *</label>
+                                <textarea class="form-control" id="motivo_respuesta_discrecional" name="motivo_respuesta_discrecional" rows="4" placeholder="Explique por qué esta correspondencia se responderá aunque no requería respuesta." required></textarea>
+                                <div class="form-text">Este motivo quedará registrado en la trazabilidad de la respuesta.</div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Columna derecha: información y destinatarios -->
+                        <div class="col-lg-4">
+                            <!-- Remitente original (de dónde viene) -->
+                            <h6 class="text-secondary mb-2">
+                                <i class="bx bx-envelope me-2"></i>Remitente Original
+                            </h6>
+                            <div class="mb-3">
+                                <div class="card border-0 shadow-sm" style="background-color: #ffffff; border-radius: 12px;">
+                                    <div class="card-body p-2">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <small>
+                                                <strong>{{ correspondencia.remitente.nombre_completo }}</strong><br>
+                                                <em>{{ correspondencia.remitente.entidad_externa.nombre }}</em><br>
+                                                <span class="text-muted">{{ correspondencia.remitente.correo_electronico }}</span>
+                                            </small>
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-outline-primary" 
+                                                    id="btn-agregar-remitente-original"
+                                                    data-id="{{ correspondencia.remitente.id }}"
+                                                    data-nombre="{{ correspondencia.remitente.nombre_completo }}"
+                                                    data-email="{{ correspondencia.remitente.correo_electronico }}"
+                                                    onclick="window.agregarRemitenteOriginalDesdeBoton(this)"
+                                                    title="Agregar como destinatario">
+                                                <i class="bx bx-plus-circle"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-3">
+
+                            <!-- Destinatarios (a dónde se enviará) -->
+                            <h6 class="text-primary mb-2">
+                                <i class="bx bx-group me-2"></i>Destinatarios de la Respuesta
+                            </h6>
+
+                            <!-- Dropdown para seleccionar categoría -->
+                            <div class="mb-2">
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-warning dropdown-toggle w-100" type="button" id="btn-abrir-categorias" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bx bx-purchase-tag me-1"></i> <span id="btn-texto-categoria">Seleccionar categoría de contactos</span>
+                                    </button>
+                                    <div class="dropdown-menu w-100 p-3" id="dropdown-categorias" style="max-height: 400px; overflow-y: auto;">
+                                        <div class="input-group mb-3">
+                                            <input type="text" class="form-control" id="buscar_categoria_input" placeholder="Buscar categoría..." autocomplete="off">
+                                            <button type="button" class="btn btn-outline-primary" id="btn-buscar-categoria">
+                                                <i class="bx bx-search"></i>
+                                            </button>
+                                        </div>
+                                        <div id="resultados_categorias" class="list-group list-group-flush">
+                                            <!-- Los resultados se cargarán aquí -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="categoria-seleccionada" class="mt-2" style="display:none;">
+                                    <div class="border border-success rounded-3 p-3 bg-success bg-opacity-5">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="d-flex align-items-center">
+                                                <i class="bx bxs-check-circle text-success me-2"></i>
+                                                <div>
+                                                    <strong id="categoria-nombre" class="text-success d-block"></strong>
+                                                    <span class="badge bg-success bg-opacity-75 text-white" id="categoria-count"></span>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-success" id="btn-quitar-categoria" title="Quitar categoría">
+                                                <i class="bx bx-x"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Categoría activa - Destinatarios automáticos
+                                        </small>
+                                        <div class="mt-2">
+                                            <a href="#" class="btn btn-sm btn-outline-info" id="btn-ver-detalle-categoria" target="_blank">
+                                                <i class="bx bx-show me-1"></i>Ver detalles de la categoría
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Buscador con autosugerencias (oculto: falla intermitente) -->
+                            <div class="mb-2 d-none">
+                                <label class="form-label">Agregar destinatarios (contacto, grupo o email)</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="buscador_destinatarios" placeholder="Ej: Juan, Grupo Ventas o correo@dominio.com" autocomplete="off">
+                                    <button type="button" class="btn btn-outline-primary" id="btn-buscar-dest">Buscar</button>
+                                </div>
+                                <div id="sugerencias_dest" class="list-group shadow-sm" style="position:absolute; z-index:1056; width: calc(100% - 0px); display:none;"></div>
+                            </div>
+
+                            <!-- Chips de destinatarios -->
+                            <div class="mb-2">
+                                <div class="alert alert-info border-0 py-2 px-3 mb-2 small" role="note">
+                                    <i class="bi bi-info-circle me-1"></i>{{ blocked_recipient_message }}
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted">Seleccionados: <span id="contador-chips">0</span></small>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-limpiar-chips">Limpiar</button>
+                                </div>
+                                <div id="chips_dest" class="border rounded p-2" style="min-height: 44px; max-height: 220px; overflow-y: auto;"></div>
+                            </div>
+
+                            <!-- Contenedores ocultos para envío -->
+                            <div id="hidden_dest_inputs"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light border-top" style="padding: 1rem 1.5rem;">
+                    <button type="button" class="btn btn-light border px-4 rounded-pill fw-medium text-secondary hover-shadow-sm" data-bs-dismiss="modal"><i class="bx bx-x me-1"></i>Cancelar</button>
+                    <button type="button" class="btn btn-outline-warning px-4 rounded-pill fw-medium shadow-sm d-flex align-items-center gap-2 bg-white hover-shadow-sm" onclick="abrirAgendaContactosModal('respuesta')"><i class="bx bxs-book-bookmark"></i>Agenda Global</button>
+                    <button type="submit" class="btn btn-primary px-4 rounded-pill fw-bold shadow-sm d-flex align-items-center gap-2"><i class="bx bx-send"></i>Enviar Respuesta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Fallback: definir función si el JS externo no cargó
+    if (typeof window.agregarRemitenteOriginalDesdeBoton !== 'function') {
+        window.agregarRemitenteOriginalDesdeBoton = function(btn) {
+            if (!btn || !btn.dataset) return;
+            const id = btn.dataset.id;
+            const nombre = btn.dataset.nombre;
+            const email = btn.dataset.email || '';
+            if (!id || !nombre) return;
+
+            if (typeof window.seleccionarDestinatario === 'function') {
+                window.seleccionarDestinatario(parseInt(id, 10), nombre, email, 'contacto');
+                return;
+            }
+
+            const chipsContainer = document.getElementById('chips_dest');
+            const hiddenDest = document.getElementById('hidden_dest_inputs');
+            const contador = document.getElementById('contador-chips');
+            if (!chipsContainer || !hiddenDest || !contador) return;
+
+            const existingHidden = hiddenDest.querySelector(`input[name="destinatarios_contacto"][value="${id}"]`);
+            if (existingHidden) return;
+
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'destinatarios_contacto';
+            hidden.value = id;
+            hiddenDest.appendChild(hidden);
+
+            const chip = document.createElement('span');
+            chip.className = 'badge bg-primary me-2 mb-2';
+            chip.textContent = nombre + ' ';
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'btn-close btn-close-white ms-1';
+            closeBtn.addEventListener('click', function() {
+                chip.remove();
+                hidden.remove();
+                const totalInputs = hiddenDest.querySelectorAll('input[name="destinatarios_contacto"], input[name="destinatarios_email"]').length;
+                contador.textContent = totalInputs;
+            });
+            chip.appendChild(closeBtn);
+            chipsContainer.appendChild(chip);
+
+            const totalInputs = hiddenDest.querySelectorAll('input[name="destinatarios_contacto"], input[name="destinatarios_email"]').length;
+            contador.textContent = totalInputs;
+        };
+    }
+</script>
+
+

@@ -1,0 +1,177 @@
+<!-- Modal para radicar urgencia desde correo detalle -->
+<div class="modal fade" id="modalRadicarUrgencia" tabindex="-1" aria-labelledby="modalRadicarUrgenciaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalRadicarUrgenciaLabel">
+                    <i class="fas fa-fire"></i> Radicar como URGENCIA
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Atención:</strong> Las urgencias se gestionan en <strong>horas laborales</strong> (8am-5pm, Lun-Vie) 
+                    y van directamente a la oficina sin pasar por distribución.
+                </div>
+
+                <form id="formRadicarUrgencia" method="post" action="{% url 'correspondencia:radicar_urgencia' correo.pk %}">
+                    {% csrf_token %}
+                    {% load crispy_forms_tags %}
+                    {{ form|crispy }}
+                    
+                    <div class="alert alert-info mt-3">
+                        <h6><i class="fas fa-info-circle"></i> Información:</h6>
+                        <ul class="mb-0">
+                            <li>El límite de tiempo puede ser entre <strong>1 y 72 horas laborales</strong></li>
+                            <li>Todos los usuarios de la oficina destino recibirán una notificación</li>
+                            <li>Cualquier usuario de la oficina puede tomar y responder la urgencia</li>
+                            <li>El sistema calculará automáticamente la fecha límite</li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" id="btnRadicarUrgencia" class="btn btn-danger">
+                    <i class="fas fa-fire"></i> Radicar Urgencia
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para urgencia -->
+<div class="modal fade" id="modalConfirmarUrgencia" tabindex="-1" aria-labelledby="modalConfirmarUrgenciaLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalConfirmarUrgenciaLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Confirmar Radicación de Urgencia
+                </h5>
+            </div>
+            <div class="modal-body text-center py-4">
+                <i class="fas fa-fire text-danger mb-3" style="font-size: 3rem;"></i>
+                <h5 class="mb-3">¿Está seguro de radicar este correo como URGENCIA?</h5>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Esta acción no se puede deshacer. El correo será asignado inmediatamente a la oficina destino.
+                </p>
+            </div>
+            <div class="modal-footer justify-content-center border-0 pt-0">
+                <button type="button" class="btn btn-secondary px-4" id="btnCancelarConfirmacion">
+                    <i class="fas fa-times me-1"></i> No, Cancelar
+                </button>
+                <button type="button" class="btn btn-danger px-4" id="btnConfirmarUrgencia">
+                    <i class="fas fa-check me-1"></i> Sí, Radicar Urgencia
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para cascada Serie -> Subserie en el modal de urgencias -->
+<!-- NOTA: Este script DEBE ejecutarse después de que jQuery esté cargado -->
+<script>
+// Envolver en función que se ejecuta cuando el documento esté listo
+(function initUrgenciaModal() {
+    // Verificar si jQuery está disponible
+    if (typeof $ === 'undefined' || typeof jQuery === 'undefined') {
+        // Si no está disponible, esperar y reintentar
+        setTimeout(initUrgenciaModal, 100);
+        return;
+    }
+    
+    $(document).ready(function() {
+        // Cascade: Serie -> Subserie (IDs específicos del formulario de urgencia)
+        var $serieUrgencia = $('#id_serie_urgencia');
+        var $subserieUrgencia = $('#id_subserie_urgencia');
+        
+        if ($serieUrgencia.length === 0) {
+            console.warn('Campo serie urgencia no encontrado');
+            return;
+        }
+        
+        $serieUrgencia.on('change', function() {
+            var serieId = $(this).val();
+            
+            console.log('Serie urgencia seleccionada:', serieId);
+            
+            if (serieId) {
+                $.ajax({
+                    url: '{% url "correspondencia:ajax_subseries" %}',
+                    data: { 'serie_id': serieId },
+                    dataType: 'json',
+                    success: function(data) {
+                        console.log('Subseries recibidas:', data);
+                        $subserieUrgencia.empty();
+                        $subserieUrgencia.append('<option value="">---------</option>');
+                        // El endpoint devuelve un array directamente: [{id, nombre}, ...]
+                        $.each(data, function(index, subserie) {
+                            $subserieUrgencia.append(
+                                $('<option></option>')
+                                    .val(subserie.id)
+                                    .text(subserie.nombre)
+                            );
+                        });
+                        $subserieUrgencia.prop('disabled', false);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error cargando subseries:', error, xhr.responseText);
+                        $subserieUrgencia.empty();
+                        $subserieUrgencia.append('<option value="">Error al cargar</option>');
+                    }
+                });
+            } else {
+                $subserieUrgencia.empty();
+                $subserieUrgencia.append('<option value="">---------</option>');
+                $subserieUrgencia.prop('disabled', true);
+            }
+        });
+        
+        // Modales Bootstrap
+        var modalUrgencia = document.getElementById('modalRadicarUrgencia');
+        var modalConfirmar = document.getElementById('modalConfirmarUrgencia');
+        var bsModalUrgencia = modalUrgencia ? new bootstrap.Modal(modalUrgencia) : null;
+        var bsModalConfirmar = modalConfirmar ? new bootstrap.Modal(modalConfirmar) : null;
+        
+        // Botón "Radicar Urgencia" - Validar y mostrar confirmación
+        $('#btnRadicarUrgencia').on('click', function() {
+            var horasLimite = parseInt($('#id_horas_limite').val());
+            
+            if (horasLimite < 1 || horasLimite > 72) {
+                alert('Las horas límite deben estar entre 1 y 72 horas laborales.');
+                return false;
+            }
+            
+            if (!$('#id_motivo_urgencia').val().trim()) {
+                alert('Debe especificar el motivo de urgencia.');
+                return false;
+            }
+            
+            // Ocultar modal principal y mostrar confirmación
+            if (bsModalUrgencia) bsModalUrgencia.hide();
+            setTimeout(function() {
+                if (bsModalConfirmar) bsModalConfirmar.show();
+            }, 300);
+        });
+        
+        // Botón "No, Cancelar" - Volver al modal principal
+        $('#btnCancelarConfirmacion').on('click', function() {
+            if (bsModalConfirmar) bsModalConfirmar.hide();
+            setTimeout(function() {
+                if (bsModalUrgencia) bsModalUrgencia.show();
+            }, 300);
+        });
+        
+        // Botón "Sí, Radicar Urgencia" - Enviar formulario
+        $('#btnConfirmarUrgencia').on('click', function() {
+            $('#formRadicarUrgencia').submit();
+        });
+        
+        console.log('Modal urgencia inicializado correctamente');
+    });
+})();
+</script>

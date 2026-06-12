@@ -1,0 +1,73 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load humanize %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-10">
+    <div class="card shadow mb-3">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <h5 class="mb-1">{{ comunicacion.asunto }}</h5>
+            <div class="small text-muted">Estado: {{ comunicacion.get_estado_display }} | Creado: {{ comunicacion.fecha_creacion|date:'Y-m-d H:i' }}</div>
+          </div>
+          <form method="post" action="{% url 'correspondencia:comunicacion_masiva_enviar' comunicacion.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-primary" {% if comunicacion.destinatarios.count == 0 %}disabled{% endif %}>
+              <i class="bi bi-send me-1"></i> Enviar ahora
+            </button>
+          </form>
+        </div>
+        <div class="border rounded p-3" style="background:#fafafa;">
+          {{ comunicacion.cuerpo|safe }}
+        </div>
+      </div>
+    </div>
+
+    <div class="card shadow">
+      <div class="card-body">
+        <h6 class="fw-bold">Destinatarios ({{ destinatarios.count|intcomma }})</h6>
+        {% if destinatarios %}
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Contacto</th>
+                <th>Email</th>
+                <th>Estado</th>
+                <th>Envío</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for d in destinatarios %}
+              <tr>
+                <td>{{ d.nombre_snapshot }}</td>
+                <td>{{ d.email_snapshot }}</td>
+                <td>{{ d.get_estado_display }}</td>
+                <td><small>{{ d.fecha_envio|date:'Y-m-d H:i'|default:'-' }}</small></td>
+                <td class="text-end">
+                  {% if d.estado != 'ENVIADO' %}
+                    <span class="badge bg-secondary">Pendiente</span>
+                  {% else %}
+                    <span class="badge bg-success">Enviado</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+          <p class="text-muted mb-0">No hay destinatarios.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

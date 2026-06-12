@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: testdb
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-django pytest-cov
+      - name: Install Node deps
+        run: |
+          npm ci || npm install
+          npm run playwright:install
+      - name: Django collectstatic
+        run: |
+          python manage.py collectstatic --noinput
+      - name: Run unit/integration tests with coverage
+        env:
+          DJANGO_SETTINGS_MODULE: hospital_document_management.settings
+        run: |
+          pytest
+      - name: Archive coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-and-junit
+          path: |
+            reports/
+      - name: Run Playwright tests
+        env:
+          E2E_BASE_URL: http://127.0.0.1:8000
+        run: |
+          echo "Skipping Playwright run placeholder (needs running server)"
+
+

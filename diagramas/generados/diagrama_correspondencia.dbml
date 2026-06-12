@@ -1,0 +1,449 @@
+// Diagrama de Base de Datos - Módulo CORRESPONDENCIA
+// Sistema de Gestión Documental y Correspondencia
+// Hospital del Sarare
+// Generado automáticamente
+
+Project correspondencia_module {
+  database_type: 'PostgreSQL'
+  Note: 'Módulo CORRESPONDENCIA'
+}
+
+// EntidadExterna
+Table correspondencia_entidadexterna {
+  id bigint [pk, increment]
+  nombre varchar(255) [unique, not null]
+  nit varchar(20)
+  direccion varchar(255)
+  telefono varchar(50)
+  dominio varchar(100) [unique]
+}
+
+// Contacto
+Table correspondencia_contacto {
+  id bigint [pk, increment]
+  entidad_externa integer [not null]
+  nombres varchar(150) [not null]
+  apellidos varchar(150)
+  cargo varchar(150)
+  correo_electronico varchar(254) [unique, not null]
+  telefono_contacto varchar(50)
+  numero_documento varchar(50)
+}
+
+// Correspondencia
+Table correspondencia_correspondencia {
+  id bigint [pk, increment]
+  numero_radicado varchar(50) [unique, not null]
+  tipo_radicado varchar(20) [not null]
+  fecha_radicacion timestamp [not null]
+  usuario_radicador integer
+  remitente integer
+  asunto text [not null]
+  serie integer
+  subserie integer
+  medio_recepcion varchar(50) [not null]
+  requiere_respuesta boolean [not null]
+  tiempo_respuesta varchar(20)
+  plazo_respuesta_dias integer
+  fecha_limite_respuesta_persist timestamp
+  plazo_origen varchar(20) [not null]
+  tramite_aplicado integer
+  estado varchar(50) [not null]
+  leido_por_oficina boolean [not null]
+  resumen_ia text
+  sellado boolean [not null]
+  fecha_sellado timestamp
+  en_planilla boolean [not null]
+  oficina_destino integer [not null]
+  usuario_destino_inicial integer
+}
+
+// HistorialCorrespondencia
+Table correspondencia_historialcorrespondencia {
+  id bigint [pk, increment]
+  correspondencia integer [not null]
+  fecha_hora timestamp [not null]
+  evento varchar(30) [not null]
+  usuario integer
+  descripcion text
+}
+
+// AdjuntoCorreo
+Table correspondencia_adjuntocorreo {
+  id bigint [pk, increment]
+  correspondencia integer [not null]
+  archivo varchar(500) [not null]
+  nombre_original varchar(255) [not null]
+  tipo_mime varchar(100) [not null]
+  fecha_carga timestamp [not null]
+}
+
+// CorreoEntrante
+Table correspondencia_correoentrante {
+  id bigint [pk, increment]
+  message_id varchar(255) [unique, not null]
+  remitente varchar(254) [not null]
+  asunto varchar(500) [not null]
+  cuerpo_texto text [not null]
+  cuerpo_html text [not null]
+  fecha_recepcion_original timestamp
+  fecha_lectura_imap timestamp [not null]
+  procesado boolean [not null]
+  radicado_asociado integer
+  requiere_revision_manual boolean [not null]
+  oficina_clasificada integer
+  serie_clasificada integer
+  subserie_clasificada integer
+  fecha_clasificacion timestamp
+}
+
+// AdjuntoCorreoEntrante
+Table correspondencia_adjuntocorreoentrante {
+  id bigint [pk, increment]
+  correo_entrante integer [not null]
+  archivo varchar(500) [not null]
+  nombre_original varchar(255) [not null]
+  tipo_mime varchar(100) [not null]
+  fecha_carga timestamp [not null]
+}
+
+// DistribucionInternaUsuario
+Table correspondencia_distribucioninternausuario {
+  id bigint [pk, increment]
+  correspondencia integer [not null]
+  usuario_asignado integer [not null]
+  fecha_asignacion timestamp [not null]
+  asignado_por integer
+  leido boolean [not null]
+  fecha_lectura timestamp
+  observaciones text
+}
+
+// AccesoCorrespondenciaOficina
+Table correspondencia_accesocorrespondenciaoficina {
+  id bigint [pk, increment]
+  correspondencia integer [not null]
+  oficina integer [not null]
+  compartido_por integer
+  fecha_compartido timestamp [not null]
+  observaciones text
+  leido boolean [not null]
+  fecha_lectura timestamp
+  solo_lider boolean [not null]
+  puede_responder boolean [not null]
+}
+
+// Notificacion
+Table correspondencia_notificacion {
+  id bigint [pk, increment]
+  usuario integer [not null]
+  tipo varchar(25) [not null]
+  titulo varchar(200) [not null]
+  mensaje text [not null]
+  correspondencia integer
+  comunicacion_interna integer
+  leida boolean [not null]
+  fecha_creacion timestamp [not null]
+  fecha_lectura timestamp
+  url varchar(500)
+}
+
+// CorrespondenciaSalida
+Table correspondencia_correspondenciasalida {
+  id bigint [pk, increment]
+  respuesta_a integer
+  numero_radicado_salida varchar(50) [unique, not null]
+  fecha_creacion timestamp [not null]
+  usuario_redactor integer
+  fecha_ultima_modificacion timestamp [not null]
+  oficina_emisora integer
+  oficina_emisora_nombre varchar(255)
+  redactor_nombre varchar(255)
+  redactor_cargo varchar(255)
+  destinatario_contacto integer [not null]
+  destinatario_email varchar(254) [not null]
+  asunto varchar(255) [not null]
+  cuerpo text [not null]
+  estado varchar(50) [not null]
+  usuario_aprobador integer
+  fecha_aprobacion timestamp
+  motivo_rechazo text
+  fecha_envio timestamp
+  id_mensaje_enviado varchar(255)
+  envio_tipo varchar(20)
+  envio_grupo integer
+  envio_total_destinatarios integer
+  envio_detalle_snapshot varchar(255)
+}
+
+// AdjuntoSalida
+Table correspondencia_adjuntosalida {
+  id bigint [pk, increment]
+  correspondencia_salida integer [not null]
+  archivo varchar(500) [not null]
+  nombre_original varchar(255) [not null]
+  tipo_mime varchar(100) [not null]
+  fecha_carga timestamp [not null]
+}
+
+// HistorialSalida
+Table correspondencia_historialsalida {
+  id bigint [pk, increment]
+  correspondencia_salida integer [not null]
+  fecha_hora timestamp [not null]
+  tipo_evento varchar(30) [not null]
+  usuario integer
+  descripcion text
+}
+
+// SalidaDestinatario
+Table correspondencia_salidadestinatario {
+  id bigint [pk, increment]
+  correspondencia_salida integer [not null]
+  contacto integer [not null]
+  email_snapshot varchar(254) [not null]
+  nombre_snapshot varchar(255) [not null]
+  estado varchar(20) [not null]
+  fecha_envio timestamp
+  id_mensaje_enviado varchar(255)
+  detalle_error text
+  smtp_code varchar(20)
+  dsn_status varchar(20)
+  ultimo_evento_at timestamp
+}
+
+// GrupoAgenda
+Table correspondencia_grupoagenda {
+  id bigint [pk, increment]
+  oficina_propietaria integer [not null]
+  nombre varchar(150) [not null]
+  descripcion text
+  creado_por integer
+  activo boolean [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+// ComunicacionMasiva
+Table correspondencia_comunicacionmasiva {
+  id bigint [pk, increment]
+  oficina_emisora integer [not null]
+  usuario_creador integer
+  asunto varchar(255) [not null]
+  cuerpo text [not null]
+  estado varchar(20) [not null]
+  fecha_creacion timestamp [not null]
+  fecha_envio timestamp
+}
+
+// ComunicacionDestinatario
+Table correspondencia_comunicaciondestinatario {
+  id bigint [pk, increment]
+  comunicacion integer [not null]
+  contacto integer [not null]
+  email_snapshot varchar(254) [not null]
+  nombre_snapshot varchar(255) [not null]
+  estado varchar(20) [not null]
+  fecha_envio timestamp
+  id_mensaje_enviado varchar(255)
+  detalle_error text
+}
+
+// InformeDiarioCorrespondencia
+Table correspondencia_informediariocorrespondencia {
+  id bigint [pk, increment]
+  fecha date [unique, not null]
+  archivo_firmado varchar(500)
+  estado varchar(20) [not null]
+  total_correspondencias integer [not null]
+  fecha_creacion timestamp [not null]
+  fecha_subida_firma timestamp
+  subido_por integer
+}
+
+// HistorialDescargaInforme
+Table correspondencia_historialdescargainforme {
+  id bigint [pk, increment]
+  informe integer [not null]
+  usuario integer
+  fecha_descarga timestamp [not null]
+  ip_address varchar(255)
+}
+
+// FirmaCorrespondencia
+Table correspondencia_firmacorrespondencia {
+  id bigint [pk, increment]
+  correspondencia integer [unique, not null]
+  firma_imagen varchar(500) [not null]
+  fecha_firma timestamp [not null]
+  firmado_por integer
+  nombre_firmante varchar(255) [not null]
+  cargo_firmante varchar(255)
+  oficina_firmante integer
+  recolector integer
+  ip_address varchar(255)
+  observaciones text
+}
+
+// ComunicacionInterna
+Table correspondencia_comunicacioninterna {
+  id bigint [pk, increment]
+  radicado varchar(50) [unique]
+  trd varchar(100)
+  fecha_creacion timestamp [not null]
+  ciudad varchar(100) [not null]
+  fecha_documento date [not null]
+  tipo_distribucion varchar(20)
+  es_a_toda_entidad boolean [not null]
+  remitente_usuario integer [not null]
+  remitente_nombre varchar(255) [not null]
+  remitente_cargo varchar(255)
+  remitente_oficina integer [not null]
+  destinatario_oficina integer
+  destinatario_usuario integer
+  destinatario_proceso integer
+  asunto varchar(255) [not null]
+  cuerpo text [not null]
+  archivo_generado varchar(500)
+  archivo_firmado varchar(500)
+  fecha_firma timestamp
+  revisado_por integer
+  revisado_nombre varchar(255)
+  revisado_cargo varchar(255)
+  fecha_revision timestamp
+  motivo_rechazo text
+  comunicacion_origen integer
+  fecha_distribucion timestamp
+  estado varchar(25) [not null]
+}
+
+// ComunicacionInternaDestinatario
+Table correspondencia_comunicacioninternadestinatario {
+  id bigint [pk, increment]
+  comunicacion integer [not null]
+  tipo varchar(10) [not null]
+  usuario integer
+  oficina integer
+}
+
+// ComunicacionInternaDistribucion
+Table correspondencia_comunicacioninternadistribucion {
+  id bigint [pk, increment]
+  comunicacion integer [not null]
+  usuario integer [not null]
+  fecha_distribucion timestamp [not null]
+  leido boolean [not null]
+  fecha_lectura timestamp
+}
+
+// HistorialComunicacionInterna
+Table correspondencia_historialcomunicacioninterna {
+  id bigint [pk, increment]
+  comunicacion integer [not null]
+  evento varchar(30) [not null]
+  fecha timestamp [not null]
+  usuario integer
+  descripcion text
+}
+
+// TramiteTipo
+Table correspondencia_tramitetipo {
+  id bigint [pk, increment]
+  codigo varchar(50) [unique, not null]
+  nombre varchar(255) [not null]
+  plazo_dias_habiles varchar(255) [not null]
+  fundamento_normativo varchar(255) [not null]
+  activo boolean [not null]
+}
+
+// SubserieTramite
+Table correspondencia_subserietramite {
+  id bigint [pk, increment]
+  subserie integer [unique, not null]
+  tramite integer [not null]
+}
+
+// CalendarioLaboral
+Table correspondencia_calendariolaboral {
+  id bigint [pk, increment]
+  fecha date [unique, not null]
+  es_habil boolean [not null]
+}
+
+// ========== RELACIONES ==========
+
+Ref: correspondencia_contacto.entidad_externa > correspondencia_entidadexterna.id [note: "<function PROTECT at 0x0000019090F049A0"]
+Ref: correspondencia_correspondencia.remitente > correspondencia_contacto.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: correspondencia_correspondencia.serie > documentos_seriedocumental.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: correspondencia_correspondencia.subserie > documentos_subseriedocumental.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: correspondencia_correspondencia.tramite_aplicado > correspondencia_tramitetipo.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: correspondencia_correspondencia.oficina_destino > documentos_oficinaproductora.id [note: "<function PROTECT at 0x0000019090F049A0"]
+Ref: correspondencia_historialcorrespondencia.correspondencia > correspondencia_correspondencia.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_adjuntocorreo.correspondencia > correspondencia_correspondencia.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_correoentrante.radicado_asociado > correspondencia_correspondencia.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: correspondencia_correoentrante.oficina_clasificada > documentos_oficinaproductora.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: correspondencia_correoentrante.serie_clasificada > documentos_seriedocumental.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: correspondencia_correoentrante.subserie_clasificada > documentos_subseriedocumental.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: correspondencia_adjuntocorreoentrante.correo_entrante > correspondencia_correoentrante.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_distribucioninternausuario.correspondencia > correspondencia_correspondencia.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_accesocorrespondenciaoficina.correspondencia > correspondencia_correspondencia.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_accesocorrespondenciaoficina.oficina > documentos_oficinaproductora.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_notificacion.correspondencia > correspondencia_correspondencia.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_notificacion.comunicacion_interna > correspondencia_comunicacioninterna.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_correspondenciasalida.respuesta_a > correspondencia_correspondencia.id [note: "<function PROTECT at 0x0000019090F049A0"]
+Ref: correspondencia_correspondenciasalida.oficina_emisora > documentos_oficinaproductora.id [note: "<function PROTECT at 0x0000019090F049A0"]
+Ref: correspondencia_correspondenciasalida.destinatario_contacto > correspondencia_contacto.id [note: "<function PROTECT at 0x0000019090F049A0"]
+Ref: correspondencia_correspondenciasalida.envio_grupo > correspondencia_grupoagenda.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: correspondencia_adjuntosalida.correspondencia_salida > correspondencia_correspondenciasalida.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_historialsalida.correspondencia_salida > correspondencia_correspondenciasalida.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_salidadestinatario.correspondencia_salida > correspondencia_correspondenciasalida.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_salidadestinatario.contacto > correspondencia_contacto.id [note: "<function PROTECT at 0x0000019090F049A0"]
+Ref: correspondencia_grupoagenda.oficina_propietaria > documentos_oficinaproductora.id [note: "<function PROTECT at 0x0000019090F049A0"]
+Ref: correspondencia_comunicacionmasiva.oficina_emisora > documentos_oficinaproductora.id [note: "<function PROTECT at 0x0000019090F049A0"]
+Ref: correspondencia_comunicaciondestinatario.comunicacion > correspondencia_comunicacionmasiva.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_comunicaciondestinatario.contacto > correspondencia_contacto.id [note: "<function PROTECT at 0x0000019090F049A0"]
+Ref: correspondencia_historialdescargainforme.informe > correspondencia_informediariocorrespondencia.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_firmacorrespondencia.oficina_firmante > documentos_oficinaproductora.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: correspondencia_comunicacioninterna.remitente_oficina > documentos_oficinaproductora.id [note: "<function PROTECT at 0x0000019090F049A0"]
+Ref: correspondencia_comunicacioninterna.destinatario_oficina > documentos_oficinaproductora.id [note: "<function PROTECT at 0x0000019090F049A0"]
+Ref: correspondencia_comunicacioninterna.destinatario_proceso > documentos_proceso.id [note: "<function PROTECT at 0x0000019090F049A0"]
+Ref: correspondencia_comunicacioninterna.comunicacion_origen > correspondencia_comunicacioninterna.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: correspondencia_comunicacioninternadestinatario.comunicacion > correspondencia_comunicacioninterna.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_comunicacioninternadestinatario.oficina > documentos_oficinaproductora.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_comunicacioninternadistribucion.comunicacion > correspondencia_comunicacioninterna.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_historialcomunicacioninterna.comunicacion > correspondencia_comunicacioninterna.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: correspondencia_subserietramite.tramite > correspondencia_tramitetipo.id [note: "<function PROTECT at 0x0000019090F049A0"]
+
+// ========== RELACIONES MANY-TO-MANY ==========
+
+Ref: correspondencia_grupoagenda.id <> correspondencia_contacto.id // contactos
+
+TableGroup correspondencia {
+  correspondencia_entidadexterna
+  correspondencia_contacto
+  correspondencia_correspondencia
+  correspondencia_historialcorrespondencia
+  correspondencia_adjuntocorreo
+  correspondencia_correoentrante
+  correspondencia_adjuntocorreoentrante
+  correspondencia_distribucioninternausuario
+  correspondencia_accesocorrespondenciaoficina
+  correspondencia_notificacion
+  correspondencia_correspondenciasalida
+  correspondencia_adjuntosalida
+  correspondencia_historialsalida
+  correspondencia_salidadestinatario
+  correspondencia_grupoagenda
+  correspondencia_comunicacionmasiva
+  correspondencia_comunicaciondestinatario
+  correspondencia_informediariocorrespondencia
+  correspondencia_historialdescargainforme
+  correspondencia_firmacorrespondencia
+  correspondencia_comunicacioninterna
+  correspondencia_comunicacioninternadestinatario
+  correspondencia_comunicacioninternadistribucion
+  correspondencia_historialcomunicacioninterna
+  correspondencia_tramitetipo
+  correspondencia_subserietramite
+  correspondencia_calendariolaboral
+}

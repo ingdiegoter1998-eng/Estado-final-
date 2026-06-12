@@ -1,0 +1,304 @@
+<!-- 
+  MODAL DE RADICACIÓN RÁPIDA - CORRESPONDENCIA ENTRANTE
+  
+  Formulario simplificado para registrar correspondencia entrante durante
+  el período de transición. Usa campos mínimos obligatorios.
+-->
+<style>
+  /* Modal ~20% más ancho que xl (1140px → ~1370px) */
+  .modal-radicacion-rapida-entrante .modal-dialog { max-width: 1370px; }
+  /* Scroll visible con barra en el body del modal */
+  .modal-radicacion-rapida-entrante .modal-body {
+    max-height: 70vh;
+    overflow-y: auto;
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #6c757d #e9ecef; /* Firefox */
+  }
+  .modal-radicacion-rapida-entrante .modal-body::-webkit-scrollbar {
+    width: 8px;
+  }
+  .modal-radicacion-rapida-entrante .modal-body::-webkit-scrollbar-track {
+    background: #e9ecef;
+    border-radius: 4px;
+  }
+  .modal-radicacion-rapida-entrante .modal-body::-webkit-scrollbar-thumb {
+    background-color: #6c757d;
+    border-radius: 4px;
+  }
+  .modal-radicacion-rapida-entrante .modal-body::-webkit-scrollbar-thumb:hover {
+    background-color: #495057;
+  }
+</style>
+<div class="modal fade modal-radicacion-rapida-entrante" id="{{ modal_id|default:'modalRadicacionRapidaEntrante' }}" tabindex="-1" 
+     aria-labelledby="modalRadicacionRapidaEntranteLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <form method="post" action="" id="form-radicacion-rapida-entrante" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="form_prefix" value="rapida_entrante">
+        
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="modalRadicacionRapidaEntranteLabel">
+            <i class="bi bi-lightning-fill me-2"></i>Radicación Rápida - Entrante
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        
+        <div class="modal-body">
+          <!-- Alerta informativa -->
+          <div class="alert alert-info mb-3" id="alert-rapida-entrante">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <strong>Radicación rápida:</strong> Registre correspondencia entrante que llegó por vías externas.
+          </div>
+          
+          {% if form_rapida_entrante %}
+          <!-- Asunto -->
+          <div class="mb-3">
+            <label for="id_rapida_ent-asunto" class="form-label fw-semibold">
+              Asunto <span class="text-danger">*</span>
+            </label>
+            {{ form_rapida_entrante.asunto }}
+            {% if form_rapida_entrante.asunto.errors %}
+              <div class="invalid-feedback d-block">{{ form_rapida_entrante.asunto.errors.0 }}</div>
+            {% endif %}
+          </div>
+          
+          <div class="row">
+            <!-- Remitente (texto libre) -->
+            <div class="col-md-3 mb-3">
+              <label for="id_rapida_ent-remitente_texto" class="form-label fw-semibold">
+                Remitente (texto libre)
+              </label>
+              {{ form_rapida_entrante.remitente_texto }}
+              <small class="text-muted">Use si el remitente no está registrado.</small>
+            </div>
+            
+            <!-- Oficina Destino -->
+            <div class="col-md-3 mb-3">
+              <label for="id_rapida_ent-oficina_destino" class="form-label fw-semibold">
+                Oficina Destino <span class="text-danger">*</span>
+              </label>
+              {{ form_rapida_entrante.oficina_destino }}
+              {% if form_rapida_entrante.oficina_destino.errors %}
+                <div class="invalid-feedback d-block">{{ form_rapida_entrante.oficina_destino.errors.0 }}</div>
+              {% endif %}
+            </div>
+            
+            <!-- Medio de Recepción -->
+            <div class="col-md-3 mb-3">
+              <label for="id_rapida_ent-medio_recepcion" class="form-label fw-semibold">
+                Medio de Recepción
+              </label>
+              {{ form_rapida_entrante.medio_recepcion }}
+            </div>
+          </div>
+          
+          <!-- Adjuntar archivos (escaneos) -->
+          <div class="mb-3">
+            <label for="id_rapida_ent-adjuntos_archivos" class="form-label fw-semibold">
+              <i class="bi bi-paperclip me-2"></i>Adjuntar escaneos o documentos
+            </label>
+            <input type="file" name="rapida_ent-adjuntos_archivos" class="form-control" 
+                   id="id_rapida_ent-adjuntos_archivos" multiple 
+                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.zip">
+            <small class="text-muted d-block mt-1">
+              <i class="bi bi-info-circle me-1"></i>Puede seleccionar múltiples archivos (PDF, Word, imágenes, Excel, ZIP)
+            </small>
+          </div>
+          
+          <!-- Datos adicionales (opcionales) -->
+          <div class="border-top pt-3 mt-3">
+            <h6 class="text-muted mb-3"><i class="bi bi-plus-square me-1"></i> Datos adicionales (opcionales)</h6>
+            
+            <div class="row">
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-fecha_recepcion_documento" class="form-label">Fecha de recepción del documento</label>
+                {{ form_rapida_entrante.fecha_recepcion_documento }}
+                <small class="text-muted">Fecha en que se recibió físicamente el documento</small>
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-tipo_tramite" class="form-label">Tipo de trámite</label>
+                {{ form_rapida_entrante.tipo_tramite }}
+                <small class="text-muted">Seleccione para calcular fecha límite automáticamente</small>
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-clasificacion_comunicacion" class="form-label">Clasificación</label>
+                {{ form_rapida_entrante.clasificacion_comunicacion }}
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-entidad_persona_remitente" class="form-label">Entidad o persona remitente</label>
+                {{ form_rapida_entrante.entidad_persona_remitente }}
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-funcionario_responsable_tramite" class="form-label">Funcionario responsable del trámite</label>
+                {{ form_rapida_entrante.funcionario_responsable_tramite }}
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-email_funcionario_responsable" class="form-label">
+                  <i class="bi bi-envelope me-1"></i>Correo del funcionario responsable
+                </label>
+                {{ form_rapida_entrante.email_funcionario_responsable }}
+                <small class="text-muted">Se enviará notificación automática al radicar</small>
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-numero_folios" class="form-label">Número de folios</label>
+                {{ form_rapida_entrante.numero_folios }}
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-anexos" class="form-label">Anexos</label>
+                {{ form_rapida_entrante.anexos }}
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-medio_recibido" class="form-label">Medio de recibido</label>
+                {{ form_rapida_entrante.medio_recibido }}
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-direccion_correo_remitente" class="form-label">Dirección de correo del remitente</label>
+                {{ form_rapida_entrante.direccion_correo_remitente }}
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-empresa_transportadora" class="form-label">Empresa transportadora (opcional)</label>
+                {{ form_rapida_entrante.empresa_transportadora }}
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-numero_guia" class="form-label">Número de guía (opcional)</label>
+                {{ form_rapida_entrante.numero_guia }}
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-fecha_limite_respuesta_manual" class="form-label">Fecha límite de respuesta</label>
+                {{ form_rapida_entrante.fecha_limite_respuesta_manual }}
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-fecha_primer_seguimiento" class="form-label">Fecha de 1° seguimiento</label>
+                {{ form_rapida_entrante.fecha_primer_seguimiento }}
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-fecha_segundo_seguimiento" class="form-label">Fecha de 2° seguimiento</label>
+                {{ form_rapida_entrante.fecha_segundo_seguimiento }}
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-fecha_notificacion_vencimiento" class="form-label">Fecha notif. vencimiento (si aplica)</label>
+                {{ form_rapida_entrante.fecha_notificacion_vencimiento }}
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-fecha_respuesta" class="form-label">Fecha de respuesta</label>
+                {{ form_rapida_entrante.fecha_respuesta }}
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-estado_respuesta" class="form-label">Estado de la respuesta</label>
+                {{ form_rapida_entrante.estado_respuesta }}
+              </div>
+              <div class="col-md-3 mb-3">
+                <label for="id_rapida_ent-radicado_enviado_respuesta" class="form-label">Radicado enviado para respuesta</label>
+                {{ form_rapida_entrante.radicado_enviado_respuesta }}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Errores no relacionados a campos -->
+          {% if form_rapida_entrante.non_field_errors %}
+            <div class="alert alert-danger">
+              {% for error in form_rapida_entrante.non_field_errors %}
+                {{ error }}
+              {% endfor %}
+            </div>
+          {% endif %}
+          
+          {% else %}
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              Formulario no disponible. Recargue la página.
+            </div>
+          {% endif %}
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Cancelar
+          </button>
+          <button type="submit" class="btn btn-danger" id="btn-submit-rapida-entrante">
+            <i class="bi bi-check-lg me-1"></i>Radicar Entrante
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Script para cálculo automático de fecha límite según tipo de trámite -->
+{% load static %}
+<script src="{% static 'correspondencia/js/modals/radicacion-rapida-entrante.js' %}"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var modalEntrante = document.getElementById('{{ modal_id|default:"modalRadicacionRapidaEntrante" }}');
+  if (modalEntrante && typeof jQuery !== 'undefined' && jQuery.fn.select2) {
+    modalEntrante.addEventListener('shown.bs.modal', function() {
+      if (window.DashboardDeferredSelects && window.DashboardDeferredSelects.isDeferredMode()) {
+        return;
+      }
+      // Inicializar Select2 en todos los selects del modal (bandeja sin modo diferido)
+      $(modalEntrante).find('select').each(function() {
+        var $select = $(this);
+        if (!$select.hasClass('select2-hidden-accessible')) {
+          $select.select2({
+            theme: 'bootstrap-5',
+            dropdownParent: $(modalEntrante),
+            allowClear: true,
+            width: '100%',
+            placeholder: 'Seleccionar...',
+            language: {
+              noResults: function() { return "No se encontraron resultados"; },
+              searching: function() { return "Buscando..."; }
+            }
+          });
+        }
+
+        if ($select.attr('id') === 'id_rapida_ent-remitente') {
+          var logOpcionesRemitente = function(evento) {
+            var opciones = $select.find('option').map(function() {
+              return {
+                value: this.value,
+                text: (this.text || '').trim()
+              };
+            }).get();
+            console.log('Opciones remitente (radicacion rapida) - ' + evento + ':', opciones);
+          };
+
+          $select.off('select2:open.debugRemitente select2:close.debugRemitente change.debugRemitente');
+          $select.on('select2:open.debugRemitente', function() {
+            console.log('El campo remitente se ha abierto');
+            logOpcionesRemitente('open');
+          });
+          $select.on('select2:close.debugRemitente', function() {
+            console.log('El campo remitente se ha cerrado');
+          });
+          $select.on('change.debugRemitente', function() {
+            logOpcionesRemitente('change');
+          });
+        }
+      });
+    });
+    
+    modalEntrante.addEventListener('hidden.bs.modal', function() {
+      if (window.DashboardDeferredSelects && window.DashboardDeferredSelects.isDeferredMode()) {
+        return;
+      }
+      $(modalEntrante).find('select').each(function() {
+        if ($(this).hasClass('select2-hidden-accessible')) {
+          $(this).select2('destroy');
+        }
+      });
+    });
+  }
+});
+</script>

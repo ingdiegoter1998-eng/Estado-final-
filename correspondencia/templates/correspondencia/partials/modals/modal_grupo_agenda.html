@@ -1,0 +1,441 @@
+{% load crispy_forms_tags %}
+<div class="modal fade" id="modalCrearGrupoAgenda" tabindex="-1" aria-labelledby="modalCrearGrupoAgendaLabel" aria-hidden="true">
+  <div class="modal-dialog" style="max-width: 1400px; width: min(98vw, 1400px);">
+    <div class="modal-content">
+      <form id="form-crear-grupo-agenda" method="post" action="{% url 'correspondencia:grupo_agenda_crear' %}">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalCrearGrupoAgendaLabel">Nuevo grupo de agenda</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" style="max-height:75vh; overflow:auto;">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Nombre</label>
+              <input type="text" name="nombre" class="form-control" placeholder="Nombre del grupo" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Estado</label>
+              <select name="activo" class="form-select">
+                <option value="true" selected>Activo</option>
+                <option value="false">Inactivo</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Descripción</label>
+              <textarea name="descripcion" class="form-control" rows="2" placeholder="Opcional"></textarea>
+            </div>
+          </div>
+
+          <hr class="my-3">
+
+          <div class="row g-2 align-items-end mb-2">
+            <div class="col-md-4">
+              <label class="form-label mb-1">Filtrar por Entidad</label>
+              <select id="filtro_entidad_grupo" class="form-select select2" data-placeholder="Buscar entidad..." data-allow-clear="true">
+                <option value="">Todas las entidades</option>
+              </select>
+            </div>
+            <div class="col-md-5">
+              <label class="form-label mb-1">Buscar contacto (nombre o email)</label>
+              <input type="text" id="buscador_contactos_grupo" class="form-control" placeholder="Ej: Juan Pérez o juan@correo.com">
+            </div>
+            <div class="col-md-3 text-end">
+              <label class="form-label mb-1 d-block">&nbsp;</label>
+              <div>
+                <button type="button" id="btn-add-seleccionados" class="btn btn-outline-primary btn-sm me-2" disabled>
+                  Añadir seleccionados
+                </button>
+                <button type="button" id="btn-quitar-todos" class="btn btn-outline-secondary btn-sm" disabled>
+                  Quitar todos
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <style>
+            /* Evitar scroll horizontal dentro del modal */
+            #modalCrearGrupoAgenda .modal-content { overflow-x: hidden; }
+            #modalCrearGrupoAgenda .no-h-scroll { overflow-x: hidden; }
+            #modalCrearGrupoAgenda .tabla-scroll { max-height: 45vh; overflow-y: auto; overflow-x: hidden; }
+            /* Filas de una sola línea con elipsis */
+            #modalCrearGrupoAgenda table td, #modalCrearGrupoAgenda table th { white-space: nowrap; }
+            #modalCrearGrupoAgenda .truncate-25 { display: inline-block; max-width: 25ch; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+            #modalCrearGrupoAgenda .truncate-20 { display: inline-block; max-width: 20ch; overflow: hidden; text-overflow: ellipsis; vertical-align: bottom; }
+          </style>
+
+          <div class="row g-3">
+            <!-- Panel izquierdo: Disponibles -->
+            <div class="col-md-7">
+              <div class="card h-100">
+                <div class="card-header py-2"><strong>Disponibles</strong></div>
+                <div class="card-body p-0">
+                  <div class="table-responsive no-h-scroll tabla-scroll">
+                    <table class="table table-sm align-middle mb-0">
+                      <thead class="table-light" style="position: sticky; top: 0; z-index:1;">
+                        <tr>
+                          <th style="width: 36px;"><input type="checkbox" id="chk-disponibles-page"></th>
+                          <th>Nombre</th>
+                          <th>Entidad</th>
+                          <th>Correo</th>
+                        </tr>
+                      </thead>
+                      <tbody id="tbody-disponibles">
+                        <tr><td colspan="4" class="text-center text-muted py-3">Cargando...</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center py-2">
+                  <small class="text-muted" id="lbl-rango">Mostrando 0–0 de 0</small>
+                  <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary" id="btn-prev" disabled>Anterior</button>
+                    <button type="button" class="btn btn-outline-secondary" id="btn-next" disabled>Siguiente</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Panel derecho: Seleccionados -->
+            <div class="col-md-5">
+              <div class="card h-100">
+                <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                  <strong>Seleccionados</strong>
+                  <small class="text-muted">(<span id="contador-contactos-grupo">0</span>)</small>
+                </div>
+                <div class="card-body p-0">
+                  <div class="table-responsive no-h-scroll tabla-scroll">
+                    <table class="table table-sm align-middle mb-0">
+                      <thead class="table-light" style="position: sticky; top: 0; z-index:1;">
+                        <tr>
+                          <th>Nombre</th>
+                          <th>Entidad</th>
+                          <th>Correo</th>
+                          <th style="width: 40px;"></th>
+                        </tr>
+                      </thead>
+                      <tbody id="tbody-seleccionados">
+                        <tr><td colspan="4" class="text-center text-muted py-3">Sin contactos seleccionados.</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" name="contactos" id="input-contactos-ids" value="">
+          <input type="hidden" id="input-grupo-id" value="">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar grupo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const $entidad = $('#filtro_entidad_grupo');
+  const $buscador = $('#buscador_contactos_grupo');
+  const $contador = $('#contador-contactos-grupo');
+  const $tbodyDisponibles = $('#tbody-disponibles');
+  const $tbodySeleccionados = $('#tbody-seleccionados');
+  const $chkDisponiblesPage = $('#chk-disponibles-page');
+  const $btnAddSeleccionados = $('#btn-add-seleccionados');
+  const $btnQuitarTodos = $('#btn-quitar-todos');
+  const $btnPrev = $('#btn-prev');
+  const $btnNext = $('#btn-next');
+  const $lblRango = $('#lbl-rango');
+  const $inputIds = $('#input-contactos-ids');
+
+  let currentPage = 1;
+  const pageSize = 25;
+  const seleccionados = new Map(); // id -> {id, nombre, entidad, email}
+  const seleccionDisponibles = new Set(); // ids seleccionados en la página actual
+
+  function cargarEntidades() {
+    $.ajax({
+      url: '{% url "correspondencia:buscar_entidades_ajax" %}',
+      method: 'GET',
+      headers: {'X-Requested-With':'XMLHttpRequest'},
+      success: function(resp){
+        if(resp.success){
+          $entidad.find('option:not(:first)').remove();
+          resp.entidades.forEach(function(e){
+            $entidad.append(new Option(e.nombre, e.id));
+          });
+          $entidad.trigger('change.select2');
+        }
+      }
+    });
+  }
+
+  function cargarDisponibles() {
+    const entidad_id = $entidad.val();
+    const q = $buscador.val();
+    $tbodyDisponibles.html('<tr><td colspan="4" class="text-center text-muted py-3">Cargando...</td></tr>');
+    $.ajax({
+      url: '{% url "correspondencia:contactos_agenda_paginado_ajax" %}',
+      method: 'GET',
+      data: { entidad_id, q, page: currentPage, page_size: pageSize },
+      headers: {'X-Requested-With':'XMLHttpRequest'},
+      success: function(resp){
+        if(!resp.success){ $tbodyDisponibles.html('<tr><td colspan="4" class="text-danger text-center py-3">Error cargando contactos</td></tr>'); return; }
+        renderDisponibles(resp.results);
+        actualizarPaginacion(resp);
+      },
+      error: function(){ $tbodyDisponibles.html('<tr><td colspan="4" class="text-danger text-center py-3">Error de red</td></tr>'); }
+    });
+  }
+
+  function renderDisponibles(items){
+    seleccionDisponibles.clear();
+    if(!items.length){
+      $tbodyDisponibles.html('<tr><td colspan="4" class="text-muted text-center py-3">No hay resultados. Ajusta filtros o búsqueda.</td></tr>');
+      $chkDisponiblesPage.prop('checked', false).prop('disabled', true);
+      $btnAddSeleccionados.prop('disabled', true);
+      return;
+    }
+    $chkDisponiblesPage.prop('disabled', false).prop('checked', false);
+    const rows = items.map(function(c){
+      const disabled = c.tiene_email ? '' : 'disabled';
+      const muted = c.tiene_email ? '' : 'text-muted';
+      const title = c.tiene_email ? '' : ' title="Sin correo válido"';
+      const nombreDisp = truncate(c.nombre, 25, true);
+      const entidadDisp = truncate(c.entidad || '', 20);
+      const emailDisp = truncate(c.email || '', 25);
+      return `<tr data-id="${c.id}" class="fila-disponible ${muted}"${title}>
+        <td><input type="checkbox" class="chk-disponible" ${disabled}></td>
+        <td><span class="truncate-25" data-bs-toggle="tooltip" title="${escapeHtml(c.nombre)}">${escapeHtml(nombreDisp)}</span></td>
+        <td><span class="truncate-20" data-bs-toggle="tooltip" title="${escapeHtml(c.entidad || '')}">${escapeHtml(entidadDisp)}</span></td>
+        <td><span class="truncate-25" data-bs-toggle="tooltip" title="${escapeHtml(c.email || '')}">${escapeHtml(emailDisp)}</span></td>
+      </tr>`;
+    }).join('');
+    $tbodyDisponibles.html(rows);
+    // Inicializar tooltips
+    const tooltipTriggerList = [].slice.call($tbodyDisponibles[0].querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (el) { new bootstrap.Tooltip(el); });
+    actualizarBotonesSeleccion();
+  }
+
+  function actualizarPaginacion(meta){
+    const start = meta.total ? ((meta.page - 1) * meta.page_size) + 1 : 0;
+    const end = Math.min(meta.page * meta.page_size, meta.total);
+    $lblRango.text(`Mostrando ${start}–${end} de ${meta.total}`);
+    $btnPrev.prop('disabled', meta.page <= 1);
+    $btnNext.prop('disabled', meta.page >= meta.total_pages);
+  }
+
+  function actualizarBotonesSeleccion(){
+    $btnAddSeleccionados.prop('disabled', seleccionDisponibles.size === 0);
+    $btnQuitarTodos.prop('disabled', seleccionados.size === 0);
+  }
+
+  function renderSeleccionados(){
+    const values = Array.from(seleccionados.values());
+    if(!values.length){
+      $tbodySeleccionados.html('<tr><td colspan="4" class="text-center text-muted py-3">Sin contactos seleccionados.</td></tr>');
+    } else {
+      const rows = values.map(function(c){
+        const nombreDisp = truncate(c.nombre, 25, true);
+        const entidadDisp = truncate(c.entidad || '', 20);
+        const emailDisp = truncate(c.email || '', 25);
+        return `<tr data-id="${c.id}">
+          <td><span class="truncate-25" data-bs-toggle="tooltip" title="${escapeHtml(c.nombre)}">${escapeHtml(nombreDisp)}</span></td>
+          <td><span class="truncate-20" data-bs-toggle="tooltip" title="${escapeHtml(c.entidad || '')}">${escapeHtml(entidadDisp)}</span></td>
+          <td><span class="truncate-25" data-bs-toggle="tooltip" title="${escapeHtml(c.email || '')}">${escapeHtml(emailDisp)}</span></td>
+          <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger btn-quitar" data-id="${c.id}"><i class="bi bi-x"></i></button></td>
+        </tr>`;
+      }).join('');
+      $tbodySeleccionados.html(rows);
+      const tooltipTriggerList = [].slice.call($tbodySeleccionados[0].querySelectorAll('[data-bs-toggle="tooltip"]'));
+      tooltipTriggerList.forEach(function (el) { new bootstrap.Tooltip(el); });
+    }
+    $contador.text(values.length);
+    $inputIds.val(values.map(v => v.id).join(','));
+    actualizarBotonesSeleccion();
+  }
+
+  function addSeleccionadosDesdePagina(){
+    $tbodyDisponibles.find('.fila-disponible').each(function(){
+      const $row = $(this);
+      const id = parseInt($row.data('id'));
+      const chk = $row.find('.chk-disponible')[0];
+      if(chk && chk.checked){
+        const nombre = $row.find('td').eq(1).find('span').attr('title') || $row.find('td').eq(1).text();
+        const entidad = $row.find('td').eq(2).find('span').attr('title') || $row.find('td').eq(2).text();
+        const email = $row.find('td').eq(3).find('span').attr('title') || $row.find('td').eq(3).text();
+        seleccionados.set(id, {id, nombre, entidad, email});
+      }
+    });
+    renderSeleccionados();
+  }
+
+  function quitarTodos(){
+    seleccionados.clear();
+    renderSeleccionados();
+  }
+
+  function escapeHtml(str){
+    return (str || '').replace(/[&<>\""]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]); });
+  }
+
+  function truncate(text, max, isName = false){
+    const s = String(text || '');
+    if(s.length <= max) return s;
+    
+    // Si es nombre, mostrar solo apellidos (después del primer espacio)
+    if(isName && s.includes(' ')){
+      const apellidos = s.split(' ').slice(1).join(' ');
+      if(apellidos.length <= max) return apellidos;
+      return apellidos.slice(0, max - 1) + '…';
+    }
+    
+    return s.slice(0, max - 1) + '…';
+  }
+
+  // Select2 en filtros
+  $entidad.select2({ dropdownParent: $('#modalCrearGrupoAgenda') });
+
+  // Eventos
+  $entidad.on('change', function(){ currentPage = 1; cargarDisponibles(); });
+  // Debounce sin lodash
+  let buscadorTimer = null;
+  $buscador.on('input', function(){
+    if (buscadorTimer) clearTimeout(buscadorTimer);
+    buscadorTimer = setTimeout(function(){ currentPage = 1; cargarDisponibles(); }, 300);
+  });
+  $chkDisponiblesPage.on('change', function(){
+    const checked = this.checked;
+    seleccionDisponibles.clear();
+    $tbodyDisponibles.find('.chk-disponible').each(function(){ if(!this.disabled){ this.checked = checked; if(checked){ seleccionDisponibles.add(parseInt($(this).closest('tr').data('id'))); } } });
+    actualizarBotonesSeleccion();
+  });
+  $tbodyDisponibles.on('change', '.chk-disponible', function(){
+    const id = parseInt($(this).closest('tr').data('id'));
+    if(this.checked){ seleccionDisponibles.add(id); } else { seleccionDisponibles.delete(id); }
+    actualizarBotonesSeleccion();
+  });
+  $tbodyDisponibles.on('dblclick', 'tr', function(){
+    const $row = $(this);
+    const id = parseInt($row.data('id'));
+    const chk = $row.find('.chk-disponible')[0];
+    if(chk && !chk.disabled){
+      const nombre = $row.find('td').eq(1).find('span').attr('title') || $row.find('td').eq(1).text();
+      const entidad = $row.find('td').eq(2).find('span').attr('title') || $row.find('td').eq(2).text();
+      const email = $row.find('td').eq(3).find('span').attr('title') || $row.find('td').eq(3).text();
+      seleccionados.set(id, {id, nombre, entidad, email});
+      renderSeleccionados();
+    }
+  });
+  $btnAddSeleccionados.on('click', function(){ addSeleccionadosDesdePagina(); seleccionDisponibles.clear(); $chkDisponiblesPage.prop('checked', false); $tbodyDisponibles.find('.chk-disponible').prop('checked', false); actualizarBotonesSeleccion(); });
+  $btnQuitarTodos.on('click', function(){ quitarTodos(); });
+  $btnPrev.on('click', function(){ if(currentPage>1){ currentPage--; cargarDisponibles(); } });
+  $btnNext.on('click', function(){ currentPage++; cargarDisponibles(); });
+  
+  // Quitar contacto individual del panel de seleccionados
+  $tbodySeleccionados.on('click', '.btn-quitar', function(){
+    const id = parseInt($(this).data('id'));
+    seleccionados.delete(id);
+    renderSeleccionados();
+  });
+
+  // Cargar datos iniciales al abrir modal
+  const modalEl = document.getElementById('modalCrearGrupoAgenda');
+  modalEl.addEventListener('shown.bs.modal', function(){
+    cargarEntidades();
+    cargarDisponibles();
+    // Foco en nombre
+    $('#form-crear-grupo-agenda input[name="nombre"]').trigger('focus');
+  });
+
+  // Confirmación al cerrar si hay cambios
+  let dirty = false;
+  $(document).on('change', '#form-crear-grupo-agenda input, #form-crear-grupo-agenda textarea, #form-crear-grupo-agenda select', function(){ dirty = true; });
+  const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+  modalEl.addEventListener('hide.bs.modal', function (e){
+    if(dirty){
+      const confirma = confirm('Tienes cambios sin guardar. ¿Cerrar de todos modos?');
+      if(!confirma){ e.preventDefault(); }
+    }
+  });
+
+  // Normalizar booleano de 'activo' en submit
+  $('#form-crear-grupo-agenda').on('submit', function(e){
+    const sel = $(this).find('select[name="activo"]');
+    // Mantener el valor como 'true' o 'false' para que Django lo procese correctamente
+    // No convertir a 'on' o cadena vacía
+    // Validaciones:
+    const nombre = ($(this).find('input[name="nombre"]').val() || '').trim();
+    if(!nombre){ alert('El nombre del grupo es obligatorio.'); return false; }
+    if(seleccionados.size === 0){ alert('Debes seleccionar al menos un contacto.'); return false; }
+    
+    // Construir inputs múltiples para contactos
+    // Eliminar cualquier input 'contactos' previamente agregado
+    $(this).find('input[name="contactos"]').remove();
+    // Agregar uno por cada id seleccionado
+    Array.from(seleccionados.keys()).forEach(function(id){
+      $('<input />', { type: 'hidden', name: 'contactos', value: id }).appendTo('#form-crear-grupo-agenda');
+    });
+
+    // Si es edición, cambiar la acción al endpoint de editar
+    const grupoId = $('#input-grupo-id').val();
+    if(grupoId){
+      this.action = `{% url 'correspondencia:grupo_agenda_editar' 0 %}`.replace('/0/', `/${grupoId}/`);
+    }
+  });
+
+  // Validación de nombre único (on change)
+  $('#form-crear-grupo-agenda input[name="nombre"]').on('change', function(){
+    const nombre = ($(this).val() || '').trim();
+    const exclude_id = $('#input-grupo-id').val() || '';
+    if(!nombre){ return; }
+    $.ajax({ url: '{% url "correspondencia:validar_nombre_grupo_ajax" %}', method: 'GET', data: { nombre, exclude_id }, headers: {'X-Requested-With':'XMLHttpRequest'}, success: function(resp){ if(resp.ok && resp.exists){ alert('Ya existe un grupo con este nombre en tu oficina.'); } } });
+  });
+  // Modo edición: abrir modal precargado
+  $(document).on('click', '.btn-editar-grupo', function(){
+    const id = $(this).data('grupo-id');
+    // Limpiar estado previo
+    seleccionados.clear();
+    renderSeleccionados();
+    $('#input-grupo-id').val(id);
+    $('#modalCrearGrupoAgendaLabel').text('Editar grupo de agenda');
+    // Cargar datos del grupo
+    $.ajax({
+      url: `{% url 'correspondencia:grupo_agenda_detalle_ajax' 0 %}`.replace('/0/', `/${id}/`),
+      method: 'GET', headers: {'X-Requested-With':'XMLHttpRequest'},
+      success: function(resp){
+        if(!resp.success){ alert('No se pudo cargar el grupo.'); return; }
+        $('#form-crear-grupo-agenda input[name="nombre"]').val(resp.grupo.nombre);
+        $('#form-crear-grupo-agenda textarea[name="descripcion"]').val(resp.grupo.descripcion || '');
+        $('#form-crear-grupo-agenda select[name="activo"]').val(resp.grupo.activo ? 'true' : 'false');
+        (resp.contactos || []).forEach(function(c){ seleccionados.set(c.id, c); });
+        renderSeleccionados();
+        // Abrir modal
+        const bs = bootstrap.Modal.getOrCreateInstance(modalEl);
+        bs.show();
+        // Recargar disponibles con filtros actuales y mantener selección
+        currentPage = 1; cargarDisponibles();
+        // Foco
+        $('#form-crear-grupo-agenda input[name="nombre"]').trigger('focus');
+      },
+      error: function(){ alert('Error de red al cargar el grupo.'); }
+    });
+  });
+
+  // Modo creación: botón estándar abre modal con estado limpio
+  $(document).on('click', '[data-bs-target="#modalCrearGrupoAgenda"]', function(){
+    $('#input-grupo-id').val('');
+    $('#modalCrearGrupoAgendaLabel').text('Nuevo grupo de agenda');
+    $('#form-crear-grupo-agenda')[0].reset();
+    seleccionados.clear();
+    renderSeleccionados();
+    currentPage = 1; cargarDisponibles();
+  });
+
+});
+</script>
+
+

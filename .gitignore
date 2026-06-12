@@ -1,0 +1,219 @@
+# ============================================================================
+# PYTHON
+# ============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ============================================================================
+# ENTORNOS VIRTUALES
+# ============================================================================
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# ============================================================================
+# DJANGO
+# ============================================================================
+*.log
+*.pot
+*.pyc
+db.sqlite3
+db.sqlite3-journal
+*.db
+/staticfiles/
+/static/
+/media/
+media/
+*.sqlite
+*.sqlite3
+
+# ============================================================================
+# ARCHIVOS DE CONFIGURACIÓN SENSIBLES
+# ============================================================================
+.env
+*.env
+.env.local
+.env.*.local
+settings_local.py
+local_settings.py
+secrets.json
+*.key
+*.pem
+deploy/secrets/*.json
+deploy/backups/
+celerybeat-schedule
+archivos afuera/
+*.eml
+
+# ============================================================================
+# IDEs Y EDITORES
+# ============================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.project
+.pydevproject
+.settings/
+
+# ============================================================================
+# ARCHIVOS DE TEST Y COBERTURA
+# ============================================================================
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.hypothesis/
+reports/
+*.cover
+.hypothesis/
+.pytest_cache/
+coverage.xml
+*.cover
+.hypothesis/
+
+# ============================================================================
+# NODE MODULES (si usas npm/frontend)
+# ============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# ============================================================================
+# ARCHIVOS DE SISTEMA
+# ============================================================================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============================================================================
+# ARCHIVOS TEMPORALES Y BACKUPS
+# ============================================================================
+*.tmp
+*.bak
+*.swp
+*.swo
+~*
+*.orig
+*.rej
+*~
+*.log.*
+
+# ============================================================================
+# ARCHIVOS DE DATOS Y SCRIPTS TEMPORALES
+# ============================================================================
+# Scripts de prueba y consultas
+consultas_*.py
+limpiar_*.py
+verificar_*.py
+probar_*.py
+test_*.py
+ejecutar_*.py
+crear_*.py
+poblar_*.py
+resumen_*.py
+estadisticas_*.py
+generar_*.py
+temp_*.py
+
+# Archivos de datos
+*.csv
+*.xlsx
+*.xls
+dataUnidad/
+*.sql
+*.dump
+
+# Archivos de configuración de base de datos
+settings_sql_server.py
+configure_*.ps1
+infologin*.txt
+
+# ============================================================================
+# ARCHIVOS DE DOCUMENTACIÓN PERSONAL/TEMPORAL
+# ============================================================================
+# Mantener solo los importantes, ignorar los temporales
+# (Ajustar según necesidad)
+contexto.txt
+*.md.bak
+
+# ============================================================================
+# ARCHIVOS DE PRESENTACIÓN Y DIAGRAMAS TEMPORALES
+# ============================================================================
+presentacion_*.html
+dashboard.html
+dashpanel.html
+diagrama_*.png
+diagrama_*.jpg
+
+# ============================================================================
+# ARCHIVOS DE CONTRATOS Y DOCUMENTOS SENSIBLES
+# ============================================================================
+CONTRATO*.pdf
+Propuesta*.pdf
+*.docx
+*.doc
+
+# ============================================================================
+# ARCHIVOS DE PLAYWRIGHT Y TESTING
+# ============================================================================
+playwright-report/
+test-results/
+correspondencia/tests/e2e/.auth/
+playwright/.cache/
+
+# ============================================================================
+# ARCHIVOS ZIP Y COMPRIMIDOS
+# ============================================================================
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# ============================================================================
+# MIGRACIONES - MANTENER (normalmente SÍ se deben subir)
+# ============================================================================
+# Las migraciones SÍ se suben, no las ignores
+# */migrations/

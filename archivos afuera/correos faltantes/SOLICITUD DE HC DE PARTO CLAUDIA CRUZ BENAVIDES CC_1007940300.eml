@@ -1,0 +1,283 @@
+Delivered-To: correspondencia@esehospitaldelsarare.gov.co
+Received: by 2002:a05:6402:a398:b0:68d:cac6:200c with SMTP id x24csp322282edf;
+        Thu, 4 Jun 2026 06:54:14 -0700 (PDT)
+X-Forwarded-Encrypted: i=5; AFNElJ+No8pFuBWfeDQlezeoA/CFYshAaSQ2FPqZabyB3im41imOXJLpn7hwAAucUa3n+j8oJf8Ie22bcTNpV1OLmtg=@esehospitaldelsarare.gov.co
+X-Received: by 2002:a17:907:3c8e:b0:beb:632a:eea9 with SMTP id a640c23a62f3a-bf0acf1a5fbmr424017266b.21.1780581254171;
+        Thu, 04 Jun 2026 06:54:14 -0700 (PDT)
+ARC-Seal: i=4; a=rsa-sha256; t=1780581254; cv=pass;
+        d=google.com; s=arc-20240605;
+        b=SsOLdmG69Sx/JPQKJ5g1+oQXqc3zRUdKV2QWZEnNDVJyvXZ53bV7VB7w/h4KBMKVii
+         DD4sYuHvaCVeaWh/kVjG6sJsXNNH8ooW//3O+qPXchZAAIedo1/jwmpMIk1GQKLURFTJ
+         D2ynCnJgVUIrbI0Si2452A63mi78L96SwRTwxxp/pk/XaEcV63g7xLEjsBsn2eG0J2R2
+         UXer0wPeSyobuawSktjrKuhFiojslvmiijoJb8RTHfcDYlSjeVlaSwTwDKohsdotHJu4
+         Y7GJd+KSljonuEUmW3I9fuDoaBU3+8YjtCmrF48elCx+mDSEH+cWN+PVxUErmbtddURU
+         lEJg==
+ARC-Message-Signature: i=4; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=to:subject:message-id:date:from:in-reply-to:references:mime-version
+         :dkim-signature:delivered-to;
+        bh=nycTGhvdFwGlhPiyKhTvabDY1O81xdSqgSkpWY2okz8=;
+        fh=TjV/7o1CeDsi8uwy7GX6STjicWPtBlLDIXI2caIoW+Y=;
+        b=Pvu1dRDNukbh5VUFHewtH81CpbsO5Kya24+iJzdKohQ/1+tJ57QGeksbyy3bI+7CsN
+         gxs+iH7oBtN2AFk74Hra9H3NzOBimA8mQs0WoS+xWHT5Sd7Ihx7hZm+A7rgO6slG/wrt
+         aix4d9GINQbjsqFobnF9Bf2+kMagvdIPrQEDqlYIrh1sf+hU6k3EnC4/xCAvozcqPttx
+         MiitKl5GHm+I9QLabSLMzVrzSWD1alvDOV1jBhTBVx6t+jsl6aUqq7gM5w6qQ+vJcNMe
+         9bOawVmYKIun6mMyBMy0hGErScfkzinJzqrPSZ5TSeFAr+BM1wTQoqyt7YO+nBfqa9g2
+         04gA==;
+        dara=google.com
+ARC-Authentication-Results: i=4; mx.google.com;
+       dkim=pass header.i=@gmail.com header.s=20251104 header.b=NW0vx2uh;
+       arc=pass (i=3 spf=pass spfdomain=gmail.com dkim=pass dkdomain=gmail.com dmarc=pass fromdomain=gmail.com);
+       spf=pass (google.com: domain of correspondenciaesesarare+caf_=correspondencia=esehospitaldelsarare.gov.co@gmail.com designates 209.85.220.41 as permitted sender) smtp.mailfrom="correspondenciaesesarare+caf_=correspondencia=esehospitaldelsarare.gov.co@gmail.com";
+       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com;
+       dara=neutral header.i=@esehospitaldelsarare.gov.co
+Return-Path: <correspondenciaesesarare+caf_=correspondencia=esehospitaldelsarare.gov.co@gmail.com>
+Received: from mail-sor-f41.google.com (mail-sor-f41.google.com. [209.85.220.41])
+        by mx.google.com with SMTPS id 4fb4d7f45d1cf-68e65b52945sor1360681a12.11.2026.06.04.06.54.14
+        for <correspondencia@esehospitaldelsarare.gov.co>
+        (Google Transport Security);
+        Thu, 04 Jun 2026 06:54:14 -0700 (PDT)
+Received-SPF: pass (google.com: domain of correspondenciaesesarare+caf_=correspondencia=esehospitaldelsarare.gov.co@gmail.com designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;
+Authentication-Results: mx.google.com;
+       dkim=pass header.i=@gmail.com header.s=20251104 header.b=NW0vx2uh;
+       arc=pass (i=3 spf=pass spfdomain=gmail.com dkim=pass dkdomain=gmail.com dmarc=pass fromdomain=gmail.com);
+       spf=pass (google.com: domain of correspondenciaesesarare+caf_=correspondencia=esehospitaldelsarare.gov.co@gmail.com designates 209.85.220.41 as permitted sender) smtp.mailfrom="correspondenciaesesarare+caf_=correspondencia=esehospitaldelsarare.gov.co@gmail.com";
+       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com;
+       dara=neutral header.i=@esehospitaldelsarare.gov.co
+ARC-Seal: i=3; a=rsa-sha256; t=1780581254; cv=pass;
+        d=google.com; s=arc-20240605;
+        b=Y6y7oCAItjS+vMcMpc4QLXUMcwVVfjcVHVGA9QyuWqZjIoopYKtZaocdvo2L/89Tsc
+         xPhgcNrPfeK4llTLfYJmyhU+Omqo48jqTzsArMSI8YTYrcTU4tXw5L/Tu0t3+1wdCHca
+         xuEfjBUaz3JeNFByHpTzxhUsNWLq0u0VVFdD/MbkxWFqMjcupRAq1gFngcphNKN8DIYM
+         AMHb49SCNRwqKYEyA2D+NMNGx/8b5UdKnwL3hK/qGFmYyv7DDxf0LfTcfzrWUsrGGrp6
+         NMWaNoID0iAg0AMDe7aQhnAQNDdSD6P2UJ3SkgHktpWufXvPUNNJgHOQPoqqt9ETKKmd
+         AbMA==
+ARC-Message-Signature: i=3; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=to:subject:message-id:date:from:in-reply-to:references:mime-version
+         :dkim-signature:delivered-to;
+        bh=nycTGhvdFwGlhPiyKhTvabDY1O81xdSqgSkpWY2okz8=;
+        fh=TjV/7o1CeDsi8uwy7GX6STjicWPtBlLDIXI2caIoW+Y=;
+        b=lOp3QCyG5hLtQLXRYPl3yhVIoEq/nM4wDuspE5NHM65OYwCQmBgXCZ3pZhBTrt25PW
+         iwCM9NvNLcmaCM3trTfhpVa24GA2hYbAvtxxDbl5xtlVZXiRQqZeVQ9UYJ1W8JTDDWCi
+         /s1NCnvuzec9EH8Hnipk5KUPj9QYHFsCYyRDsbLVN0UeYuMaYc9Hc7XXEfLBFMuQZff5
+         eKz8plEIaIhgxinzIQKXbWgkIt9aQD4VbIWQAieSkki1bd6ECm3GV+bzprIgCagt0CdK
+         rjhBZdmYjcmWGmYbj6q6CKbi5BbWNtH0KRgaB5gJTpQRqJkCXGrgxSKZcc8x8bJAsSbi
+         J8yQ==;
+        darn=esehospitaldelsarare.gov.co
+ARC-Authentication-Results: i=3; mx.google.com;
+       dkim=pass header.i=@gmail.com header.s=20251104 header.b=NW0vx2uh;
+       arc=pass (i=1);
+       spf=pass (google.com: domain of unidadepidemiologica.esesarare@gmail.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=unidadepidemiologica.esesarare@gmail.com;
+       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com;
+       dara=pass header.i=@gmail.com
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=1e100.net; s=20251104; t=1780581254; x=1781186054;
+        h=to:subject:message-id:date:from:in-reply-to:references:mime-version
+         :x-gm-gg:dkim-signature:delivered-to:x-forwarded-for:x-forwarded-to
+         :x-gm-message-state:from:to:cc:subject:date:message-id:reply-to;
+        bh=nycTGhvdFwGlhPiyKhTvabDY1O81xdSqgSkpWY2okz8=;
+        b=H6IaR3cS5XZ3+FEHKVTqGR2Km1lssRWm3svegK8Zt/7jtdmf+Y1mjFtz8lkkRG6T0S
+         FPewiZ8LDIOAL7+SGB1Ijpm9OlCMICz9YDeXXZk8ACplx0wJSGJe3dFs4cUQf7fx4cux
+         LRJh7SJQuoOc3fi4/FA34WNTuJ05wpf5ygVy01DrtIpvseejbA/2LKt0ytH7h8RInVFw
+         2fnRAM5dJokSOl0aAJfJQS93Wp/1i2LnqUZBaPbivKsbB7pSZYsnpPrZhDpKmUPMJXm0
+         3rR6Et2WsogXqLX8ujMbEfCG2cEFKI5gt/7KdTm4qHvtMshXhEznyAPu8KRPlE+ZTwRH
+         MWCw==
+X-Forwarded-Encrypted: i=3; AFNElJ8afGPmeRHxPfG809fKyBTQZuUGCqbLxQ9fONuFe9B9ZmP1I9UUM88vOkj81KRz8YitzNmsEo5lg6xvhn8OB1c=@esehospitaldelsarare.gov.co
+X-Gm-Message-State: AOJu0YyCDwLFQA7cTrwbRG9QT7A0B9c/JPEvdr2AQX11hHf36+fBfKFJ
+	xV1rp5Z83M+6TszKOYxe0VzspRsJZ8WsVGhLOK0v13uFnnTVkfDB9IlZEu69M2spLDV8/aiuseG
+	RLXLKUNRBDMsVAN6cckO1ISUir5tWKkt2ZWeRsEQUhhggY+T2pjabY05XX4SvHg==
+X-Received: by 2002:a05:6402:43cf:b0:688:12fd:789c with SMTP id 4fb4d7f45d1cf-68e70412737mr4081003a12.9.1780581253458;
+        Thu, 04 Jun 2026 06:54:13 -0700 (PDT)
+X-Forwarded-To: correspondencia@esehospitaldelsarare.gov.co
+X-Forwarded-For: correspondenciaesesarare@gmail.com correspondencia@esehospitaldelsarare.gov.co
+Delivered-To: correspondenciaesesarare@gmail.com
+Received: by 2002:a05:6f02:cb04:b0:121:a78d:816b with SMTP id h4csp297139rch;
+        Thu, 4 Jun 2026 06:54:12 -0700 (PDT)
+X-Received: by 2002:a05:6402:268c:b0:67f:7e9b:afe8 with SMTP id 4fb4d7f45d1cf-68e6f97c207mr3893212a12.6.1780581252091;
+        Thu, 04 Jun 2026 06:54:12 -0700 (PDT)
+ARC-Seal: i=2; a=rsa-sha256; t=1780581252; cv=pass;
+        d=google.com; s=arc-20240605;
+        b=DtK3SIZj9IUyIS81GDnyVL2MMvDTa66atvgA9c+v9FV+lu6P9A3GCUX+olV2JkCpoZ
+         a6POnEKtTINpXYGblkbix0/rnjSHmuG7m3r3Wp9Abg37x8Wr0nR7jXqkSbCpZF1VTl0z
+         jL6RMCQnCObz1eUbcZsP2qGiDCtjaWDB5kEIlUfaEOvWmzj9YW99uPhmn+BKdldykYXr
+         09R1894qDA2sjy57myqUkImFJf4Ws8mAAWKGM/fzz4yVNYZVV7v/AyBLkzEQUzjP3WrQ
+         PPgf+RKFnm49/G5eLgcwPMNHgrA9I/jPNsA61tiGNtL20Fb1VFpo7APh0KObEQYuygD8
+         dEXw==
+ARC-Message-Signature: i=2; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=to:subject:message-id:date:from:in-reply-to:references:mime-version
+         :dkim-signature;
+        bh=nycTGhvdFwGlhPiyKhTvabDY1O81xdSqgSkpWY2okz8=;
+        fh=YrdHamsLhETz4Q+/idInaLE3Vp1GHYwFWSmNUT/NO+c=;
+        b=ZFAp5KV/q2KGhqNtzhfyoqeO+ys7usgNNPWJsdALv9aFFOs07KqkDtrG1VtprjuUiY
+         I0fDKQW+3c8hW2DyhNfmHiRrbkCYUncv2DQnGB0EzLF/VeRl89HyvTEyQh/IcQDSRzxf
+         Vlk/gQYhnAn05GQVoiP+s575tadqVmNYaAzZNL8w5Sd9WvVrQwVRUYR2GbLzTws2H2VG
+         rhjet2sB9zLwvNDZJ1n5iJtJZnU6BazeiTV1jBo0Kjv7mfaBNPmxeaVC14H96u3YCpD7
+         1aKmf5KB5mr704qn0CQDxCRYTOtfu/BFFCG5iHmKP1ilZdtY/EpXV/1sAeA3PyoQqhSb
+         yF3g==;
+        dara=google.com
+ARC-Authentication-Results: i=2; mx.google.com;
+       dkim=pass header.i=@gmail.com header.s=20251104 header.b=NW0vx2uh;
+       arc=pass (i=1);
+       spf=pass (google.com: domain of unidadepidemiologica.esesarare@gmail.com designates 209.85.220.41 as permitted sender) smtp.mailfrom=unidadepidemiologica.esesarare@gmail.com;
+       dmarc=pass (p=NONE sp=QUARANTINE dis=NONE) header.from=gmail.com;
+       dara=pass header.i=@gmail.com
+Return-Path: <unidadepidemiologica.esesarare@gmail.com>
+Received: from mail-sor-f41.google.com (mail-sor-f41.google.com. [209.85.220.41])
+        by mx.google.com with SMTPS id 4fb4d7f45d1cf-68e65c55b20sor1320251a12.12.2026.06.04.06.54.11
+        for <correspondenciaesesarare@gmail.com>
+        (Google Transport Security);
+        Thu, 04 Jun 2026 06:54:12 -0700 (PDT)
+Received-SPF: pass (google.com: domain of unidadepidemiologica.esesarare@gmail.com designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41;
+ARC-Seal: i=1; a=rsa-sha256; t=1780581251; cv=none;
+        d=google.com; s=arc-20240605;
+        b=UuP8Q2+3lztJUTX1hhHERxHE+cxfR3aosuFljk7n4SabaWAEryauLXOZKuqLjQKHeY
+         orclEahX2rrm8Wo7UXmcUKQnfkapXzAE5bVxBDdpTKT5n6GULFiJi1uB5rG+i6iqQPCm
+         GpWNk/p4YRH1Ucwp3N7lOk4wCRCUDfDdMq3gn2TA+F44AcFD+YeG0Wc4TFuRSAD+4a0y
+         En25L+5BHO02GeTv59Cp9lueUqfsMOWIgyjmCKL0bmaTywn3UTgvxxW11qB1uN9j36as
+         bLrLZRCluzYw9sHXAFiWkJzz5gm6oFh/5KNktO7FqTQYH3CW+wqZgkTOAbkUZSEeZd5p
+         TCEQ==
+ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=google.com; s=arc-20240605;
+        h=to:subject:message-id:date:from:in-reply-to:references:mime-version
+         :dkim-signature;
+        bh=nycTGhvdFwGlhPiyKhTvabDY1O81xdSqgSkpWY2okz8=;
+        fh=YrdHamsLhETz4Q+/idInaLE3Vp1GHYwFWSmNUT/NO+c=;
+        b=AtW9kiO83Z90dx+q72o+vMe9s6RrBp7BQ2fejDdI0u3J307VFGRdzYKD7iaEz5MpT1
+         uID/Gzh9oyzT01jH2b0qt03dIC+51fsJWn3xVHw0YT/oXVB7SBBAoUnP0r4Xe4O2Xlhk
+         DsWyij3O9sFkhRVveqELEQJU8B6lXPprXuVRrhNsicgw6g/kNAkNPe9zK3bG+nPtdDcM
+         7+R9YDQgyCQHHs2/vPhyb0ghLkFc0OR6AHMB3FbM0Vwtf+ZvyMCfLDMq5MVp0vIuktF9
+         gU/QQrGIebc6DykwAXZvnTTxYhft3VddmPrGgjwQdaL/BnFakkAWE/OiL0ozHs1RKr+3
+         TXyA==;
+        dara=google.com
+ARC-Authentication-Results: i=1; mx.google.com; arc=none
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20251104; t=1780581251; x=1781186051; dara=google.com;
+        h=to:subject:message-id:date:from:in-reply-to:references:mime-version
+         :from:to:cc:subject:date:message-id:reply-to;
+        bh=nycTGhvdFwGlhPiyKhTvabDY1O81xdSqgSkpWY2okz8=;
+        b=NW0vx2uhdLJCZF1uJJNqtiLbouumTFn2NOW0Hn6Vc/D3WA9zl306/0fj59AqxFnhsP
+         eQPeNcuITKqiPNjbcRLHlHsY5KpSeknD9yqCGbJ9kCL7jxy6aThHUXeSh591X9PkNsWC
+         eD9gmNSv4SG7G3JLCDyD2+eNeZ5KOf5BiqiwFdifbdwfsvJal1dNSB66UXG+HGgU/x/n
+         m8cAUqDoJCofQSCAM3wifXKoxSycNhbWEEPurWD3lwkbDRr+9yEiMnLxb03wku+wlssE
+         D9aN+Pz0EL2hvI747F+f/buf1qJhSiEE68v1f9I0gElPAUqr4zL2zcVGqhULhB4CVZJ8
+         1gnA==
+X-Gm-Gg: Acq92OE0qcl01dBMhNB9EYAsRZZVZ1jqhHWV+J2+VWXniR/Hf4zvQr9SB86nYAh2/QC
+	om3R3Q3WD/059yj079rZChMFXIntRomaMqDq3VxabZ/Z39gT48sLFkuoNRXKwopskDVCOhP84IJ
+	0rGxXvA9zbVAtSDAMmBO6JiBqKRMhdoRBme/UCAW0rifzQ6/cmbkmwrU1tCoqaUBrVy93/0sAwc
+	nvfNQFF0ftOjleLbqyvYc/ZZai84nNK/hK6G/9whptcHiT7lYhCiXlB/vNYVQ0/Nm3Ph00MeM5N
+	a2c3zOEByLNneL1F/VY3q3nTfBtVjpiy3UDeVRv3jruMaxyG5Q==
+X-Received: by 2002:a05:6402:3485:b0:673:7412:1152 with SMTP id
+ 4fb4d7f45d1cf-68e716ce7b4mr3766862a12.21.1780581251302; Thu, 04 Jun 2026
+ 06:54:11 -0700 (PDT)
+MIME-Version: 1.0
+References: <CAEQNawJvRn38XJ9rZdmrVu4fh0jiowEg3fzxz0Rz53NYCCgUEA@mail.gmail.com>
+In-Reply-To: <CAEQNawJvRn38XJ9rZdmrVu4fh0jiowEg3fzxz0Rz53NYCCgUEA@mail.gmail.com>
+From: =?UTF-8?Q?Unidad_de_Vigilancia_Epidemiol=C3=B3gica?= <unidadepidemiologica.esesarare@gmail.com>
+Date: Thu, 4 Jun 2026 08:54:57 -0500
+X-Gm-Features: AVHnY4L_vBI8PTEzVJn53Cv_GMymbznU4OBXv_wOXwXaiXq5AL1YuPz2Zhn9BJA
+Message-ID: <CA+gONG15hgAF4RXXeP_0oogOiR96aETvSc+yZf=XytGMiyMgow@mail.gmail.com>
+Subject: Fwd: SOLICITUD DE HC DE PARTO CLAUDIA CRUZ BENAVIDES CC:1007940300
+To: correspondenciahospitaldelsarare esesarare <correspondenciaesesarare@gmail.com>
+Content-Type: multipart/alternative; boundary="000000000000fa48e506536de057"
+
+--000000000000fa48e506536de057
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+*AVISO DE CONFIDENCIALIDAD:* "Este mensaje y sus archivos adjuntos van
+dirigidos exclusivamente a su destinatario pudiendo contener informaci=C3=
+=B3n
+confidencial sometida a secreto profesional. No est=C3=A1 permitida su
+reproducci=C3=B3n o distribuci=C3=B3n sin la autorizaci=C3=B3n expresa del =
+Hospital del
+Sarare E.S.E. Si usted no es el destinatario final, por favor elim=C3=ADnel=
+o e
+inf=C3=B3rmenos por esta v=C3=ADa.
+De acuerdo con la Ley Estatutaria 1581 de 2012 de Protecci=C3=B3n de Datos =
+y con
+el Decreto 1074 de 2015, el titular presta su consentimiento para que sus
+datos, facilitados voluntariamente, pasen a formar parte de una base de
+datos, cuyo responsable es el Hospital del Sarare E.S.E, cuyas finalidades
+son: la gesti=C3=B3n administrativa de la entidad, as=C3=AD como la gesti=
+=C3=B3n de
+car=C3=A1cter comercial y el env=C3=ADo de comunicaciones comerciales sobre=
+ nuestros
+productos y/o servicios.
+Puede usted ejercitar los derechos de acceso, correcci=C3=B3n, supresi=C3=
+=B3n,
+revocaci=C3=B3n o reclamo por infracci=C3=B3n sobre sus datos, mediante esc=
+rito
+dirigido al Hospital del Sarare E.S.E, a la direcci=C3=B3n de correo
+correspondencia@hospitaldelsarare.gov.co, indicando en el asunto el derecho
+que desea ejercitar".
+
+
+---------- Forwarded message ---------
+De: SALUD PUBLICA JORDAN TAME ARAUCA <saludpublicac.d.s.j.d.j.c@gmail.com>
+Date: jue, 4 jun 2026 a la(s) 7:36=E2=80=AFa.m.
+Subject: SOLICITUD DE HC DE PARTO CLAUDIA CRUZ BENAVIDES CC:1007940300
+To: Unidad de Vigilancia Epidemiol=C3=B3gica <
+unidadepidemiologica.esesarare@gmail.com>
+
+
+Buenos dias por medio de la presente permito solicitar la historia cl=C3=AD=
+nica
+de parto de la paciente Claudia Cruz Benavides identificada con la
+CC:1007940300 *Motiv=C3=B3 cerrar caso de s=C3=ADfilis gestacional con el s=
+istema de
+SIGMAP-Agradezco pronta respuesta.*
+
+--000000000000fa48e506536de057
+Content-Type: text/html; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+<div dir=3D"ltr"><div><br clear=3D"all"></div><div><div dir=3D"ltr" class=
+=3D"gmail_signature" data-smartmail=3D"gmail_signature"><div dir=3D"ltr"><d=
+iv style=3D"color:rgb(34,34,34)"><b style=3D"text-align:justify"><i><span s=
+tyle=3D"font-family:Arial,sans-serif;background-image:initial;background-po=
+sition:initial;background-repeat:initial"><br></span></i></b></div><div sty=
+le=3D"color:rgb(34,34,34)"><b style=3D"text-align:justify"><i><span style=
+=3D"font-family:Arial,sans-serif;background-image:initial;background-positi=
+on:initial;background-repeat:initial"><img src=3D"https://ci3.googleusercon=
+tent.com/mail-sig/AIorK4ydFFofVPVqqwvqwxXuKJA2g1PhTfz8Ez-begrkHQhOqRJ2yj4yj=
+-8VERx-n1pbzebDa0z9axx-JBRa" width=3D"420" height=3D"143">=C2=A0 =C2=A0=C2=
+=A0</span></i></b></div><div style=3D"color:rgb(34,34,34)"><b style=3D"text=
+-align:justify"><i><span style=3D"font-family:Arial,sans-serif;background-i=
+mage:initial;background-position:initial;background-repeat:initial"><br></s=
+pan></i></b></div><div style=3D"color:rgb(34,34,34)"><b style=3D"text-align=
+:justify"><i><span style=3D"font-family:Arial,sans-serif;background-image:i=
+nitial;background-position:initial;background-repeat:initial">AVISO DE CONF=
+IDENCIALIDAD:</span></i></b>=C2=A0&quot;Este mensaje y sus archivos adjunto=
+s van dirigidos exclusivamente a su destinatario pudiendo contener informac=
+i=C3=B3n confidencial sometida a secreto profesional. No est=C3=A1 permitid=
+a su reproducci=C3=B3n o distribuci=C3=B3n sin la autorizaci=C3=B3n expresa=
+ del Hospital del Sarare E.S.E. Si usted no es el destinatario final, por f=
+avor elim=C3=ADnelo e inf=C3=B3rmenos por esta v=C3=ADa.</div><div style=3D=
+"color:rgb(34,34,34)">De acuerdo con la Ley Estatutaria 1581 de 2012 de Pro=
+tecci=C3=B3n de Datos y con el Decreto 1074 de 2015, el titular presta su c=
+onsentimiento para que sus datos, facilitados voluntariamente, pasen a form=
+ar parte de una base de datos, cuyo responsable es el Hospital del Sarare E=
+.S.E, cuyas finalidades son: la gesti=C3=B3n administrativa de la entidad, =
+as=C3=AD como la gesti=C3=B3n de car=C3=A1cter comercial y el env=C3=ADo de=
+ comunicaciones comerciales sobre nuestros productos y/o servicios.</div><d=
+iv style=3D"color:rgb(34,34,34)">Puede usted ejercitar los derechos de acce=
+so, correcci=C3=B3n, supresi=C3=B3n, revocaci=C3=B3n o reclamo por infracci=
+=C3=B3n sobre sus datos, mediante escrito dirigido al Hospital del Sarare E=
+.S.E, a la direcci=C3=B3n de correo=C2=A0<a href=3D"mailto:correspondencia@=
+hospitaldelsarare.gov.co" style=3D"color:rgb(17,85,204)" target=3D"_blank">=
+correspondencia@hospitaldelsarare.gov.co</a>, indicando en el asunto el der=
+echo que desea ejercitar&quot;.</div></div></div></div><br><br><div class=
+=3D"gmail_quote gmail_quote_container"><div dir=3D"ltr" class=3D"gmail_attr=
+">---------- Forwarded message ---------<br>De: <strong class=3D"gmail_send=
+ername" dir=3D"auto">SALUD PUBLICA JORDAN TAME ARAUCA</strong> <span dir=3D=
+"auto">&lt;<a href=3D"mailto:saludpublicac.d.s.j.d.j.c@gmail.com">saludpubl=
+icac.d.s.j.d.j.c@gmail.com</a>&gt;</span><br>Date: jue, 4 jun 2026 a la(s) =
+7:36=E2=80=AFa.m.<br>Subject: SOLICITUD DE HC DE PARTO CLAUDIA CRUZ BENAVID=
+ES CC:1007940300<br>To: Unidad de Vigilancia Epidemiol=C3=B3gica &lt;<a hre=
+f=3D"mailto:unidadepidemiologica.esesarare@gmail.com">unidadepidemiologica.=
+esesarare@gmail.com</a>&gt;<br></div><br><br><div dir=3D"ltr">Buenos dias p=
+or medio de la presente permito solicitar la historia cl=C3=ADnica de parto=
+ de la paciente Claudia Cruz Benavides identificada con la CC:1007940300 <b=
+>Motiv=C3=B3 cerrar caso de s=C3=ADfilis gestacional con el sistema de SIGM=
+AP-Agradezco=C2=A0pronta respuesta.</b></div>
+</div></div>
+
+--000000000000fa48e506536de057--

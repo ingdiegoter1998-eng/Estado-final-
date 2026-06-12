@@ -1,0 +1,506 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static humanize %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rebotes-page {
+        --rb-surface: #ffffff;
+        --rb-surface-muted: #f8fafc;
+        --rb-border: #e2e8f0;
+        --rb-muted: #64748b;
+        --rb-title: #0f172a;
+        --rb-primary: #0f6c7a;
+        --rb-primary-rgb: 15, 108, 122;
+        --rb-shadow: 0 18px 40px -26px rgba(15, 23, 42, 0.28);
+        --rb-danger: #dc2626;
+        --rb-danger-rgb: 220, 38, 38;
+    }
+
+    .container-fluid.rebotes-page {
+        max-width: none;
+        width: 100%;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .main-content:has(.rebotes-page) {
+        padding: 0;
+    }
+
+    .rebotes-page .rb-shell {
+        width: 95%;
+        margin: 0 auto 2rem;
+    }
+
+    /* ── Hero ── */
+    .rebotes-page .rb-hero {
+        padding: 1.8rem 1.9rem;
+        margin-bottom: 1.5rem;
+        border-radius: 28px;
+        border: 1px solid rgba(var(--rb-danger-rgb), 0.12);
+        background: linear-gradient(180deg, #ffffff 0%, rgba(var(--rb-danger-rgb), 0.04) 100%);
+        box-shadow: var(--rb-shadow);
+    }
+
+    .rebotes-page .rb-breadcrumb {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.45rem;
+        margin-bottom: 0.85rem;
+        color: var(--rb-muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+
+    .rebotes-page .rb-hero h2 {
+        margin: 0;
+        color: var(--rb-title);
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+    }
+
+    .rebotes-page .rb-hero p {
+        margin: 0.55rem 0 0;
+        color: var(--rb-muted);
+        font-size: 0.95rem;
+        max-width: 72ch;
+    }
+
+    .rebotes-page .rb-hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin-top: 1rem;
+    }
+
+    .rebotes-page .rb-meta-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.5rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        background: rgba(var(--rb-danger-rgb), 0.06);
+        border: 1px solid rgba(var(--rb-danger-rgb), 0.1);
+        color: #334155;
+    }
+
+    .rebotes-page .rb-inline-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.35rem 0.7rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 800;
+    }
+
+    /* ── Cards ── */
+    .rebotes-page .card {
+        border: 1px solid var(--rb-border);
+        border-radius: 24px;
+        overflow: hidden;
+        background: var(--rb-surface);
+        box-shadow: var(--rb-shadow);
+    }
+
+    .rebotes-page .card-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--rb-border);
+        background: linear-gradient(180deg, #ffffff 0%, var(--rb-surface-muted) 100%);
+        color: var(--rb-title);
+        font-size: 0.92rem;
+        font-weight: 800;
+    }
+
+    .rebotes-page .card-body {
+        padding: 1.35rem;
+    }
+
+    .rebotes-page .rb-section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--rb-title);
+    }
+
+    .rebotes-page .rb-section-title i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 12px;
+        background: rgba(var(--rb-danger-rgb), 0.1);
+        color: var(--rb-danger);
+        font-size: 1rem;
+    }
+
+    .rebotes-page .rb-section-link {
+        color: var(--rb-primary);
+        font-size: 0.76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-decoration: none;
+    }
+
+    /* ── Alert soporte ── */
+    .rebotes-page .rb-support-alert {
+        border: 1px solid rgba(var(--rb-danger-rgb), 0.15);
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(254, 242, 242, 0.96), rgba(255, 251, 235, 0.96));
+        padding: 1.15rem 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .rebotes-page .rb-support-alert strong {
+        color: #991b1b;
+        font-size: 0.92rem;
+    }
+
+    .rebotes-page .rb-support-alert p {
+        margin: 0.4rem 0 0;
+        font-size: 0.86rem;
+        color: #78350f;
+        line-height: 1.55;
+    }
+
+    /* ── Table ── */
+    .rebotes-page .table thead th {
+        border-bottom: 1px solid var(--rb-border);
+        color: #475569;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .rebotes-page .table > :not(caption) > * > * {
+        padding-top: 0.85rem;
+        padding-bottom: 0.85rem;
+        vertical-align: middle;
+    }
+
+    .rebotes-page .row-rebote {
+        background: #fffbeb;
+    }
+
+    .rebotes-page .rb-detail-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.6rem;
+        border-radius: 10px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--rb-primary);
+        background: rgba(var(--rb-primary-rgb), 0.06);
+        border: 1px solid rgba(var(--rb-primary-rgb), 0.1);
+        text-decoration: none;
+        transition: background 0.15s;
+    }
+
+    .rebotes-page .rb-detail-link:hover {
+        background: rgba(var(--rb-primary-rgb), 0.12);
+        color: var(--rb-primary);
+    }
+
+    /* ── OK Box ── */
+    .rebotes-page .rb-ok-box {
+        border: 1px solid rgba(25, 135, 84, 0.18);
+        background: linear-gradient(180deg, rgba(234, 250, 242, 0.96), rgba(246, 252, 248, 0.96));
+        color: #166534;
+        font-weight: 700;
+        padding: 1.5rem;
+        border-radius: 22px;
+        text-align: center;
+        font-size: 0.95rem;
+    }
+
+    /* ── CTA back ── */
+    .rebotes-page .rb-back-cta {
+        margin-top: 1rem;
+        min-height: 48px;
+        border-radius: 16px;
+        background: rgba(var(--rb-primary-rgb), 0.09);
+        border: 1px solid rgba(var(--rb-primary-rgb), 0.12);
+        color: var(--rb-primary);
+        width: 100%;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
+
+    .rebotes-page .rb-back-cta:hover {
+        background: rgba(var(--rb-primary-rgb), 0.15);
+        color: var(--rb-primary);
+    }
+
+    /* ── Overline / value ── */
+    .rebotes-page .rb-overline {
+        margin-bottom: 0.38rem;
+        color: #94a3b8;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .rebotes-page .rb-value {
+        color: var(--rb-title);
+        font-size: 0.96rem;
+        font-weight: 700;
+        line-height: 1.5;
+        word-break: break-word;
+    }
+
+    /* ── KPI mini grid ── */
+    .rebotes-page .rb-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .rebotes-page .rb-kpi-item {
+        padding: 1rem 1.05rem;
+        border: 1px solid #edf2f7;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        text-align: center;
+    }
+
+    .rebotes-page .rb-kpi-big {
+        font-size: 1.6rem;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+
+    /* ── Pagination ── */
+    .rebotes-page .pagination {
+        gap: 0.3rem;
+    }
+
+    .rebotes-page .page-link {
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        border: 1px solid var(--rb-border);
+    }
+
+    .rebotes-page .page-item.active .page-link {
+        background: var(--rb-primary);
+        border-color: var(--rb-primary);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 1199.98px) {
+        .rebotes-page .rb-kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .rebotes-page .rb-hero {
+            padding: 1.4rem;
+            border-radius: 22px;
+        }
+        .rebotes-page .rb-hero h2 {
+            font-size: 1.55rem;
+        }
+        .rebotes-page .rb-kpi-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 rebotes-page">
+    <div class="rb-shell">
+
+        {# ── Hero ── #}
+        <div class="rb-hero">
+            <div class="rb-breadcrumb">
+                <i class="bi bi-envelope-x"></i>
+                <span>Panel de correspondencia</span>
+                <i class="bi bi-dot"></i>
+                <span>Rebotes de envío</span>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <h2>Mis rebotes de envío</h2>
+                {% if total_rebotes > 0 %}
+                    <span class="rb-inline-pill text-danger-emphasis bg-danger-subtle">
+                        <i class="bi bi-exclamation-triangle-fill"></i> {{ total_rebotes }} rebote{{ total_rebotes|pluralize:"s" }}
+                    </span>
+                {% endif %}
+            </div>
+            <p>Aquí puedes consultar los correos de correspondencia saliente que fueron rechazados por el servidor de destino. Si ves rebotes activos, contacta a soporte técnico para verificar la dirección del destinatario.</p>
+            <div class="rb-hero-meta">
+                <span class="rb-meta-chip"><i class="bi bi-arrow-repeat"></i>{{ total_rebotes }} rebote{{ total_rebotes|pluralize:"s" }} total{{ total_rebotes|pluralize:"es" }}</span>
+                <span class="rb-meta-chip"><i class="bi bi-send-x"></i>{{ total_salidas_afectadas }} salida{{ total_salidas_afectadas|pluralize:"s" }} afectada{{ total_salidas_afectadas|pluralize:"s" }}</span>
+            </div>
+        </div>
+
+        {# ── Alerta de soporte ── #}
+        {% if total_rebotes > 0 %}
+        <div class="rb-support-alert d-flex align-items-start gap-3">
+            <i class="bi bi-headset fs-4 mt-1 text-danger"></i>
+            <div>
+                <strong><i class="bi bi-info-circle me-1"></i>¿Qué significa un rebote?</strong>
+                <p>
+                    Un rebote ocurre cuando el servidor de correo del destinatario rechaza el mensaje.
+                    Esto puede pasar porque la dirección de correo no existe, el buzón está lleno,
+                    o el servidor lo bloqueó por políticas de seguridad.
+                </p>
+                <p class="mb-0">
+                    <strong>¿Qué debo hacer?</strong> Comuníquese con soporte técnico para que verifiquen
+                    la dirección del destinatario y reintenten el envío si es necesario.
+                </p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row g-4">
+            {# ── Tabla principal ── #}
+            <div class="col-12 col-xl-8">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="rb-section-title"><i class="bi bi-envelope-x"></i> Destinatarios rebotados</h5>
+                        <span class="rb-section-link">{{ total_rebotes }} registro{{ total_rebotes|pluralize:"s" }}</span>
+                    </div>
+                    <div class="card-body">
+                        {% if rebotes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Destinatario</th>
+                                        <th>Email</th>
+                                        <th>Radicado salida</th>
+                                        <th>Fecha del rebote</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for d in rebotes %}
+                                    <tr class="row-rebote">
+                                        <td>{{ forloop.counter0|add:rebotes.start_index }}</td>
+                                        <td>
+                                            <strong>{{ d.nombre_snapshot|default:"-" }}</strong>
+                                        </td>
+                                        <td><code>{{ d.email_snapshot }}</code></td>
+                                        <td>
+                                            <span class="fw-bold">{{ d.correspondencia_salida.numero_radicado_salida|default:"—" }}</span>
+                                            {% if d.correspondencia_salida.asunto %}
+                                                <div class="text-muted small mt-1" style="max-width: 200px;">{{ d.correspondencia_salida.asunto|truncatechars:50 }}</div>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ d.ultimo_evento_at|date:"d M Y - h:i A"|default:d.fecha_envio|date:"d M Y - h:i A"|default:"-" }}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'correspondencia:detalle_respuesta_salida_errores' d.correspondencia_salida.id %}" class="rb-detail-link">
+                                                <i class="bi bi-search"></i> Ver detalle
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {# ── Paginación ── #}
+                        {% if rebotes.has_other_pages %}
+                        <nav class="mt-4" aria-label="Paginación de rebotes">
+                            <ul class="pagination justify-content-center mb-0">
+                                {% if rebotes.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ rebotes.previous_page_number }}">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                {% for num in rebotes.paginator.page_range %}
+                                    {% if rebotes.number == num %}
+                                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                    {% elif num > rebotes.number|add:"-3" and num < rebotes.number|add:"3" %}
+                                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if rebotes.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ rebotes.next_page_number }}">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+
+                        {% else %}
+                        <div class="rb-ok-box">
+                            <i class="bi bi-check-circle me-2"></i>No tienes rebotes registrados. Todos tus envíos llegaron correctamente.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {# ── Sidebar ── #}
+            <div class="col-12 col-xl-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="rb-section-title"><i class="bi bi-bar-chart"></i> Resumen</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="rb-kpi-grid">
+                            <div class="rb-kpi-item">
+                                <div class="rb-overline">Rebotes</div>
+                                <div class="rb-kpi-big text-danger">{{ total_rebotes }}</div>
+                            </div>
+                            <div class="rb-kpi-item">
+                                <div class="rb-overline">Salidas afectadas</div>
+                                <div class="rb-kpi-big text-warning">{{ total_salidas_afectadas }}</div>
+                            </div>
+                        </div>
+
+                        <div class="rb-support-alert" style="margin-bottom: 0;">
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-telephone-fill text-danger mt-1"></i>
+                                <div>
+                                    <strong style="font-size: 0.85rem;">Soporte técnico</strong>
+                                    <p class="mb-0" style="font-size: 0.82rem;">
+                                        Si tiene rebotes activos, comuníquese con el área de soporte técnico
+                                        para que verifiquen las direcciones de correo de los destinatarios
+                                        y procedan con el reenvío.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <a href="{% url 'correspondencia:dashboard_usuario' %}" class="rb-back-cta">
+                            <i class="bi bi-arrow-left-circle me-2"></i>Volver al dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

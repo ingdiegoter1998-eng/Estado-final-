@@ -1,0 +1,803 @@
+<!-- Modal para nueva comunicación interna -->
+<div class="modal fade" id="modalComunicacionInterna" tabindex="-1" aria-labelledby="modalComunicacionInternaLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" data-usuario-oficina-trd="{{ request.user.perfil.oficina.codigo_trd_comunicacion_interna|default:'' }}" data-usuario-oficina-trd-display="{{ request.user.perfil.oficina.codigo_trd_comunicacion_interna_display }}">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalComunicacionInternaLabel">
+                    <i class="bi bi-file-earmark-text-fill me-2"></i>
+                    <span id="modal-interna-titulo">Nueva Comunicación Interna</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formComunicacionInterna"
+                      method="post"
+                      enctype="multipart/form-data"
+                      data-interna-endpoint="{% url 'correspondencia:crear_comunicacion_interna_ajax' %}"
+                      data-usuarios-endpoint="{% url 'correspondencia:usuarios_por_oficina_ajax' %}"
+                      data-oficinas-endpoint="{% url 'correspondencia:oficinas_todas_interna_ajax' %}"
+                      data-procesos-endpoint="{% url 'correspondencia:procesos_todos_ajax' %}">
+                    {% csrf_token %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="interna_ciudad" class="form-label">Ciudad *</label>
+                            <input type="text" class="form-control" id="interna_ciudad" name="ciudad" value="Saravena" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="interna_fecha_documento" class="form-label">Fecha del Documento *</label>
+                            <input type="date" class="form-control" id="interna_fecha_documento" name="fecha_documento" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="interna_serie" class="form-label">Serie documental</label>
+                            <select class="form-select" id="interna_serie" name="serie">
+                                <option value="">Seleccione una serie...</option>
+                            </select>
+                            <small class="form-text text-muted">Selecciona la serie según la TRD institucional.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="interna_subserie" class="form-label">Subserie asociada</label>
+                            <select class="form-select" id="interna_subserie" name="subserie">
+                                <option value="">Seleccione una serie primero...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="interna_trd" class="form-label">Código TRD</label>
+                        <input type="text" class="form-control" id="interna_trd" name="trd" placeholder="Se autocompleta al seleccionar una subserie" readonly style="background-color: #e9ecef; cursor: not-allowed;">
+                        <small class="form-text text-muted">Usa el TRD interno de la oficina remitente. Si falta mapeo, se mostrará el aviso correspondiente.</small>
+                    </div>
+                    
+                    <!-- SECCIÓN: Remitente y Destinatario en modo respuesta -->
+                    <div id="interna_seccion_respuesta" style="display: none;">
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-reply-fill me-2"></i>
+                            <strong>Modo Respuesta:</strong> El remitente original ha sido pre-seleccionado como destinatario. 
+                            <span class="text-muted">Puede cambiar o agregar más destinatarios abajo.</span>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-person-fill me-1 text-success"></i> Remitente (Tú)
+                                </label>
+                                <div class="card border-success bg-light">
+                                    <div class="card-body py-2 px-3">
+                                        <p class="mb-0">
+                                            <strong id="respuesta_remitente_nombre">{{ request.user.get_full_name|default:request.user.username }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ request.user.perfil.oficina.nombre|default:"Sin oficina" }}</small>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-arrow-left-right me-1 text-primary"></i> Destinatario sugerido
+                                </label>
+                                <div class="card border-primary bg-light">
+                                    <div class="card-body py-2 px-3">
+                                        <div class="d-flex flex-column flex-sm-row align-items-sm-start justify-content-between gap-2">
+                                            <p class="mb-0">
+                                                <strong id="respuesta_destinatario_nombre">-</strong>
+                                                <br>
+                                                <small class="text-muted" id="respuesta_destinatario_oficina">-</small>
+                                            </p>
+                                            <button type="button" class="btn btn-sm btn-outline-primary align-self-start" id="respuesta_agregar_destinatario_btn">
+                                                <i class="bi bi-person-plus-fill me-1" id="respuesta_agregar_destinatario_icon"></i>
+                                                <span id="respuesta_agregar_destinatario_texto">Agregar como destino</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                            <div class="mb-3">
+                                <label for="interna_tipo_distribucion" class="form-label">Tipo de Distribución *</label>
+                                <select class="form-select" id="interna_tipo_distribucion" name="tipo_distribucion" required>
+                                    <option value="USUARIO">Usuario Específico</option>
+                                    <option value="OFICINA">Oficina Completa (Subproceso)</option>
+                                    <option value="PROCESO">Proceso Completo</option>
+                                    <option value="ENTIDAD">Toda la Entidad</option>
+                                </select>
+                                <small class="form-text text-muted">
+                                    <span id="interna_info_tipo_distribucion">Seleccione el tipo de distribución para esta comunicación.</span>
+                                </small>
+                                <div id="interna_warning_firma" class="alert alert-warning mt-2" style="display: none;">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    <strong>Importante:</strong> Esta comunicación requerirá que el líder suba el documento firmado digitalmente antes de ser distribuida.
+                                </div>
+                            </div>
+                            
+                            <!-- Campo: Usuario Específico - Selección Múltiple con Tarjetas -->
+                            <div id="interna_campo_usuario" class="mb-3">
+                                <label class="form-label fw-bold">Seleccionar Usuarios *</label>
+                                <p class="text-muted small mb-3">
+                                    Haga clic en las tarjetas para seleccionar múltiples usuarios. Los seleccionados aparecerán abajo.
+                                </p>
+                                
+                                <div class="row">
+                                    <!-- Columna 1: Filtros -->
+                                    <div class="col-md-4">
+                                        <div class="card border-primary">
+                                            <div class="card-header bg-primary text-white py-2">
+                                                <i class="bi bi-funnel me-1"></i> Filtros
+                                            </div>
+                                            <div class="card-body">
+                                                <!-- Filtro por oficina -->
+                                                <div class="mb-3">
+                                                    <label for="interna_destinatario_oficina_filtro" class="form-label small fw-semibold">Filtrar por Oficina</label>
+                                                    <select class="form-select form-select-sm" id="interna_destinatario_oficina_filtro">
+                                                        <option value="">Todas las oficinas</option>
+                                                    </select>
+                                                    <small class="form-text text-muted">Seleccione una oficina para ver solo sus usuarios</small>
+                                                </div>
+                                                
+                                                <!-- Botones de acción -->
+                                                <div class="d-grid gap-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="interna_btn_limpiar_destinatarios_usuarios">
+                                                        <i class="bi bi-trash me-1"></i> Limpiar Todo
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Columna 2: Tarjetas de Usuarios -->
+                                    <div class="col-md-8">
+                                        <div class="card">
+                                            <div class="card-header bg-light py-2">
+                                                <i class="bi bi-person me-1"></i> <strong>Usuarios Disponibles</strong>
+                                            </div>
+                                            <div class="card-body p-2">
+                                                <div id="interna_lista_usuarios_tarjetas" class="row g-2" style="max-height: 300px; overflow-y: auto;">
+                                                    <div class="col-12 text-center text-muted py-3">
+                                                        <i class="bi bi-info-circle me-1"></i> Seleccione una oficina para ver usuarios
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Área de Usuarios Seleccionados (Drag & Drop) -->
+                                <div class="mt-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label class="form-label fw-semibold mb-0">
+                                            <i class="bi bi-check2-square me-1"></i> Usuarios Seleccionados 
+                                            <span class="badge bg-primary" id="interna_contador_destinatarios">0</span>
+                                        </label>
+                                    </div>
+                                    <div id="interna_chips_destinatarios" class="border border-2 border-dashed rounded-3 p-3" 
+                                         style="min-height: 80px; max-height: 180px; overflow-y: auto; background-color: #f8f9fa;">
+                                        <div class="text-center text-muted py-2">
+                                            <i class="bi bi-inbox me-1"></i> No hay usuarios seleccionados
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        <i class="bi bi-arrows-move me-1"></i> Puede arrastrar los chips para reordenarlos
+                                    </small>
+                                </div>
+                                
+                                <!-- Campos ocultos para envío -->
+                                <div id="interna_hidden_destinatarios"></div>
+                            </div>
+                            
+                            <!-- Campo: Oficina Completa - Selección Múltiple con Tarjetas -->
+                            <div id="interna_campo_oficina" class="mb-3" style="display:none;">
+                                <label class="form-label fw-bold">Seleccionar Oficinas (Subprocesos) *</label>
+                                <p class="text-muted small mb-3">
+                                    Haga clic en las tarjetas para seleccionar múltiples oficinas completas. Los seleccionados aparecerán abajo.
+                                </p>
+                                
+                                <div class="row">
+                                    <!-- Columna 1: Info -->
+                                    <div class="col-md-4">
+                                        <div class="card border-info">
+                                            <div class="card-header bg-info text-white py-2">
+                                                <i class="bi bi-info-circle me-1"></i> Información
+                                            </div>
+                                            <div class="card-body">
+                                                <p class="small mb-2">
+                                                    <i class="bi bi-building-fill me-1"></i> Seleccione las oficinas completas a las que desea enviar esta comunicación.
+                                                </p>
+                                                <p class="small mb-3">
+                                                    <i class="bi bi-people-fill me-1"></i> Todos los funcionarios de las oficinas seleccionadas recibirán la comunicación.
+                                                </p>
+                                                
+                                                <!-- Botones de acción -->
+                                                <div class="d-grid gap-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="interna_btn_limpiar_oficinas">
+                                                        <i class="bi bi-trash me-1"></i> Limpiar Todo
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Columna 2: Tarjetas de Oficinas -->
+                                    <div class="col-md-8">
+                                        <div class="card">
+                                            <div class="card-header bg-light py-2">
+                                                <i class="bi bi-building me-1"></i> <strong>Oficinas Disponibles</strong>
+                                            </div>
+                                            <div class="card-body p-2">
+                                                <div id="interna_lista_oficinas_tarjetas" class="row g-2" style="max-height: 300px; overflow-y: auto;">
+                                                    <div class="col-12 text-center text-muted py-3">
+                                                        <i class="bi bi-hourglass-split me-1"></i> Cargando oficinas...
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Área de Oficinas Seleccionadas (Drag & Drop) -->
+                                <div class="mt-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <label class="form-label fw-semibold mb-0">
+                                            <i class="bi bi-check2-square me-1"></i> Oficinas Seleccionadas 
+                                            <span class="badge bg-info" id="interna_contador_oficinas">0</span>
+                                        </label>
+                                    </div>
+                                    <div id="interna_chips_oficinas" class="border border-2 border-dashed rounded-3 p-3" 
+                                         style="min-height: 80px; max-height: 180px; overflow-y: auto; background-color: #f8f9fa;">
+                                        <div class="text-center text-muted py-2">
+                                            <i class="bi bi-inbox me-1"></i> No hay oficinas seleccionadas
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        <i class="bi bi-arrows-move me-1"></i> Puede arrastrar los chips para reordenarlos
+                                    </small>
+                                </div>
+                                
+                                <!-- Campos ocultos para envío -->
+                                <div id="interna_hidden_oficinas"></div>
+                            </div>
+                            
+                            <!-- Campo: Proceso Completo -->
+                            <div id="interna_campo_proceso" class="mb-3" style="display:none;">
+                                <label for="interna_destinatario_proceso" class="form-label">Proceso *</label>
+                                <select class="form-select" id="interna_destinatario_proceso" name="destinatario_proceso">
+                                    <option value="">Seleccionar Proceso...</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Campo oculto para compatibilidad -->
+                            <input type="hidden" id="interna_es_a_toda_entidad" name="es_a_toda_entidad" value="0">
+                    <div class="mb-3">
+                        <label for="interna_asunto" class="form-label">Asunto *</label>
+                        <input type="text" class="form-control" id="interna_asunto" name="asunto" required placeholder="Asunto del Oficio">
+                    </div>
+                    <div class="mb-3">
+                        <label for="interna_cuerpo" class="form-label">Contenido de la Comunicación *</label>
+                        <textarea class="form-control" id="interna_cuerpo" name="cuerpo" rows="8" required placeholder="Escriba el contenido del oficio aquí..."></textarea>
+                    </div>
+                    
+                    <!-- Sección de Anexos -->
+                    <hr class="my-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-paperclip me-1"></i>Anexos (Opcional)
+                        </label>
+                        <p class="text-muted small mb-2">
+                            Puede adjuntar hasta 10 archivos. Formatos permitidos: PDF, Word (.doc, .docx), Excel (.xls, .xlsx). 
+                            Máximo 25MB por archivo y 25MB en total.
+                        </p>
+                        
+                        <div class="input-group mb-2">
+                            <input type="file" class="form-control" id="interna_anexos" name="anexos" 
+                                   multiple accept=".pdf,.doc,.docx,.xls,.xlsx">
+                            <button class="btn btn-outline-secondary" type="button" id="interna_btn_limpiar_anexos">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Preview de archivos seleccionados -->
+                        <div id="interna_preview_anexos" class="d-none">
+                            <div class="card border-light">
+                                <div class="card-header bg-light py-2">
+                                    <small class="fw-semibold">
+                                        <i class="bi bi-files me-1"></i>
+                                        Archivos seleccionados: <span id="interna_anexos_count">0</span>
+                                        <span class="text-muted ms-2">(<span id="interna_anexos_size">0 KB</span>)</span>
+                                    </small>
+                                </div>
+                                <ul class="list-group list-group-flush" id="interna_anexos_list" style="max-height: 150px; overflow-y: auto;">
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Alertas de validación -->
+                        <div id="interna_anexos_error" class="alert alert-danger mt-2 d-none" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <span id="interna_anexos_error_msg"></span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Cancelar</button>
+                <button type="button" class="btn btn-primary" id="interna_btn_enviar">
+                    <i class="bi bi-send me-1"></i>Crear y Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== FUNCIONALIDAD SERIE/SUBSERIE/TRD PARA COMUNICACIONES INTERNAS =====
+(function() {
+    'use strict';
+    
+    const SUBSERIES_ENDPOINT = '/registros/cargar_subseries/';
+    const SERIES_ENDPOINT = '/registros/cargar_series/';
+    const TRD_SCOPE_QUERY = 'scope=comunicacion_interna';
+    
+    function cargarSeriesComunicacion() {
+        const serieSelect = document.getElementById('interna_serie');
+        if (!serieSelect) {
+            console.warn('[TRD] No se encontró el select de serie');
+            return;
+        }
+        
+        console.log('[TRD] Cargando series...');
+        
+        fetch(`${SERIES_ENDPOINT}?${TRD_SCOPE_QUERY}`, {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('[TRD] Series recibidas:', data);
+            serieSelect.innerHTML = '<option value="">Seleccione una serie...</option>';
+            if (data && data.length > 0) {
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.nombre;
+                    option.dataset.codigoTrd = item.codigo_trd || '';  // Guardar código TRD de la serie
+                    serieSelect.appendChild(option);
+                });
+                if (data.length === 1) {
+                    serieSelect.value = String(data[0].id);
+                    cargarSubseriesComunicacion(data[0].id);
+                }
+                console.log('[TRD] Series cargadas:', data.length);
+            }
+        })
+        .catch(error => console.error('[TRD] Error cargando series:', error));
+    }
+    
+    function cargarSubseriesComunicacion(serieId) {
+        const subserieSelect = document.getElementById('interna_subserie');
+        const trdInput = document.getElementById('interna_trd');
+        
+        if (!subserieSelect) return;
+        
+        if (!serieId) {
+            subserieSelect.innerHTML = '<option value="">Seleccione una serie primero...</option>';
+            subserieSelect.disabled = true;
+            if (trdInput) trdInput.value = '';
+            return;
+        }
+        
+        subserieSelect.innerHTML = '<option value="">Cargando...</option>';
+        subserieSelect.disabled = true;
+        
+        console.log('[TRD] Cargando subseries para serie:', serieId);
+        
+        fetch(`${SUBSERIES_ENDPOINT}?serie_id=${encodeURIComponent(serieId)}&${TRD_SCOPE_QUERY}`, {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('[TRD] Subseries recibidas:', data);
+            subserieSelect.innerHTML = '<option value="">Seleccione una subserie...</option>';
+            if (data && data.length > 0) {
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.nombre;
+                    option.dataset.codigoTrd = item.codigo_trd || '';
+                    subserieSelect.appendChild(option);
+                });
+                subserieSelect.disabled = false;
+                if (data.length === 1) {
+                    subserieSelect.value = String(data[0].id);
+                    subserieSelect.dispatchEvent(new Event('change'));
+                }
+                console.log('[TRD] Subseries cargadas:', data.length);
+            } else {
+                subserieSelect.innerHTML = '<option value="">No hay subseries disponibles</option>';
+            }
+        })
+        .catch(error => {
+            console.error('[TRD] Error cargando subseries:', error);
+            subserieSelect.innerHTML = '<option value="">Error al cargar</option>';
+        });
+    }
+    
+    function inicializarEventosTRD() {
+        const serieSelect = document.getElementById('interna_serie');
+        const subserieSelect = document.getElementById('interna_subserie');
+        const trdInput = document.getElementById('interna_trd');
+        
+        if (!serieSelect || !subserieSelect) {
+            console.warn('[TRD] Elementos no encontrados');
+            return;
+        }
+
+        if (serieSelect.dataset.trdBound === '1') {
+            return;
+        }
+        serieSelect.dataset.trdBound = '1';
+        
+        // Obtener oficina TRD del usuario logueado desde el atributo data del modal
+        const modalElement = document.getElementById('modalComunicacionInterna');
+        const usuarioOficinaTrd = modalElement ? modalElement.dataset.usuarioOficinaTrd : '';
+        console.log('[TRD] Oficina TRD del usuario logueado:', usuarioOficinaTrd);
+        
+        // Evento cuando cambia la serie
+        serieSelect.addEventListener('change', function() {
+            cargarSubseriesComunicacion(this.value);
+        });
+        
+        // Evento cuando cambia la subserie - autocompletar TRD completo
+        subserieSelect.addEventListener('change', function() {
+            const selectedSubserieOption = this.options[this.selectedIndex];
+            const selectedSerieOption = serieSelect.options[serieSelect.selectedIndex];
+            
+            if (trdInput && selectedSubserieOption && selectedSerieOption) {
+                if (usuarioOficinaTrd) {
+                    trdInput.value = usuarioOficinaTrd;
+                    console.log('[TRD] Código TRD curado asignado:', usuarioOficinaTrd);
+                } else {
+                    trdInput.value = '';
+                    console.warn('[TRD] La oficina no tiene TRD curado configurado');
+                }
+            }
+        });
+        
+        console.log('[TRD] Eventos inicializados');
+    }
+    
+    // Configurar cuando el modal se abre
+    const modalComunicacion = document.getElementById('modalComunicacionInterna');
+    if (modalComunicacion) {
+        console.log('[TRD] Modal encontrado, configurando...');
+        
+        modalComunicacion.addEventListener('shown.bs.modal', function() {
+            console.log('[TRD] Modal abierto');
+            inicializarEventosTRD();
+            cargarSeriesComunicacion();
+        });
+        
+        modalComunicacion.addEventListener('hidden.bs.modal', function() {
+            const serieSelect = document.getElementById('interna_serie');
+            const subserieSelect = document.getElementById('interna_subserie');
+            const trdInput = document.getElementById('interna_trd');
+            
+            if (serieSelect) serieSelect.innerHTML = '<option value="">Seleccione una serie...</option>';
+            if (subserieSelect) {
+                subserieSelect.innerHTML = '<option value="">Seleccione una serie primero...</option>';
+                subserieSelect.disabled = true;
+            }
+            if (trdInput) trdInput.value = '';
+            
+            // Limpiar anexos al cerrar
+            limpiarAnexos();
+        });
+    } else {
+        console.warn('[TRD] Modal no encontrado');
+    }
+    
+    // ===== FUNCIONALIDAD DE ANEXOS =====
+    const MAX_ANEXOS = 10;
+    const MAX_SIZE_PER_FILE = 25 * 1024 * 1024; // 25MB
+    const MAX_TOTAL_SIZE = 25 * 1024 * 1024; // 25MB
+    const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.xls', '.xlsx'];
+    
+    const anexosInput = document.getElementById('interna_anexos');
+    const btnLimpiarAnexos = document.getElementById('interna_btn_limpiar_anexos');
+    const previewContainer = document.getElementById('interna_preview_anexos');
+    const anexosList = document.getElementById('interna_anexos_list');
+    const anexosCount = document.getElementById('interna_anexos_count');
+    const anexosSize = document.getElementById('interna_anexos_size');
+    const anexosError = document.getElementById('interna_anexos_error');
+    const anexosErrorMsg = document.getElementById('interna_anexos_error_msg');
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function getFileIcon(filename) {
+        const ext = filename.toLowerCase().split('.').pop();
+        const icons = {
+            'pdf': 'bi-file-earmark-pdf text-danger',
+            'doc': 'bi-file-earmark-word text-primary',
+            'docx': 'bi-file-earmark-word text-primary',
+            'xls': 'bi-file-earmark-excel text-success',
+            'xlsx': 'bi-file-earmark-excel text-success'
+        };
+        return icons[ext] || 'bi-file-earmark text-secondary';
+    }
+    
+    function validarAnexos(files) {
+        const errors = [];
+        
+        if (files.length > MAX_ANEXOS) {
+            errors.push(`Máximo ${MAX_ANEXOS} archivos permitidos. Ha seleccionado ${files.length}.`);
+        }
+        
+        let totalSize = 0;
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const ext = '.' + file.name.toLowerCase().split('.').pop();
+            
+            if (!ALLOWED_EXTENSIONS.includes(ext)) {
+                errors.push(`"${file.name}" tiene un formato no permitido (${ext}).`);
+            }
+            
+            if (file.size > MAX_SIZE_PER_FILE) {
+                errors.push(`"${file.name}" excede el tamaño máximo de 25MB (${formatFileSize(file.size)}).`);
+            }
+            
+            totalSize += file.size;
+        }
+        
+        if (totalSize > MAX_TOTAL_SIZE) {
+            errors.push(`El tamaño total (${formatFileSize(totalSize)}) excede el máximo de 25MB.`);
+        }
+        
+        return errors;
+    }
+    
+    function actualizarPreviewAnexos() {
+        if (!anexosInput || !previewContainer) return;
+        
+        const files = anexosInput.files;
+        
+        if (files.length === 0) {
+            previewContainer.classList.add('d-none');
+            anexosError.classList.add('d-none');
+            return;
+        }
+        
+        // Validar
+        const errors = validarAnexos(files);
+        if (errors.length > 0) {
+            anexosError.classList.remove('d-none');
+            anexosErrorMsg.innerHTML = errors.join('<br>');
+        } else {
+            anexosError.classList.add('d-none');
+        }
+        
+        // Mostrar preview
+        previewContainer.classList.remove('d-none');
+        anexosList.innerHTML = '';
+        
+        let totalSize = 0;
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            totalSize += file.size;
+            
+            const li = document.createElement('li');
+            li.className = 'list-group-item py-2 d-flex justify-content-between align-items-center';
+            li.innerHTML = `
+                <span>
+                    <i class="bi ${getFileIcon(file.name)} me-2"></i>
+                    <span class="text-truncate" style="max-width: 300px; display: inline-block; vertical-align: middle;">${file.name}</span>
+                </span>
+                <span class="badge bg-secondary">${formatFileSize(file.size)}</span>
+            `;
+            anexosList.appendChild(li);
+        }
+        
+        anexosCount.textContent = files.length;
+        anexosSize.textContent = formatFileSize(totalSize);
+    }
+    
+    function limpiarAnexos() {
+        if (anexosInput) anexosInput.value = '';
+        if (previewContainer) previewContainer.classList.add('d-none');
+        if (anexosList) anexosList.innerHTML = '';
+        if (anexosError) anexosError.classList.add('d-none');
+    }
+    
+    if (anexosInput) {
+        anexosInput.addEventListener('change', actualizarPreviewAnexos);
+    }
+    
+    if (btnLimpiarAnexos) {
+        btnLimpiarAnexos.addEventListener('click', limpiarAnexos);
+    }
+    
+    // ===== NUEVO HANDLER DE ENVÍO CON FORMDATA EXPLÍCITA (como V2) =====
+    const btnEnviar = document.getElementById('interna_btn_enviar');
+    const formElement = document.getElementById('formComunicacionInterna');
+
+    function mostrarToastInterna(message, type = 'info') {
+        if (typeof window.showToast === 'function') {
+            return window.showToast(message, type);
+        }
+        if (type === 'success' && typeof window.showSuccess === 'function') {
+            return window.showSuccess(message);
+        }
+        if ((type === 'error' || type === 'danger') && typeof window.showError === 'function') {
+            return window.showError(message);
+        }
+        if (type === 'warning' && typeof window.showWarning === 'function') {
+            return window.showWarning(message);
+        }
+        if (typeof window.showInfo === 'function') {
+            return window.showInfo(message);
+        }
+        return null;
+    }
+    
+    if (btnEnviar && formElement) {
+        btnEnviar.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Obtener valores de campos
+            const ciudad = document.getElementById('interna_ciudad')?.value?.trim();
+            const fechaDocumento = document.getElementById('interna_fecha_documento')?.value;
+            const trd = document.getElementById('interna_trd')?.value?.trim() || '';
+            const tipoDistribucion = document.getElementById('interna_tipo_distribucion')?.value || 'USUARIO';
+            const asunto = document.getElementById('interna_asunto')?.value?.trim();
+            const cuerpo = document.getElementById('interna_cuerpo')?.value?.trim();
+            
+            // Validaciones básicas
+            if (!ciudad || !fechaDocumento || !asunto || !cuerpo) {
+                mostrarToastInterna('Campos obligatorios: Ciudad, Fecha, Asunto, Contenido.', 'warning');
+                return;
+            }
+            
+            // Validar destinatarios según tipo de distribución
+            if (tipoDistribucion === 'USUARIO') {
+                const usuariosSeleccionados = Array.from(
+                    document.querySelectorAll('input[name="destinatarios_usuarios"]')
+                ).map(el => el.value);
+                if (!usuariosSeleccionados || usuariosSeleccionados.length === 0) {
+                    mostrarToastInterna('Debe seleccionar al menos un usuario.', 'warning');
+                    return;
+                }
+            } else if (tipoDistribucion === 'OFICINA') {
+                const oficinasSeleccionadas = Array.from(
+                    document.querySelectorAll('input[name="destinatarios_oficinas"]')
+                ).map(el => el.value);
+                if (!oficinasSeleccionadas || oficinasSeleccionadas.length === 0) {
+                    mostrarToastInterna('Debe seleccionar al menos una oficina (subproceso).', 'warning');
+                    return;
+                }
+            } else if (tipoDistribucion === 'PROCESO') {
+                const proceso = document.getElementById('interna_destinatario_proceso')?.value;
+                if (!proceso) {
+                    mostrarToastInterna('Debe seleccionar un proceso.', 'warning');
+                    return;
+                }
+            }
+            
+            // Validar anexos antes de enviar
+            const anexosInput = document.getElementById('interna_anexos');
+            const anexoErrors = validarAnexos(anexosInput?.files || []);
+            if (anexoErrors.length > 0) {
+                mostrarToastInterna('Errores en anexos: ' + anexoErrors.join(' | '), 'error');
+                return;
+            }
+            
+            // Deshabilitar botón
+            btnEnviar.disabled = true;
+            btnEnviar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enviando...';
+            
+            // Construir FormData explícitamente (como V2)
+            const fd = new FormData();
+            
+            // Campos básicos
+            fd.append('ciudad', ciudad);
+            fd.append('fecha_documento', fechaDocumento);
+            fd.append('trd', trd);
+            fd.append('tipo_distribucion', tipoDistribucion);
+            fd.append('asunto', asunto);
+            fd.append('cuerpo', cuerpo);
+            fd.append('enviar_inmediatamente', document.getElementById('interna_es_a_toda_entidad')?.value === '1' ? '1' : '0');
+            
+            // CSRF token
+            const csrfToken = document.querySelector('[name="csrfmiddlewaretoken"]')?.value;
+            if (csrfToken) {
+                fd.append('csrfmiddlewaretoken', csrfToken);
+            }
+            
+            // Destinatarios según tipo
+            if (tipoDistribucion === 'USUARIO') {
+                // Agregar cada usuario seleccionado
+                const usuariosInputs = document.querySelectorAll('input[name="destinatarios_usuarios"]');
+                usuariosInputs.forEach(input => {
+                    if (input.value) {
+                        fd.append('destinatarios_usuarios', input.value);
+                    }
+                });
+            } else if (tipoDistribucion === 'OFICINA') {
+                // Agregar cada oficina seleccionada
+                const oficinasInputs = document.querySelectorAll('input[name="destinatarios_oficinas"]');
+                oficinasInputs.forEach(input => {
+                    if (input.value) {
+                        fd.append('destinatarios_oficinas', input.value);
+                    }
+                });
+            } else if (tipoDistribucion === 'PROCESO') {
+                const proceso = document.getElementById('interna_destinatario_proceso')?.value;
+                if (proceso) {
+                    fd.append('destinatario_proceso', proceso);
+                }
+            } else if (tipoDistribucion === 'ENTIDAD') {
+                fd.append('es_a_toda_entidad', '1');
+            }
+            
+            // Anexos
+            if (anexosInput?.files?.length > 0) {
+                Array.from(anexosInput.files).forEach(file => {
+                    fd.append('anexos', file);
+                });
+            }
+            
+            // Contar anexos desde cliente
+            fd.append('anexos_count_client', anexosInput?.files?.length || 0);
+            
+            // Log de lo que se envía
+            console.log('[V1 Mejorado] Enviando FormData:');
+            for (let [k, v] of fd.entries()) {
+                if (v instanceof File) {
+                    console.log(`  ${k}: File(${v.name}, ${v.size} bytes)`);
+                } else {
+                    console.log(`  ${k}: ${v}`);
+                }
+            }
+            
+            // Enviar con fetch (como V2, no form.submit)
+            const endpoint = formElement.dataset.internaEndpoint;
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: fd
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarToastInterna(data.message || 'Comunicación creada exitosamente.', 'success');
+                    const bsModal = bootstrap.Modal.getInstance(modalComunicacion);
+                    bsModal?.hide();
+                    window.location.reload();
+                } else {
+                    mostrarToastInterna('Error: ' + (data.error || 'No se pudo crear la comunicación.'), 'error');
+                }
+            })
+            .catch(err => {
+                console.error('[V1 Mejorado] Error al enviar:', err);
+                mostrarToastInterna('Error de conexión al enviar.', 'error');
+            })
+            .finally(() => {
+                btnEnviar.disabled = false;
+                btnEnviar.innerHTML = '<i class="bi bi-send me-1"></i>Crear y Enviar';
+            });
+        });
+    }
+})();
+</script>
+
+    // Legacy fallback desactivado: el modal se maneja desde
+    // static/correspondencia/js/modals/comunicacion-interna.js.
+    // Mantener este bloque activo provoca doble binding y puede enviar
+    // respuestas al endpoint de creación, dejándolas sin comunicacion_origen.
+    return;

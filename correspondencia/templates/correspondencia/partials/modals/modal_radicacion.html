@@ -1,0 +1,545 @@
+{% load crispy_forms_tags %}
+{% if form_radicacion %}
+<style>
+  .radicacion-wizard-dialog {
+    max-width: min(1480px, 96vw);
+    height: calc(100% - var(--bs-modal-margin, 1rem) * 2) !important;
+  }
+
+  .radicacion-wizard-content {
+    border: 0;
+    border-radius: 1.25rem;
+    overflow: hidden;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+    max-height: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* El <form> envuelve header+body+footer: necesita heredar flex */
+  .radicacion-wizard-content > form {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+  }
+
+  .radicacion-wizard-header {
+    background: linear-gradient(135deg, #0f4c81 0%, #1565a8 45%, #1d79c5 100%);
+    color: #fff;
+    border-bottom: 0;
+    padding: 1.15rem 1.35rem;
+    flex-shrink: 0 !important;
+  }
+
+  .radicacion-wizard-title {
+    display: flex;
+    align-items: center;
+    gap: .9rem;
+  }
+
+  .radicacion-wizard-icon {
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: .95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,.16);
+    backdrop-filter: blur(8px);
+    font-size: 1.2rem;
+  }
+
+  .radicacion-wizard-subtitle {
+    color: rgba(255,255,255,.82);
+    font-size: .88rem;
+    margin: .15rem 0 0;
+  }
+
+  .radicacion-wizard-body {
+    padding: 0;
+    background: #f4f7fb;
+    flex: 1 1 auto !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .radicacion-wizard-error-banner {
+    flex-shrink: 0;
+    margin: 0;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
+    z-index: 5;
+    box-shadow: 0 4px 14px rgba(220, 53, 69, 0.14);
+  }
+
+  .radicacion-wizard-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) 340px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .radicacion-wizard-main {
+    padding: 1.5rem;
+    background: linear-gradient(180deg, #f8fbff 0%, #f3f6fb 100%);
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    min-height: 0;
+    overscroll-behavior: contain;
+  }
+
+  .radicacion-wizard-sidebar {
+    padding: 1.5rem 1.25rem;
+    background: linear-gradient(180deg, #0f172a 0%, #172554 100%);
+    color: #e5eefb;
+    border-left: 1px solid rgba(255,255,255,.08);
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    min-height: 0;
+    overscroll-behavior: contain;
+  }
+
+  .radicacion-wizard-main,
+  .radicacion-wizard-sidebar {
+    scrollbar-width: thin;
+  }
+
+  .wizard-progress-card,
+  .wizard-summary-card,
+  .wizard-tip-card {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 1rem;
+    padding: 1rem;
+    backdrop-filter: blur(8px);
+  }
+
+  .wizard-summary-card,
+  .wizard-tip-card {
+    margin-top: 1rem;
+  }
+
+  .wizard-progress-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0;
+    display: grid;
+    gap: .85rem;
+  }
+
+  .wizard-progress-item {
+    display: flex;
+    gap: .8rem;
+    align-items: flex-start;
+    opacity: .68;
+    transition: opacity .2s ease, transform .2s ease;
+  }
+
+  .wizard-progress-item.is-active,
+  .wizard-progress-item.is-complete {
+    opacity: 1;
+  }
+
+  .wizard-progress-item.is-active {
+    transform: translateX(2px);
+  }
+
+  .wizard-progress-badge {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    background: rgba(255,255,255,.14);
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .wizard-progress-item.is-active .wizard-progress-badge {
+    background: #60a5fa;
+    color: #0f172a;
+  }
+
+  .wizard-progress-item.is-complete .wizard-progress-badge {
+    background: #34d399;
+    color: #052e2b;
+  }
+
+  .wizard-progress-title {
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .wizard-progress-text {
+    display: block;
+    font-size: .82rem;
+    color: #c8d6f1;
+    margin-top: .12rem;
+    line-height: 1.35;
+  }
+
+  .wizard-summary-grid {
+    display: grid;
+    gap: .85rem;
+  }
+
+  .wizard-summary-item {
+    border-bottom: 1px solid rgba(255,255,255,.1);
+    padding-bottom: .7rem;
+  }
+
+  .wizard-summary-item:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .wizard-summary-label {
+    display: block;
+    color: #93acd3;
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: .2rem;
+  }
+
+  .wizard-summary-value {
+    color: #fff;
+    font-weight: 600;
+    line-height: 1.35;
+    word-break: break-word;
+  }
+
+  .wizard-step-pane { animation: wizardFadeIn .22s ease; }
+  @keyframes wizardFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .wizard-step-header {
+    margin-bottom: 1rem;
+  }
+
+  .wizard-step-eyebrow {
+    display: inline-flex;
+    padding: .25rem .6rem;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+  }
+
+  .wizard-step-title {
+    font-size: 1.18rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .wizard-step-copy {
+    color: #64748b;
+    max-width: 62ch;
+  }
+
+  .wizard-card {
+    background: #fff;
+    border: 1px solid #d8e2f0;
+    border-radius: 1rem;
+    padding: 1rem 1rem .8rem;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+  }
+
+  .wizard-card-primary {
+    border-color: #bfdbfe;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  }
+
+  .wizard-card-highlight {
+    background: linear-gradient(135deg, #eff6ff 0%, #f8fbff 100%);
+    border-color: #bfdbfe;
+  }
+
+  .wizard-section-title {
+    font-size: .92rem;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+  }
+
+  .wizard-inline-switch {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+
+  .wizard-toggle-block label,
+  .wizard-inline-switch label {
+    margin-bottom: 0;
+    font-weight: 600;
+  }
+
+  .radicacion-wizard-footer {
+    border-top: 1px solid #dbe4f1;
+    background: #fff;
+    padding: 1rem 1.35rem;
+    flex-shrink: 0 !important;
+  }
+
+  .radicacion-wizard-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .radicacion-wizard-action-group {
+    display: flex;
+    gap: .75rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-wizard-primary {
+    min-width: 150px;
+    font-weight: 600;
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.24);
+  }
+
+  .btn-wizard-next,
+  .btn-wizard-back {
+    min-width: 130px;
+    font-weight: 600;
+  }
+
+  @media (max-width: 1199.98px) {
+    .radicacion-wizard-shell {
+      grid-template-columns: 1fr;
+    }
+
+    .radicacion-wizard-sidebar {
+      border-left: 0;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .radicacion-wizard-main,
+    .radicacion-wizard-sidebar {
+      padding: 1rem;
+    }
+
+    .radicacion-wizard-actions {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .radicacion-wizard-action-group {
+      width: 100%;
+    }
+
+    .radicacion-wizard-action-group .btn,
+    .radicacion-wizard-actions > .btn {
+      width: 100%;
+    }
+  }
+</style>
+<!-- 
+  MODAL DE RADICACIÓN MANUAL DE CORRESPONDENCIA
+  
+  Este modal permite radicar correspondencia manualmente desde cualquier vista
+  que lo incluya, especialmente desde el dashboard de ventanilla y la vista
+  de detalle de correos entrantes.
+  
+  CARACTERÍSTICAS:
+  - Formulario con selección jerárquica Entidad → Contacto → Oficina
+  - Carga dinámica de subseries basada en serie seleccionada
+  - Cálculo automático de plazo de respuesta según tipo de trámite
+  - Layout responsivo con Crispy Forms
+  - Validación de campos obligatorios
+  
+  FLUJO DE USUARIO:
+  1. Usuario selecciona Entidad → Se cargan contactos de esa entidad
+  2. Usuario selecciona Contacto → Se establece como remitente
+  3. Usuario selecciona Tipo de Trámite → Se calcula plazo automáticamente
+  4. Usuario selecciona Oficina → Se establece como oficina destino
+  
+  DEPENDENCIAS:
+  - core-modals.js: Funcionalidad básica de modales
+  - radicacion.js: Lógica específica de radicación
+  - sla-calculator.js: Cálculo de plazos por tipo de trámite
+-->
+<div class="modal fade" id="{{ modal_id|default:'modalRadicarCorreo' }}" tabindex="-1" aria-labelledby="modalRadicarCorreoLabel" aria-hidden="true" data-open="{{ open_radicacion_modal|default:False|yesno:'true,false' }}">
+  <div class="modal-dialog modal-xl radicacion-wizard-dialog">
+    <!-- 
+      data-subseries-url: URL para cargar subseries dinámicamente
+      data-sla-endpoint: URL para calcular plazos SLA
+    -->
+    <div class="modal-content radicacion-wizard-content" data-subseries-url="{% url 'correspondencia:ajax_subseries' %}" data-sla-endpoint="{% url 'correspondencia:calcular_plazo_sla' %}" data-users-url="{% url 'correspondencia:usuarios_por_oficina_ajax' %}">
+      <form method="post" action="" id="form-radicar-correo" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        <!-- Prefijo para diferenciar este formulario de otros en la misma página -->
+        <input type="hidden" name="form_prefix" value="radicar">
+        <div class="modal-header radicacion-wizard-header">
+          <div class="radicacion-wizard-title">
+            <span class="radicacion-wizard-icon"><i class="bi bi-journal-plus"></i></span>
+            <div>
+              <h5 class="modal-title mb-0" id="modalRadicarCorreoLabel">Radicar correspondencia</h5>
+              <p class="radicacion-wizard-subtitle">Complete el radicado y decida si desea asignarlo inmediatamente en un segundo paso.</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body radicacion-wizard-body">
+          <div class="alert alert-danger radicacion-wizard-error-banner d-none" id="radicacion-wizard-error" role="alert" aria-live="assertive">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+            <span id="radicacion-wizard-error-text"></span>
+            <ul id="radicacion-wizard-error-list" class="mb-0 mt-1 ps-3 d-none"></ul>
+          </div>
+          <!-- 
+            ALERTA DE CONTACTO SUGERIDO:
+            Se muestra cuando hay un contacto sugerido basado en el correo entrante
+          -->
+          <div class="radicacion-wizard-shell">
+            <div class="radicacion-wizard-main">
+              {% if avisar_contacto_asociado and contacto_sugerido %}
+                <div class="alert alert-info mb-3 rounded-4 border-0 shadow-sm">
+                  <i class="bi bi-info-circle-fill me-1"></i>
+                  Se ha asociado automáticamente el contacto:
+                  <strong>{{ contacto_sugerido.nombre_completo }} ({{ contacto_sugerido.correo_electronico }})</strong>.
+                </div>
+              {% endif %}
+              {% crispy form_radicacion %}
+            </div>
+
+            <aside class="radicacion-wizard-sidebar">
+              <div class="wizard-progress-card">
+                <div class="small text-uppercase fw-semibold opacity-75">Progreso</div>
+                <ul class="wizard-progress-list" id="radicacion-wizard-progress">
+                  <li class="wizard-progress-item is-active" data-step="1">
+                    <span class="wizard-progress-badge">1</span>
+                    <div>
+                      <div class="wizard-progress-title">Datos del radicado</div>
+                      <span class="wizard-progress-text">Origen, asunto, clasificación, SLA y adjuntos.</span>
+                    </div>
+                  </li>
+                  <li class="wizard-progress-item" data-step="2">
+                    <span class="wizard-progress-badge">2</span>
+                    <div>
+                      <div class="wizard-progress-title">Distribución inicial</div>
+                      <span class="wizard-progress-text">Asignación inmediata, oficina completa y compartición lateral.</span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="wizard-summary-card">
+                <div class="small text-uppercase fw-semibold opacity-75 mb-3">Resumen en vivo</div>
+                <div class="wizard-summary-grid">
+                  <div class="wizard-summary-item">
+                    <span class="wizard-summary-label">Remitente</span>
+                    <div class="wizard-summary-value" data-summary-field="remitente">Sin seleccionar</div>
+                  </div>
+                  <div class="wizard-summary-item">
+                    <span class="wizard-summary-label">Asunto</span>
+                    <div class="wizard-summary-value" data-summary-field="asunto">Sin asunto</div>
+                  </div>
+                  <div class="wizard-summary-item">
+                    <span class="wizard-summary-label">Oficina destino</span>
+                    <div class="wizard-summary-value" data-summary-field="oficina_destino">Sin seleccionar</div>
+                  </div>
+                  <div class="wizard-summary-item">
+                    <span class="wizard-summary-label">Tipo de trámite</span>
+                    <div class="wizard-summary-value" data-summary-field="tipo_tramite">No definido</div>
+                  </div>
+                  <div class="wizard-summary-item">
+                    <span class="wizard-summary-label">Distribución</span>
+                    <div class="wizard-summary-value" data-summary-field="distribucion">Radicación convencional</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="wizard-tip-card">
+                <div class="small text-uppercase fw-semibold opacity-75 mb-2">Cómo funciona</div>
+                <div class="small lh-sm">
+                  <strong>Paso 1:</strong> radique con los datos obligatorios.<br>
+                  <strong>Paso 2:</strong> si lo desea, asigne responsable y comparta con otras oficinas sin salir del modal.
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+        <div class="modal-footer radicacion-wizard-footer">
+          <div class="radicacion-wizard-actions w-100">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <div class="radicacion-wizard-action-group ms-auto">
+              <button type="button" class="btn btn-outline-primary btn-wizard-back d-none" id="radicacion-wizard-back">
+                <i class="bi bi-arrow-left me-1"></i>Volver
+              </button>
+              <button type="button" class="btn btn-primary btn-wizard-next" id="radicacion-wizard-next">
+                Siguiente<i class="bi bi-arrow-right ms-1"></i>
+              </button>
+              <button type="submit" class="btn btn-primary btn-wizard-primary d-none" id="radicacion-wizard-submit">
+                <i class="bi bi-check-lg me-1"></i>Guardar radicación
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+// Inicialización específica para Select2 en el modal de radicación
+document.addEventListener('DOMContentLoaded', function() {
+  // Función para inicializar Select2 en el campo remitente
+  function initRemitenteSelect2() {
+    if (window.DashboardDeferredSelects && window.DashboardDeferredSelects.isDeferredMode &&
+        window.DashboardDeferredSelects.isDeferredMode()) {
+      return;
+    }
+    var $remitente = $('#id_radicar-remitente');
+    if ($remitente.length && !$remitente.hasClass('select2-hidden-accessible')) {
+      $remitente.select2({
+        theme: 'bootstrap-5',
+        dropdownParent: $remitente.closest('.modal'),
+        placeholder: 'Buscar por nombre, apellido o correo...',
+        allowClear: true,
+        width: '100%',
+        minimumResultsForSearch: 0,
+        language: {
+          noResults: function() {
+            return "No se encontraron resultados";
+          },
+          searching: function() {
+            return "Buscando...";
+          },
+          inputTooShort: function() {
+            return "Ingrese más caracteres";
+          }
+        }
+      });
+    }
+  }
+  
+  // Inicializar cuando el modal se muestre
+  var modal = document.getElementById('{{ modal_id|default:"modalRadicarCorreo" }}');
+  if (modal) {
+    modal.addEventListener('shown.bs.modal', function() {
+      setTimeout(initRemitenteSelect2, 100);
+    });
+  }
+});
+</script>
+{% endif %}
+

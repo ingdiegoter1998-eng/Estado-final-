@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ respuesta.asunto }}</title> {# Asunto también se define en send_mail #}
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .header {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .footer {
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            margin-top: 25px;
+            font-size: 0.85em;
+            color: #777;
+        }
+        p {
+            margin-bottom: 1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <strong>Hospital del Sarare E.S.E.</strong> - Comunicación oficial
+            <br>
+            <small>Radicado: <strong>{{ numero_radicado_salida }}</strong></small>
+            {% if numero_radicado_entrada %}
+                <br><small>En respuesta a: <strong>{{ numero_radicado_entrada }}</strong></small>
+            {% endif %}
+        </div>
+
+        <div class="content">
+            {{ cuerpo_respuesta|linebreaksbr|safe }} 
+        </div>
+
+        <div class="footer">
+            <p>
+                Atentamente,<br><br>
+                <strong>{{ nombre_funcionario }}</strong><br>
+                {{ cargo_funcionario }}<br>
+                {{ nombre_oficina }}<br>
+                Hospital del Sarare E.S.E.
+            </p>
+            <p style="font-size: 0.85em; color: #555; line-height: 1.6;">
+                <strong>AVISO DE CONFIDENCIALIDAD.</strong> Este mensaje y sus archivos adjuntos van dirigidos exclusivamente a su destinatario pudiendo contener información confidencial sometida a secreto profesional. No está permitida su reproducción o distribución sin la autorización expresa del Hospital del Sarare E.S.E. Si usted no es el destinatario final, por favor elimínelo e infórmenos por esta vía.
+            </p>
+            <p style="font-size: 0.85em; color: #555; line-height: 1.6;">
+                De acuerdo con la Ley Estatutaria 1581 de 2012 de Protección de Datos y con el Decreto 1074 de 2015, el titular presta su consentimiento para que sus datos, facilitados voluntariamente, pasen a formar parte de una base de datos, cuyo responsable es el Hospital del Sarare E.S.E, cuyas finalidades son: la gestión administrativa de la entidad, así como la gestión de carácter comercial y el envío de comunicaciones comerciales sobre nuestros productos y/o servicios.
+            </p>
+            <p style="font-size: 0.85em; color: #555; line-height: 1.6;">
+                Puede usted ejercitar los derechos de acceso, corrección, supresión, revocación o reclamo por infracción sobre sus datos, mediante escrito dirigido al Hospital del Sarare E.S.E, a la dirección de correo correspondencia@esehospitaldelsarare.gov.co, indicando en el asunto el derecho que desea ejercitar.
+            </p>
+        </div>
+    </div>
+</body>
+</html> 

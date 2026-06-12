@@ -1,0 +1,334 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tabla de Registros</title>
+  <meta name="description" content="Gestión de registros documentales con exportación y edición dinámica.">
+  <!-- Bootstrap 5 CSS -->
+  <link href="/static/correspondencia/vendor/css/bootstrap.min.css" rel="stylesheet">
+  <!-- DataTables CSS -->
+  <link href="/static/correspondencia/vendor/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+  <!-- Animate.css -->
+  <link rel="stylesheet" href="/static/correspondencia/vendor/css/animate.min.css"/>
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+  <!-- Tu CSS personalizado -->
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+<main>
+  <!-- NAV -->
+<nav class="navbar navbar-light bg-light mb-4 animate__animated animate__fadeInDown animate__delay-1s">
+  <div class="container-fluid d-flex justify-content-between align-items-center">
+    <a class="navbar-brand d-flex align-items-center" href="/">
+      <i class="bi bi-archive-fill text-primary me-2" style="font-size:1.5rem;"></i>
+      Hospital del Sarare
+    </a>
+    <span class="navbar-text">
+      {% if request.user.is_authenticated %}
+        Bienvenido, {{ request.user.username }} |
+        <form method="post" action="{% url 'logout' %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-link p-0 align-baseline">Cerrar sesión</button>
+        </form>
+      {% else %}
+        <a href="{% url 'login' %}">Iniciar sesión</a>
+      {% endif %}
+    </span>
+  </div>
+</nav>
+
+
+  <!-- CONTENIDO -->
+  <div class="container-fluid mt-5">
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-3 animate__animated animate__fadeInDown">
+      <h1 class="text-primary animate__animated animate__fadeInUp" id="pageTitle">Lista de Registros</h1>
+      <div class="d-flex gap-2">
+        <a href="{% url 'crear_registro' %}" class="btn btn-success animate__animated animate__zoomIn">
+          <i class="bi bi-file-earmark-plus"></i> Crear Nuevo Registro
+        </a>
+        <a href="{% url 'lista_completa_registros' %}" class="btn btn-info animate__animated animate__zoomIn animate__delay-1s">
+          <i class="bi bi-table"></i> Ver Tabla Completa
+        </a>
+      </div>
+    </div>
+
+    <!-- Tabla centrada -->
+    <div class="row">
+      <div class="col-12">
+        <!-- Formulario de filtros -->
+        <div class="card mb-4 animate__animated animate__fadeInUp animate__delay-1s">
+          <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtros</h5>
+          </div>
+          <div class="card-body">
+            <form method="GET" class="row g-3">
+              <div class="col-md-2">
+                <label for="numero_orden" class="form-label">N° Orden</label>
+                <input type="text" class="form-control" id="numero_orden" name="numero_orden" value="{{ request.GET.numero_orden|default:'' }}">
+              </div>
+              <div class="col-md-2">
+                <label for="codigo" class="form-label">Código</label>
+                <input type="text" class="form-control" id="codigo" name="codigo" value="{{ request.GET.codigo|default:'' }}">
+              </div>
+              <div class="col-md-2">
+                <label for="codigo_serie" class="form-label">Código Serie</label>
+                <input type="text" class="form-control" id="codigo_serie" name="codigo_serie" value="{{ request.GET.codigo_serie|default:'' }}">
+              </div>
+              <div class="col-md-2">
+                <label for="codigo_subserie" class="form-label">Código Subserie</label>
+                <input type="text" class="form-control" id="codigo_subserie" name="codigo_subserie" value="{{ request.GET.codigo_subserie|default:'' }}">
+              </div>
+              <div class="col-md-2">
+                <label for="unidad_documental" class="form-label">Unidad Documental</label>
+                <input type="text" class="form-control" id="unidad_documental" name="unidad_documental" value="{{ request.GET.unidad_documental|default:'' }}">
+              </div>
+              <div class="col-md-2">
+                <label for="fecha_archivo" class="form-label">Fecha Archivo</label>
+                <input type="text" class="form-control" id="fecha_archivo" name="fecha_archivo" value="{{ request.GET.fecha_archivo|default:'' }}">
+              </div>
+              <div class="col-md-2">
+                <label for="soporte_fisico" class="form-label">Soporte Físico</label>
+                <select class="form-select" id="soporte_fisico" name="soporte_fisico">
+                  <option value="">Todos</option>
+                  <option value="true" {% if request.GET.soporte_fisico == 'true' %}selected{% endif %}>Sí</option>
+                  <option value="false" {% if request.GET.soporte_fisico == 'false' %}selected{% endif %}>No</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label for="soporte_electronico" class="form-label">Soporte Electrónico</label>
+                <select class="form-select" id="soporte_electronico" name="soporte_electronico">
+                  <option value="">Todos</option>
+                  <option value="true" {% if request.GET.soporte_electronico == 'true' %}selected{% endif %}>Sí</option>
+                  <option value="false" {% if request.GET.soporte_electronico == 'false' %}selected{% endif %}>No</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label for="creado_por" class="form-label">Creado Por</label>
+                <input type="text" class="form-control" id="creado_por" name="creado_por" value="{{ request.GET.creado_por|default:'' }}">
+              </div>
+              <div class="col-md-2">
+                <label for="documento" class="form-label">Con Documento</label>
+                <select class="form-select" id="documento" name="documento">
+                  <option value="">Todos</option>
+                  <option value="true" {% if request.GET.documento == 'true' %}selected{% endif %}>Sí</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-search"></i> Filtrar
+                </button>
+                <a href="{% url 'lista_registros' %}" class="btn btn-secondary">
+                  <i class="bi bi-x-circle"></i> Limpiar
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+        
+        <div class="d-flex justify-content-center">
+          <table id="tablaRegistros" class="table table-striped table-bordered tabla-ancha">
+            <thead>
+              <tr>
+                <th>N° Orden</th>
+                <th>Código</th>
+                <th>Código Serie</th>
+                <th>Código Subserie</th>
+                <th>Unidad Documental</th>
+                <th>Fecha de Archivo</th>
+                <th>Documento</th>
+                <th>Físico</th>
+                <th>Electrónico</th>
+                <th>Creado Por</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for registro in registros %}
+              <tr class="animate__animated animate__fadeIn">
+                <td>{{ registro.numero_orden }}</td>
+                <td>{{ registro.codigo }}</td>
+                <td>{{ registro.codigo_serie }}</td>
+                <td>{{ registro.codigo_subserie }}</td>
+                <td>{{ registro.unidad_documental }}</td>
+                <td>{{ registro.fecha_archivo }}</td>
+                <td>
+                  {% if registro.documentos.all %}
+                    {% for doc in registro.documentos.all %}
+                      <a href="{{ doc.archivo.url }}" target="_blank">Ver</a>{% if not forloop.last %}<br>{% endif %}
+                    {% endfor %}
+                  {% else %}
+                    No hay documento
+                  {% endif %}
+                </td>
+                <td class="text-center">{% if registro.soporte_fisico %}✔{% else %}✖{% endif %}</td>
+                <td class="text-center">{% if registro.soporte_electronico %}✔{% else %}✖{% endif %}</td>
+                <td>{{ registro.creado_por }}</td>
+                <td>
+                  <a href="{% url 'editar_registro' registro.id %}" class="btn btn-warning btn-sm"><i class="bi bi-pencil"></i> Editar</a>
+                  <a href="{% url 'eliminar_registro' registro.id %}" class="btn btn-danger btn-sm"><i class="bi bi-trash"></i> Eliminar</a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr class="animate__animated animate__fadeIn">
+                <td colspan="11" class="text-center">No hay registros disponibles.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Controles de paginación -->
+    {% if registros.has_other_pages %}
+    <div class="row mt-4">
+      <div class="col-12">
+        <nav aria-label="Navegación de páginas">
+          <ul class="pagination justify-content-center">
+            {% if registros.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page=1{% for key, value in filtros_activos.items %}&{{ key }}={{ value }}{% endfor %}">&laquo; Primera</a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ registros.previous_page_number }}{% for key, value in filtros_activos.items %}&{{ key }}={{ value }}{% endfor %}">Anterior</a>
+              </li>
+            {% endif %}
+            
+            {% for num in registros.paginator.page_range %}
+              {% if registros.number == num %}
+                <li class="page-item active">
+                  <span class="page-link">{{ num }}</span>
+                </li>
+              {% elif num > registros.number|add:'-3' and num < registros.number|add:'3' %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ num }}{% for key, value in filtros_activos.items %}&{{ key }}={{ value }}{% endfor %}">{{ num }}</a>
+                </li>
+              {% endif %}
+            {% endfor %}
+            
+            {% if registros.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ registros.next_page_number }}{% for key, value in filtros_activos.items %}&{{ key }}={{ value }}{% endfor %}">Siguiente</a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="?page={{ registros.paginator.num_pages }}{% for key, value in filtros_activos.items %}&{{ key }}={{ value }}{% endfor %}">Última &raquo;</a>
+              </li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    </div>
+    {% endif %}
+    
+    <!-- Información de registros -->
+    <div class="row mt-2">
+      <div class="col-12 text-center">
+        <small class="text-muted">
+          Mostrando {{ registros.start_index }} a {{ registros.end_index }} de {{ total_registros }} registros
+        </small>
+      </div>
+    </div>
+  </div>
+</main>
+<footer>
+  <p>&copy; {{ current_year }} Hospital del Sarare - Central de Archivos del Sarare.</p>
+</footer>
+
+<!-- Scripts -->
+<script src="/static/correspondencia/vendor/js/jquery-3.7.0.min.js"></script>
+<script src="/static/correspondencia/vendor/js/bootstrap.bundle.min.js"></script>
+<script src="/static/correspondencia/vendor/js/jquery.dataTables.min.js"></script>
+<script src="/static/correspondencia/vendor/js/dataTables.bootstrap5.min.js"></script>
+<script>
+  // Comentamos DataTables ya que ahora usamos paginación del servidor
+  /*
+  $('#tablaRegistros').DataTable({
+  serverSide: true,
+  processing: true,
+  orderCellsTop: true,
+  ajax: {
+    url: "{% url 'registros_api' %}",
+    type: "GET"
+  },
+  columns: [
+    { data: 'numero_orden' },
+    { data: 'codigo' },
+    { data: 'codigo_serie' },
+    { data: 'codigo_subserie' },
+    { data: 'unidad_documental' },
+    { data: 'fecha_archivo' },
+    {
+      // Columna "Documento": Si hay documentos, muestra un botón; si no, un badge rojo.
+      data: 'documento',
+      render: function(data, type, row) {
+        if (data && data.length > 0) {
+          return `<a href="${window.location.origin}/registros/documento/${row.id}/" class="btn btn-success btn-sm">
+                    <i class="bi bi-eye"></i> Ver
+                  </a>`;
+        } else {
+          return `<span class="badge bg-danger">Sin documentos</span>`;
+        }
+      }
+    },
+    {
+      data: 'soporte_fisico',
+      render: function(data) {
+        return data ? '✔' : '✖';
+      }
+    },
+    {
+      data: 'soporte_electronico',
+      render: function(data) {
+        return data ? '✔' : '✖';
+      }
+    },
+    { data: 'creado_por' },
+    {
+      data: null,
+      orderable: false,
+      searchable: false,
+      render: function(data, type, row) {
+        return `
+          <a href="${window.location.origin}/registros/${row.id}/editar/" class="btn btn-warning btn-sm">
+            <i class="bi bi-pencil"></i> Editar
+          </a>
+          <a href="${window.location.origin}/registros/${row.id}/eliminar/" class="btn btn-danger btn-sm">
+            <i class="bi bi-trash"></i> Eliminar
+          </a>
+        `;
+      }
+    }
+  ],
+  language: {
+    processing: "Procesando...",
+    search: "Buscar:",
+    lengthMenu: "Mostrar _MENU_ registros",
+    info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+    infoEmpty: "No hay registros disponibles",
+    infoFiltered: "(filtrado de _MAX_ registros totales)",
+    loadingRecords: "Cargando...",
+    zeroRecords: "No se encontraron resultados",
+    emptyTable: "No hay datos disponibles en la tabla",
+    paginate: {
+      first: "Primero",
+      previous: "Anterior",
+      next: "Siguiente",
+      last: "Último"
+    },
+    aria: {
+      sortAscending: ": activar para ordenar la columna ascendente",
+      sortDescending: ": activar para ordenar la columna descendente"
+    }
+  },
+  pageLength: 50,
+  dom: '<"top"lf>rt<"bottom"ip><"clear">'
+});
+*/
+
+</script>
+</body>
+</html>

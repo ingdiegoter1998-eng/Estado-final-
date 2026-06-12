@@ -1,0 +1,739 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block title %}Buzón de Urgencias - Sistema de Correspondencia{% endblock %}
+
+{% block extra_css %}
+<style>
+    .urgencias-page {
+        --urg-surface: #ffffff;
+        --urg-surface-muted: #f8fafc;
+        --urg-border: #e2e8f0;
+        --urg-muted: #64748b;
+        --urg-title: #0f172a;
+        --urg-primary: #dc2626;
+        --urg-shadow: 0 18px 42px -28px rgba(15, 23, 42, 0.28);
+        --urg-radius: 24px;
+    }
+
+    .urgencias-page .urgencias-shell {
+        width: 95%;
+        margin: 0 auto 2rem;
+    }
+
+    .urgencias-page .urgencias-hero {
+        background:
+            radial-gradient(circle at top right, rgba(239, 68, 68, 0.16), transparent 34%),
+            linear-gradient(135deg, #ffffff 0%, #fff7f7 52%, #fff1f2 100%);
+        border: 1px solid rgba(248, 113, 113, 0.22);
+        border-radius: 28px;
+        padding: 2rem;
+        box-shadow: var(--urg-shadow);
+        margin-bottom: 1.5rem;
+    }
+
+    .urgencias-page .hero-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .urgencias-page .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(220, 38, 38, 0.1);
+        color: var(--urg-primary);
+        font-weight: 700;
+        font-size: 0.82rem;
+        margin-bottom: 1rem;
+    }
+
+    .urgencias-page .urgencias-hero h1 {
+        font-size: clamp(2rem, 3vw, 2.6rem);
+        line-height: 1.08;
+        font-weight: 800;
+        color: var(--urg-title);
+        margin-bottom: 0.75rem;
+    }
+
+    .urgencias-page .urgencias-hero p {
+        margin: 0;
+        max-width: 78ch;
+        color: var(--urg-muted);
+        font-size: 1rem;
+    }
+
+    .urgencias-page .hero-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.7rem 0.95rem;
+        border-radius: 16px;
+        border: 1px solid rgba(248, 113, 113, 0.18);
+        background: rgba(255, 255, 255, 0.88);
+        color: #7f1d1d;
+        font-weight: 700;
+    }
+
+    .urgencias-page .hero-chips,
+    .urgencias-page .stats-grid {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .urgencias-page .hero-chips {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-top: 1.25rem;
+    }
+
+    .urgencias-page .stats-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-bottom: 1.5rem;
+    }
+
+    .urgencias-page .stats-card,
+    .urgencias-page .tabs-shell,
+    .urgencias-page .urgencia-card,
+    .urgencias-page .table-card,
+    .urgencias-page .empty-card,
+    .urgencias-page .alert-card {
+        border: 1px solid var(--urg-border);
+        border-radius: var(--urg-radius);
+        background: var(--urg-surface);
+        box-shadow: var(--urg-shadow);
+    }
+
+    .urgencias-page .stats-card {
+        position: relative;
+        overflow: hidden;
+        padding: 1.25rem;
+    }
+
+    .urgencias-page .stats-card::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: linear-gradient(180deg, rgba(220, 38, 38, 0.92), rgba(249, 115, 22, 0.72));
+    }
+
+    .urgencias-page .stats-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        color: var(--urg-primary);
+        background: rgba(220, 38, 38, 0.1);
+        margin-bottom: 1rem;
+    }
+
+    .urgencias-page .stats-value {
+        font-size: 1.85rem;
+        line-height: 1;
+        font-weight: 800;
+        color: var(--urg-title);
+        margin-bottom: 0.3rem;
+    }
+
+    .urgencias-page .stats-label {
+        color: var(--urg-muted);
+        font-weight: 600;
+    }
+
+    .urgencias-page .tabs-shell {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .urgencias-page .nav-tabs-modern {
+        border-bottom: 0;
+        gap: 0.75rem;
+    }
+
+    .urgencias-page .nav-tabs-modern .nav-link {
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        border-radius: 16px;
+        color: #475569;
+        font-weight: 700;
+        padding: 0.9rem 1rem;
+        transition: all .2s ease;
+        background: #fff;
+    }
+
+    .urgencias-page .nav-tabs-modern .nav-link:hover,
+    .urgencias-page .nav-tabs-modern .nav-link.active {
+        color: var(--urg-primary);
+        border-color: rgba(239, 68, 68, 0.28);
+        background: rgba(239, 68, 68, 0.06);
+    }
+
+    .urgencias-page .nav-tabs-modern .badge {
+        border-radius: 999px;
+        font-weight: 700;
+    }
+
+    .urgencias-page .tab-pane {
+        padding-top: 0.5rem;
+    }
+
+    .urgencias-page .urgencia-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .urgencias-page .urgencia-card {
+        overflow: hidden;
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        height: 100%;
+    }
+
+    .urgencias-page .urgencia-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 22px 46px -30px rgba(15, 23, 42, 0.35);
+    }
+
+    .urgencias-page .urgencia-card.is-pending { border-color: rgba(245, 158, 11, 0.28); }
+    .urgencias-page .urgencia-card.is-process { border-color: rgba(14, 165, 233, 0.28); }
+    .urgencias-page .urgencia-card.is-overdue { border-color: rgba(239, 68, 68, 0.35); }
+
+    .urgencias-page .urgencia-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.2rem 1.25rem 0.8rem;
+    }
+
+    .urgencias-page .urgencia-radicado {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .urgencias-page .urgencia-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .urgencias-page .urgencia-card.is-pending .urgencia-icon {
+        background: rgba(245, 158, 11, 0.12);
+        color: #b45309;
+    }
+
+    .urgencias-page .urgencia-card.is-process .urgencia-icon {
+        background: rgba(14, 165, 233, 0.12);
+        color: #0369a1;
+    }
+
+    .urgencias-page .urgencia-card.is-overdue .urgencia-icon {
+        background: rgba(239, 68, 68, 0.12);
+        color: #b91c1c;
+    }
+
+    .urgencias-page .urgencia-code {
+        color: var(--urg-title);
+        font-weight: 800;
+        line-height: 1.35;
+    }
+
+    .urgencias-page .urgencia-title {
+        color: var(--urg-title);
+        font-size: 1rem;
+        font-weight: 800;
+        margin-bottom: 0.8rem;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+    }
+
+    .urgencias-page .urgencia-body {
+        padding: 0 1.25rem 1.25rem;
+    }
+
+    .urgencias-page .priority-badge,
+    .urgencias-page .meta-badge,
+    .urgencias-page .time-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border-radius: 999px;
+        padding: 0.5rem 0.8rem;
+        font-weight: 700;
+        font-size: 0.78rem;
+    }
+
+    .urgencias-page .priority-badge.is-critica,
+    .urgencias-page .time-badge.is-overdue {
+        background: rgba(239, 68, 68, 0.16);
+        color: #991b1b;
+    }
+
+    .urgencias-page .priority-badge.is-alta,
+    .urgencias-page .time-badge.is-warning {
+        background: rgba(245, 158, 11, 0.18);
+        color: #92400e;
+    }
+
+    .urgencias-page .priority-badge.is-normal,
+    .urgencias-page .time-badge.is-ok,
+    .urgencias-page .meta-badge {
+        background: rgba(14, 165, 233, 0.12);
+        color: #075985;
+    }
+
+    .urgencias-page .urgencia-meta {
+        display: grid;
+        gap: 0.7rem;
+        margin-bottom: 1rem;
+    }
+
+    .urgencias-page .meta-row {
+        display: flex;
+        gap: 0.65rem;
+        align-items: flex-start;
+        color: #334155;
+        line-height: 1.45;
+    }
+
+    .urgencias-page .meta-row span {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .urgencias-page .time-block {
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        padding: 0.95rem 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .urgencias-page .progress-time {
+        height: 8px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        overflow: hidden;
+    }
+
+    .urgencias-page .progress-time .progress-bar {
+        transition: width 0.6s ease;
+    }
+
+    .urgencias-page .urgencia-actions .btn {
+        border-radius: 14px;
+        font-weight: 700;
+        width: 100%;
+    }
+
+    .urgencias-page .table-card {
+        overflow: hidden;
+    }
+
+    .urgencias-page .table-modern {
+        margin-bottom: 0;
+        --bs-table-bg: transparent;
+    }
+
+    .urgencias-page .table-modern thead th {
+        border-bottom-width: 1px;
+        border-color: rgba(226, 232, 240, 0.9);
+        color: var(--urg-muted);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-weight: 800;
+        padding: 1rem 0.9rem;
+        background: var(--urg-surface-muted);
+    }
+
+    .urgencias-page .table-modern tbody td {
+        padding: 1rem 0.9rem;
+        border-color: rgba(226, 232, 240, 0.8);
+        vertical-align: middle;
+    }
+
+    .urgencias-page .table-modern tbody tr:hover {
+        background: rgba(248, 250, 252, 0.7);
+    }
+
+    .urgencias-page .table-action {
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .urgencias-page .alert-card {
+        padding: 1rem 1.2rem;
+        margin-bottom: 1rem;
+        color: #991b1b;
+        background: linear-gradient(180deg, #fff7f7 0%, #fff1f2 100%);
+        border-color: rgba(248, 113, 113, 0.35);
+    }
+
+    .urgencias-page .empty-card {
+        padding: 2rem 1.2rem;
+        text-align: center;
+    }
+
+    .urgencias-page .empty-state-icon {
+        font-size: 3rem;
+        opacity: 0.35;
+        margin-bottom: 1rem;
+    }
+
+    @media (max-width: 1399.98px) {
+        .urgencias-page .urgencia-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .urgencias-page .hero-top {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .urgencias-page .hero-chips,
+        .urgencias-page .stats-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .urgencias-page .urgencias-shell {
+            width: 100%;
+        }
+
+        .urgencias-page .hero-chips,
+        .urgencias-page .stats-grid,
+        .urgencias-page .urgencia-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="urgencias-page">
+    <div class="urgencias-shell">
+        <section class="urgencias-hero">
+            <div class="hero-top">
+                <div>
+                    <span class="hero-eyebrow"><i class="bi bi-fire"></i> Gestión prioritaria</span>
+                    <h1>Buzón de urgencias</h1>
+                    <p>Centraliza correspondencia crítica, controla el avance por horas y prioriza los casos que requieren atención inmediata desde una vista clara y accionable.</p>
+                </div>
+                <span class="hero-chip"><i class="bi bi-clock-history"></i> Actualizado: {{ now|date:"H:i" }}</span>
+            </div>
+            <div class="hero-chips">
+                <span class="hero-chip"><i class="bi bi-hourglass-split"></i> {{ total_pendientes }} pendiente{{ total_pendientes|pluralize }}</span>
+                <span class="hero-chip"><i class="bi bi-list-task"></i> {{ total_proceso }} en proceso</span>
+                <span class="hero-chip"><i class="bi bi-exclamation-octagon"></i> {{ total_vencidas }} vencida{{ total_vencidas|pluralize }}</span>
+            </div>
+        </section>
+
+        <div class="stats-grid">
+            <div class="stats-card">
+                <div class="stats-icon"><i class="bi bi-hourglass-split"></i></div>
+                <div class="stats-value">{{ total_pendientes }}</div>
+                <div class="stats-label">Pendientes</div>
+            </div>
+            <div class="stats-card">
+                <div class="stats-icon"><i class="bi bi-list-task"></i></div>
+                <div class="stats-value">{{ total_proceso }}</div>
+                <div class="stats-label">En proceso</div>
+            </div>
+            <div class="stats-card">
+                <div class="stats-icon"><i class="bi bi-check-circle"></i></div>
+                <div class="stats-value">{{ total_respondidas }}</div>
+                <div class="stats-label">Respondidas</div>
+            </div>
+            <div class="stats-card">
+                <div class="stats-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                <div class="stats-value">{{ total_criticas }}</div>
+                <div class="stats-label">Críticas activas</div>
+            </div>
+        </div>
+
+        <section class="tabs-shell">
+            <ul class="nav nav-tabs nav-tabs-modern" id="urgenciasTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pendientes-tab" data-bs-toggle="tab" data-bs-target="#pendientes-content" type="button" role="tab">
+                        <i class="bi bi-clock me-2"></i>Pendientes <span class="badge bg-warning text-dark ms-2">{{ total_pendientes }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="proceso-tab" data-bs-toggle="tab" data-bs-target="#proceso-content" type="button" role="tab">
+                        <i class="bi bi-list-task me-2"></i>En proceso <span class="badge bg-info ms-2">{{ total_proceso }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="respondidas-tab" data-bs-toggle="tab" data-bs-target="#respondidas-content" type="button" role="tab">
+                        <i class="bi bi-check-circle me-2"></i>Respondidas <span class="badge bg-success ms-2">{{ total_respondidas }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="vencidas-tab" data-bs-toggle="tab" data-bs-target="#vencidas-content" type="button" role="tab">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Vencidas <span class="badge bg-danger ms-2">{{ total_vencidas }}</span>
+                    </button>
+                </li>
+            </ul>
+        </section>
+
+        <div class="tab-content" id="urgenciasTabContent">
+            <div class="tab-pane fade show active" id="pendientes-content" role="tabpanel" aria-labelledby="pendientes-tab">
+                {% if urgencias_pendientes %}
+                    <div class="urgencia-grid">
+                        {% for urgencia in urgencias_pendientes %}
+                            <article class="urgencia-card is-pending">
+                                <div class="urgencia-head">
+                                    <div class="urgencia-radicado">
+                                        <span class="urgencia-icon"><i class="bi bi-fire"></i></span>
+                                        <div>
+                                            <div class="urgencia-code">{{ urgencia.radicado }}</div>
+                                            <small class="text-muted">Pendiente de atención</small>
+                                        </div>
+                                    </div>
+                                    <span class="priority-badge {% if urgencia.prioridad == 'CRITICA' %}is-critica{% elif urgencia.prioridad == 'ALTA' %}is-alta{% else %}is-normal{% endif %}">
+                                        {{ urgencia.get_prioridad_display }}
+                                    </span>
+                                </div>
+                                <div class="urgencia-body">
+                                    <div class="urgencia-title">{{ urgencia.correo_entrante.asunto|truncatechars:90 }}</div>
+                                    <div class="urgencia-meta">
+                                        <div class="meta-row"><i class="bi bi-building"></i><span>{{ urgencia.oficina_destino.nombre|truncatechars:40 }}</span></div>
+                                        <div class="meta-row"><i class="bi bi-folder"></i><span>{{ urgencia.serie.nombre|default:'Sin serie'|truncatechars:40 }}</span></div>
+                                        <div class="meta-row"><i class="bi bi-calendar-event"></i><span>{{ urgencia.fecha_radicacion|date:"d/m/Y H:i" }}</span></div>
+                                    </div>
+                                    <div class="time-block">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <small class="text-muted">Tiempo transcurrido</small>
+                                            <span class="time-badge {% if urgencia.color_alerta == 'danger' %}is-overdue{% elif urgencia.color_alerta == 'warning' %}is-warning{% else %}is-ok{% endif %}">
+                                                {{ urgencia.horas_transcurridas|floatformat:1 }}h / {{ urgencia.horas_limite }}h
+                                            </span>
+                                        </div>
+                                        <div class="progress progress-time">
+                                            <div class="progress-bar bg-{{ urgencia.color_alerta }}" role="progressbar" style="width: {{ urgencia.porcentaje_tiempo_usado }}%"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between mt-2">
+                                            <small class="text-muted">{{ urgencia.porcentaje_tiempo_usado|floatformat:0 }}% usado</small>
+                                            <small class="text-muted">Meta: {{ urgencia.horas_limite }}h</small>
+                                        </div>
+                                    </div>
+                                    <div class="urgencia-actions">
+                                        <a href="{% url 'correspondencia:urgencia_detalle' urgencia.pk %}" class="btn btn-outline-primary">
+                                            <i class="bi bi-eye me-1"></i>Ver detalle
+                                        </a>
+                                    </div>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-card">
+                        <i class="bi bi-inbox empty-state-icon text-success"></i>
+                        <h5 class="text-muted">No hay urgencias pendientes</h5>
+                        <p class="text-muted mb-0">Todas las urgencias están siendo atendidas.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="tab-pane fade" id="proceso-content" role="tabpanel" aria-labelledby="proceso-tab">
+                {% if urgencias_proceso %}
+                    <div class="urgencia-grid">
+                        {% for urgencia in urgencias_proceso %}
+                            <article class="urgencia-card is-process">
+                                <div class="urgencia-head">
+                                    <div class="urgencia-radicado">
+                                        <span class="urgencia-icon"><i class="bi bi-gear-fill"></i></span>
+                                        <div>
+                                            <div class="urgencia-code">{{ urgencia.radicado }}</div>
+                                            <small class="text-muted">Actualmente en gestión</small>
+                                        </div>
+                                    </div>
+                                    <span class="priority-badge {% if urgencia.prioridad == 'CRITICA' %}is-critica{% elif urgencia.prioridad == 'ALTA' %}is-alta{% else %}is-normal{% endif %}">
+                                        {{ urgencia.get_prioridad_display }}
+                                    </span>
+                                </div>
+                                <div class="urgencia-body">
+                                    <div class="urgencia-title">{{ urgencia.correo_entrante.asunto|truncatechars:90 }}</div>
+                                    <div class="urgencia-meta">
+                                        <div class="meta-row"><i class="bi bi-person-circle"></i><span>{{ urgencia.usuario_asignado.get_full_name|default:'Sin asignación'|truncatechars:40 }}</span></div>
+                                        <div class="meta-row"><i class="bi bi-building"></i><span>{{ urgencia.oficina_destino.nombre|truncatechars:40 }}</span></div>
+                                        <div class="meta-row"><i class="bi bi-folder"></i><span>{{ urgencia.serie.nombre|default:'Sin serie'|truncatechars:40 }}</span></div>
+                                    </div>
+                                    <div class="time-block">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <small class="text-muted">Tiempo restante</small>
+                                            <span class="time-badge {% if urgencia.color_alerta == 'danger' %}is-overdue{% elif urgencia.color_alerta == 'warning' %}is-warning{% else %}is-ok{% endif %}">
+                                                {{ urgencia.horas_restantes|floatformat:1 }}h
+                                            </span>
+                                        </div>
+                                        <div class="progress progress-time">
+                                            <div class="progress-bar bg-{{ urgencia.color_alerta }}" role="progressbar" style="width: {{ urgencia.porcentaje_tiempo_usado }}%"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between mt-2">
+                                            <small class="text-muted">{{ urgencia.horas_transcurridas|floatformat:1 }}h consumidas</small>
+                                            <small class="text-muted">{{ urgencia.porcentaje_tiempo_usado|floatformat:0 }}%</small>
+                                        </div>
+                                    </div>
+                                    <div class="urgencia-actions">
+                                        <a href="{% url 'correspondencia:urgencia_detalle' urgencia.pk %}" class="btn btn-outline-info">
+                                            <i class="bi bi-eye me-1"></i>Ver detalle
+                                        </a>
+                                    </div>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-card">
+                        <i class="bi bi-list-check empty-state-icon text-info"></i>
+                        <h5 class="text-muted">No hay urgencias en proceso</h5>
+                        <p class="text-muted mb-0">Las urgencias aparecerán aquí cuando sean asignadas.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="tab-pane fade" id="respondidas-content" role="tabpanel" aria-labelledby="respondidas-tab">
+                {% if urgencias_respondidas %}
+                    <section class="table-card">
+                        <div class="table-responsive">
+                            <table class="table table-modern table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Radicado</th>
+                                        <th>Asunto</th>
+                                        <th>Oficina</th>
+                                        <th>Respondió</th>
+                                        <th>Fecha respuesta</th>
+                                        <th>Tiempo</th>
+                                        <th class="text-center">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for urgencia in urgencias_respondidas %}
+                                        <tr>
+                                            <td><strong>{{ urgencia.radicado }}</strong></td>
+                                            <td>{{ urgencia.correo_entrante.asunto|truncatechars:55 }}</td>
+                                            <td><span class="text-muted">{{ urgencia.oficina_destino.nombre|truncatechars:30 }}</span></td>
+                                            <td>{{ urgencia.usuario_responde.get_full_name|default:'Sin registro'|truncatechars:30 }}</td>
+                                            <td><span class="text-muted">{{ urgencia.fecha_respuesta|date:"d/m/Y H:i" }}</span></td>
+                                            <td>
+                                                <span class="meta-badge">
+                                                    <i class="bi bi-clock"></i>{{ urgencia.horas_transcurridas|floatformat:1 }}h
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <a href="{% url 'correspondencia:urgencia_detalle' urgencia.pk %}" class="btn btn-outline-success table-action" title="Ver detalle">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                {% else %}
+                    <div class="empty-card">
+                        <i class="bi bi-check-circle empty-state-icon text-success"></i>
+                        <h5 class="text-muted">No hay urgencias respondidas</h5>
+                        <p class="text-muted mb-0">Las urgencias completadas aparecerán aquí.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="tab-pane fade" id="vencidas-content" role="tabpanel" aria-labelledby="vencidas-tab">
+                {% if urgencias_vencidas %}
+                    <div class="alert-card" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Estas urgencias han superado el límite de tiempo establecido y requieren atención inmediata.
+                    </div>
+                    <div class="urgencia-grid">
+                        {% for urgencia in urgencias_vencidas %}
+                            <article class="urgencia-card is-overdue">
+                                <div class="urgencia-head">
+                                    <div class="urgencia-radicado">
+                                        <span class="urgencia-icon"><i class="bi bi-exclamation-octagon-fill"></i></span>
+                                        <div>
+                                            <div class="urgencia-code">{{ urgencia.radicado }}</div>
+                                            <small class="text-danger fw-semibold">Tiempo excedido</small>
+                                        </div>
+                                    </div>
+                                    <span class="time-badge is-overdue">Vencida</span>
+                                </div>
+                                <div class="urgencia-body">
+                                    <div class="urgencia-title">{{ urgencia.correo_entrante.asunto|truncatechars:90 }}</div>
+                                    <div class="urgencia-meta">
+                                        <div class="meta-row"><i class="bi bi-building"></i><span>{{ urgencia.oficina_destino.nombre|truncatechars:40 }}</span></div>
+                                        {% if urgencia.usuario_asignado %}
+                                            <div class="meta-row"><i class="bi bi-person-circle"></i><span>{{ urgencia.usuario_asignado.get_full_name|truncatechars:40 }}</span></div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="time-block">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <small class="text-muted">Tiempo excedido</small>
+                                            <span class="time-badge is-overdue">{{ urgencia.horas_transcurridas|floatformat:1 }}h / {{ urgencia.horas_limite }}h</span>
+                                        </div>
+                                        <div class="progress progress-time">
+                                            <div class="progress-bar bg-danger" role="progressbar" style="width: 100%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="urgencia-actions">
+                                        <a href="{% url 'correspondencia:urgencia_detalle' urgencia.pk %}" class="btn btn-danger">
+                                            <i class="bi bi-lightning-fill me-1"></i>Atender urgente
+                                        </a>
+                                    </div>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-card">
+                        <i class="bi bi-check-circle-fill empty-state-icon text-success"></i>
+                        <h5 class="text-success">Excelente trabajo</h5>
+                        <p class="text-muted mb-0">No hay urgencias vencidas.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Auto-refresh cada 60 segundos (mejorado a 60s para reducir carga)
+setTimeout(function() {
+    location.reload();
+}, 60000);
+
+// Activar tooltips si hay alguno
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}

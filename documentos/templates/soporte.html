@@ -1,0 +1,1167 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Centro de Ayuda - Archivo Sarare</title>
+  <!-- Bootstrap 5 -->
+      <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+      <!-- Bootstrap Icons -->
+      <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+  <!-- Google Fonts -->
+  <!-- Estilos Personalizados -->
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+
+  <style>
+    /* Fuente global */
+    * {
+      font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+      background: #f5f7fa;
+      color: #2c3e50;
+      margin: 0;
+      padding: 0;
+      line-height: 1.7;
+    }
+    
+    /* Layout con sidebar */
+    .soporte-layout {
+      display: flex;
+      min-height: 100vh;
+      align-items: flex-start;
+    }
+    
+    .soporte-content {
+      flex: 1;
+      min-width: 0;
+      background: #f5f7fa;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      position: relative;
+    }
+    
+    .soporte-main {
+      flex: 1;
+      padding: 1.5rem 2rem;
+      min-height: 0;
+      overflow-y: auto;
+      width: 100%;
+      background: #f5f7fa;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    .soporte-main * {
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    .accordion {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    
+    /* Navbar mejorado */
+    .soporte-navbar {
+      background: white;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      padding: 1rem 2rem;
+      margin-bottom: 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .soporte-navbar-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .soporte-navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #003366;
+      text-decoration: none;
+    }
+    
+    .soporte-navbar-brand i {
+      font-size: 1.8rem;
+      color: #0077cc;
+    }
+    
+    .soporte-navbar-user {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .soporte-navbar-greeting {
+      color: #5a6c7d;
+      font-size: 0.95rem;
+    }
+    
+    .soporte-navbar-logout {
+      background: #f0f0f0;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      color: #003366;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+    }
+    
+    .soporte-navbar-logout:hover {
+      background: #e0e0e0;
+      color: #005599;
+    }
+    
+    /* Título principal */
+    .soporte-hero {
+      background: linear-gradient(135deg, #003366 0%, #005599 50%, #0077cc 100%);
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 51, 102, 0.2);
+      margin: 1.5rem 0 2rem;
+      padding: 2.5rem 2rem;
+      color: white;
+      text-align: center;
+    }
+    
+    .soporte-hero h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 0.5rem;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .soporte-hero p {
+      font-size: 1.1rem;
+      opacity: 0.95;
+      margin: 0;
+    }
+    
+    /* Títulos de secciones */
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #003366;
+      margin: 2rem 0 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 3px solid #0077cc;
+      display: inline-block;
+    }
+    
+    /* Cards del accordion mejorados */
+    .accordion .card {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      margin-bottom: 1rem;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      background: white;
+    }
+    
+    .accordion .card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      transform: translateY(-2px);
+    }
+    
+    .accordion .card-header {
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+      border-bottom: 2px solid #e1e8ed;
+      padding: 1.25rem 1.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .accordion .card-header:hover {
+      background: linear-gradient(135deg, #f0f4f8 0%, #f8f9fa 100%);
+    }
+    
+    .accordion .card-header h5 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #003366;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    
+    .accordion .card-header h5 i {
+      font-size: 1.2rem;
+      color: #0077cc;
+    }
+    
+    .accordion .card-body {
+      padding: 1.5rem;
+      background: white;
+      color: #2c3e50;
+      line-height: 1.8;
+    }
+    
+    .accordion-collapse {
+      background: white;
+    }
+    
+    .card-body ul {
+      margin: 0.5rem 0;
+      padding-left: 1.5rem;
+    }
+    
+    .card-body li {
+      margin-bottom: 0.5rem;
+    }
+    
+    .card-body strong {
+      color: #003366;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+<div class="soporte-layout">
+    {% include 'partials/sidebar_nav.html' %}
+    <div class="soporte-content">
+                    <!-- Navbar Mejorado -->
+        <nav class="soporte-navbar">
+            <div class="soporte-navbar-content">
+                <div class="soporte-navbar-brand">
+                    <i class="bi bi-question-circle-fill"></i>
+                    <span>Centro de Ayuda</span>
+                </div>
+                <div class="soporte-navbar-user">
+      {% if request.user.is_authenticated %}
+                        <span class="soporte-navbar-greeting">
+                            <i class="bi bi-person-circle me-1"></i>
+                            {{ request.user.get_full_name|default:request.user.username }}
+                        </span>
+        <form method="post" action="{% url 'logout' %}" class="d-inline">
+          {% csrf_token %}
+                            <button type="submit" class="soporte-navbar-logout">
+                                <i class="bi bi-box-arrow-right me-1"></i>Cerrar sesión
+                            </button>
+        </form>
+      {% else %}
+                        <a href="{% url 'login' %}" class="soporte-navbar-logout">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión
+                        </a>
+      {% endif %}
+                </div>
+  </div>
+</nav>
+
+<!-- Contenido Principal -->
+        <main class="soporte-main" id="mainContainer">
+                        <!-- Hero Section -->
+            <div class="soporte-hero">
+                <h1><i class="bi bi-book-half me-2"></i>Manual de Usuario</h1>
+                <p>Guía completa para el uso del Sistema de Gestión Documental del Hospital del Sarare</p>
+            </div>
+
+  <!-- Título del Manual -->
+            <h2 class="section-title" id="manualUsuario">Contenido del Manual</h2>
+
+  <!-- Accordion del Manual -->
+            <div class="accordion" id="accordion">
+
+    <!-- 1. Introducción -->
+    <div class="card mb-3">
+                                  <div class="card-header" id="heading1" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse1" aria-expanded="true" aria-controls="collapse1">
+        <h5 class="mb-0">
+                            <i class="bi bi-info-circle"></i> 1. Introducción <span>🔍</span>
+        </h5>
+      </div>
+                    <div id="collapse1" class="accordion-collapse collapse show" data-bs-parent="#accordion">
+        <div class="card-body">
+          <p>
+            El Sistema de Gestión Documental – Archivo Sarare está diseñado para administrar de manera eficiente el archivo histórico del Hospital del Sarare. Permite a los funcionarios registrar, gestionar y consultar información documental de forma digitalizada, garantizando trazabilidad y seguridad de los documentos.
+          </p>
+          <p>
+            Este manual fusiona las indicaciones de uso de la plataforma con las pautas para el diligenciamiento del <strong>Formato Único de Inventarios Documentales (FUID)</strong> y la terminología clave. Está dirigido tanto a los <span class="text-primary">Usuarios Líderes de Oficina</span> como a los <span class="text-primary">Usuarios Documentales</span>.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Objetivo -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading2" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse2" aria-expanded="false" aria-controls="collapse2">
+        <h5 class="mb-0">
+                            <i class="bi bi-bullseye"></i> 2. Objetivo <span>🎯</span>
+        </h5>
+      </div>
+                    <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <ul>
+            <li>Establecer lineamientos claros para la correcta creación, consulta y administración de los FUIDs.</li>
+            <li>Unificar criterios para la gestión de la documentación, abarcando registro, inventario y conservación.</li>
+            <li>Garantizar el manejo de la información cumpliendo los principios archivísticos y requerimientos de seguridad institucional.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Alcance -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading3" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse3" aria-expanded="false" aria-controls="collapse3">
+        <h5 class="mb-0">
+                            <i class="bi bi-rulers"></i> 3. Alcance <span>📏</span>
+        </h5>
+      </div>
+                    <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <ul>
+            <li>Incluye todos los subprocesos de la entidad relacionados con la gestión documental.</li>
+            <li>Aplica a los responsables de archivo de gestión y archivo central, así como a los equipos involucrados en la creación y administración de inventarios documentales.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Definiciones Principales -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading4" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse4" aria-expanded="false" aria-controls="collapse4">
+        <h5 class="mb-0">
+                            <i class="bi bi-book"></i> 4. Definiciones Principales <span>📚</span>
+        </h5>
+      </div>
+                                  <div id="collapse4" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <ul>
+            <li><strong>Archivo:</strong> Conjunto de documentos acumulados de manera natural por una persona o entidad.</li>
+            <li><strong>Archivo Central:</strong> Unidad que coordina y controla los archivos de gestión, recibiendo documentos transferidos.</li>
+            <li><strong>Archivo de Gestión:</strong> Archivo de la oficina productora que conserva documentación en trámite y de uso continuo.</li>
+            <li><strong>Archivo Electrónico:</strong> Conjunto de documentos en soporte digital producidos y tratados archivísticamente.</li>
+            <li><strong>Archivo Histórico:</strong> Documentos con valor permanente para la investigación, la ciencia y la cultura.</li>
+            <li><strong>Carpeta:</strong> Unidad de conservación que protege documentos para su almacenamiento.</li>
+            <li><strong>Código:</strong> Identificación asignada a oficinas, series y subseries según el sistema de clasificación.</li>
+            <li><strong>Inventario Documental (FUID):</strong> Instrumento que describe de forma precisa las series o asuntos de un fondo documental.</li>
+            <li><strong>Serie Documental:</strong> Documentos organizados por actividad o proceso archivístico.</li>
+            <li><strong>Subserie Documental:</strong> Conjunto de documentos que forman parte de una serie, con características específicas.</li>
+            <li><strong>Tipo Documental:</strong> Unidad documental simple con formato y contenido distintivos.</li>
+            <li><strong>Unidad de Conservación:</strong> Elemento (caja, carpeta, tomo, etc.) que agrupa documentos para garantizar su preservación.</li>
+            <li><strong>Unidad Documental:</strong> Conjunto de documentos del mismo tipo o varios tipos tratados como un todo.</li>
+            <li><strong>Fechas Extremas:</strong> Fecha inicial y final de los documentos; si no existe, se registra “S.F.” (Sin Fecha).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Roles de Usuario -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading5" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse5" aria-expanded="false" aria-controls="collapse5">
+        <h5 class="mb-0">
+                            <i class="bi bi-people"></i> 5. Roles de Usuario <span>👥</span>
+        </h5>
+      </div>
+                                  <div id="collapse5" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <h6>Usuario Líder de Oficina</h6>
+          <ul>
+            <li>Responsable de la creación y administración de los FUIDs.</li>
+            <li>Gestiona la edición y actualización de la información asociada.</li>
+          </ul>
+          <h6>Usuario Documental</h6>
+          <ul>
+            <li>Colaborador autorizado para gestionar (crear, modificar o eliminar) los registros dentro de los FUIDs de su oficina.</li>
+            <li>No posee privilegios para modificar FUIDs completos, solo los registros que haya creado.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. Acceso al Sistema -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading6" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse6" aria-expanded="false" aria-controls="collapse6">
+        <h5 class="mb-0">
+                            <i class="bi bi-key"></i> 6. Acceso al Sistema <span>🔑</span>
+        </h5>
+      </div>
+                                  <div id="collapse6" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <h6>Ingreso a la Plataforma</h6>
+          <p>
+            Abra su navegador web e ingrese la dirección <code>192.168.2.23</code> desde su navegador.
+          </p>
+          <h6>Recuperación de Contraseña</h6>
+          <p>
+            En caso de olvido o pérdida de la contraseña, contacte al administrador del sistema para el restablecimiento.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. Creación y Diligenciamiento de FUIDs -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading7" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse7" aria-expanded="false" aria-controls="collapse7">
+        <h5 class="mb-0">
+                            <i class="bi bi-pencil-square"></i> 7. Creación y Diligenciamiento de FUIDs <span>🗃️</span>
+        </h5>
+      </div>
+                                  <div id="collapse7" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <h6>7.1. Objetivo del FUID</h6>
+          <p>
+            El FUID permite llevar el control detallado de las series documentales producidas en cada oficina, registrando:
+          </p>
+          <ul>
+            <li><strong>Entidad Productora:</strong> Nombre de la institución que genera los documentos.</li>
+            <li><strong>Unidad Administrativa y Oficina Productora:</strong> Dependencia que produce y gestiona la documentación.</li>
+            <li><strong>Objeto:</strong> Propósito del inventario (transferencias, valoración de fondos acumulados, fusiones, inventarios individuales, etc.).</li>
+          </ul>
+          <h6>7.2. Creación de un FUID</h6>
+          <ol>
+            <li>Ingrese al sistema y seleccione la sección <strong>"FUIDs"</strong>.</li>
+            <li>Haga clic en <strong>"Crear FUID"</strong>.</li>
+            <li>Complete los campos obligatorios:
+              <ul>
+                <li>Entidad Productora</li>
+                <li>Unidad Administrativa</li>
+                <li>Oficina Productora</li>
+                <li>Objeto del FUID</li>
+                <li>Datos del Responsable (Elaborado por, Entregado por, Recibido por)</li>
+              </ul>
+            </li>
+            <li>Guarde los cambios haciendo clic en <strong>"Guardar"</strong>.</li>
+          </ol>
+          <h6>7.3. Modificación de un FUID</h6>
+          <ol>
+            <li>Vaya a la <strong>"Lista de FUIDs"</strong>.</li>
+            <li>Seleccione el FUID a modificar.</li>
+            <li>Presione <strong>"Editar"</strong> y realice los ajustes necesarios.</li>
+            <li>Haga clic en <strong>"Guardar"</strong> para confirmar.</li>
+          </ol>
+          <p class="text-danger">
+            <strong>Importante:</strong> Solo los Usuarios Líderes de Oficina pueden modificar un FUID. No es posible eliminar un FUID una vez creado.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. Gestión de Registros dentro de un FUID -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading8" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse8" aria-expanded="false" aria-controls="collapse8">
+        <h5 class="mb-0">
+                            <i class="bi bi-clipboard-check"></i> 8. Gestión de Registros <span>📝</span>
+        </h5>
+      </div>
+                                  <div id="collapse8" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <h6>8.1. Creación de un Registro</h6>
+          <ol>
+            <li>Acceda a la <strong>"Lista de FUIDs"</strong> y seleccione el FUID correspondiente, luego haga clic en <strong>"Ver"</strong>.</li>
+            <li>Dentro del detalle, presione <strong>"Agregar Registro"</strong>.</li>
+            <li>Complete la información requerida:
+              <ul>
+                <li><strong>Número de Orden:</strong> Consecutivo para cada nuevo registro.</li>
+                <li><strong>Código de Serie/Subserie:</strong> Según el sistema de clasificación (CCD, TRD o TVD).</li>
+                <li><strong>Unidad Documental:</strong> Nombre identificatorio (carpeta, expediente, tomo, etc.).</li>
+                <li><strong>Fechas Inicial y Final:</strong> Formato AAAA-MM-DD; use “S.F.” si no hay fecha.</li>
+                <li><strong>Tipo de Soporte:</strong> Físico (papel) o Electrónico.</li>
+                <li><strong>Ubicación y Detalles:</strong> Indique caja, carpeta, tomo o ruta digital.</li>
+                <li><strong>Notas (opcional):</strong> Observaciones (saltos en numeración, estado de conservación, documentos sensibles, etc.).</li>
+              </ul>
+            </li>
+            <li>Presione <strong>"Guardar"</strong> para finalizar.</li>
+          </ol>
+          <h6>8.2. Edición de un Registro</h6>
+          <ol>
+            <li>Acceda al FUID correspondiente en la <strong>"Lista de FUIDs"</strong>.</li>
+            <li>Ubique el registro y presione <strong>"Editar"</strong>.</li>
+            <li>Ajuste los campos necesarios y guarde los cambios.</li>
+          </ol>
+          <h6>8.3. Eliminación de Registros</h6>
+          <p>
+            Ningun usuario puede eliminar registros, solo se puede desligarde un FUID. Los FUIDs completos no se pueden eliminar
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. Gestión de Documentos Adjuntos -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading9" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse9" aria-expanded="false" aria-controls="collapse9">
+        <h5 class="mb-0">
+                            <i class="bi bi-paperclip"></i> 9. Gestión de Documentos Adjuntos <span>📎</span>
+        </h5>
+      </div>
+                                  <div id="collapse9" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <h6>9.1. Adjuntar Documentos</h6>
+          <ol>
+            <li>Al crear o editar un registro, busque la opción <strong>"Adjuntar Documento"</strong>.</li>
+            <li>Seleccione el archivo desde su dispositivo.</li>
+            <li>
+              <strong>Restricciones:</strong>
+              <ul>
+                <li>Tamaño máximo: 10 MB por archivo.</li>
+                <li>Formatos permitidos: PDF, Word, Excel, imágenes, etc.</li>
+              </ul>
+            </li>
+            <li>Haga clic en <strong>"Guardar"</strong> para subir el documento a la nube de Microsoft Azure.</li>
+          </ol>
+          <h6>9.2. Visualización y Descarga de Documentos</h6>
+          <ol>
+            <li>Acceda a la <strong>"Lista de FUIDs"</strong> y seleccione el FUID.</li>
+            <li>Haga clic en <strong>"Ver"</strong> para entrar al detalle de registros.</li>
+            <li>En la columna <strong>"Documento"</strong>, presione <strong>"Ver Documento"</strong>.</li>
+            <li>Seleccione la opción de descarga para guardar el archivo localmente.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. Exportación de Datos -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading10" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse10" aria-expanded="false" aria-controls="collapse10">
+        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-arrow-down"></i> 10. Exportación de Datos <span>📈</span>
+        </h5>
+      </div>
+                                  <div id="collapse10" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <p>
+            Desde la <strong>"Lista de FUIDs"</strong> o <strong>"Lista de Registros"</strong>, haga clic en <strong>"Exportar a Excel"</strong> y guarde o abra el archivo generado para su análisis o respaldo.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11. Sistema de Correspondencia -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading11" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse11" aria-expanded="false" aria-controls="collapse11">
+        <h5 class="mb-0">
+                            <i class="bi bi-envelope"></i> 11. Sistema de Correspondencia <span>📧</span>
+        </h5>
+      </div>
+                                  <div id="collapse11" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <h6>11.1. Introducción al Sistema de Correspondencia</h6>
+          <p>
+            El Sistema de Correspondencia permite gestionar la comunicación interna del Hospital del Sarare, facilitando el envío, recepción y seguimiento de documentos y mensajes entre diferentes oficinas y funcionarios.
+          </p>
+          
+          <h6>11.2. Acceso al Sistema de Correspondencia</h6>
+          <ol>
+            <li>Desde la página principal, haga clic en <strong>"Correspondencia"</strong> en la sección de Accesos Rápidos.</li>
+            <li>O acceda directamente desde el menú de navegación superior.</li>
+            <li>El sistema mostrará su bandeja personal de correspondencia.</li>
+          </ol>
+
+          <h6>11.3. Bandeja Personal</h6>
+          <p>
+            La bandeja personal muestra todas las correspondencias asignadas a su usuario, organizadas por estado:
+          </p>
+          <ul>
+            <li><strong>📬 No Leídas:</strong> Correspondencias pendientes de revisión</li>
+            <li><strong>📭 Leídas:</strong> Correspondencias ya revisadas</li>
+            <li><strong>⏰ Pendientes:</strong> Correspondencias que requieren acción</li>
+          </ul>
+
+          <h6>11.4. Estados de Lectura</h6>
+          <p>
+            El sistema utiliza iconos visuales para indicar el estado de lectura:
+          </p>
+          <ul>
+            <li><strong>🔴 Envelope cerrado:</strong> No leída (0/X destinatarios)</li>
+            <li><strong>🟡 Envelope semi-abierto:</strong> Parcialmente leída (X/Y destinatarios)</li>
+            <li><strong>🟢 Envelope abierto:</strong> Completamente leída (X/X destinatarios)</li>
+          </ul>
+
+          <h6>11.5. Sistema de Notificaciones</h6>
+          <p>
+            El sistema incluye un sistema de notificaciones en tiempo real:
+          </p>
+          <ul>
+            <li><strong>🔔 Notificaciones automáticas:</strong> Recibe alertas cuando se le asigna nueva correspondencia</li>
+            <li><strong>🔊 Sonido de notificación:</strong> Alerta auditiva para nuevas asignaciones</li>
+            <li><strong>📱 Actualización automática:</strong> La bandeja se actualiza cada 15-30 segundos</li>
+            <li><strong>📊 Contador de no leídas:</strong> Badge en el icono de notificaciones</li>
+          </ul>
+
+          <h6>11.6. Gestión de Correspondencia</h6>
+          <ol>
+            <li><strong>Ver Detalle:</strong> Haga clic en cualquier correspondencia para ver el contenido completo</li>
+            <li><strong>Marcar como Leída:</strong> Al abrir una correspondencia, se marca automáticamente como leída</li>
+            <li><strong>Filtrar por Estado:</strong> Use los filtros para ver solo correspondencias no leídas o leídas</li>
+            <li><strong>Buscar:</strong> Utilice la barra de búsqueda para encontrar correspondencias específicas</li>
+          </ol>
+
+          <h6>11.7. Historial de Lectura</h6>
+          <p>
+            El sistema registra automáticamente:
+          </p>
+          <ul>
+            <li><strong>Fecha y hora de lectura:</strong> Cuándo fue leída cada correspondencia</li>
+            <li><strong>Usuario que leyó:</strong> Quién accedió al contenido</li>
+            <li><strong>Estado de seguimiento:</strong> Progreso de lectura por destinatario</li>
+          </ul>
+
+          <h6>11.8. Radicación de Correspondencia</h6>
+          <p>
+            La radicación es el proceso mediante el cual se registra oficialmente una correspondencia en el sistema, asignándole un número único e irrepetible.
+          </p>
+          
+          <h6>11.8.1. Radicación de Correspondencia Entrante</h6>
+          <p>
+            Para radicar correspondencia que ingresa a la entidad (física o electrónica):
+          </p>
+          <ol>
+            <li>Acceda al módulo de <strong>"Correspondencia"</strong> desde el menú principal.</li>
+            <li>Haga clic en <strong>"Radicar Correspondencia"</strong> (solo usuarios del grupo Ventanilla).</li>
+            <li>Complete el formulario con la siguiente información:
+              <ul>
+                <li><strong>Remitente:</strong> Seleccione o cree el contacto que envía la correspondencia</li>
+                <li><strong>Asunto:</strong> Descripción breve del contenido</li>
+                <li><strong>Medio de Recepción:</strong> Físico o Electrónico</li>
+                <li><strong>Serie y Subserie Documental:</strong> Clasificación según TRD</li>
+                <li><strong>Oficina Destino:</strong> Oficina responsable de procesar</li>
+                <li><strong>Usuario Destino:</strong> Funcionario específico asignado (opcional)</li>
+                <li><strong>Requiere Respuesta:</strong> Marque si la correspondencia requiere respuesta</li>
+                <li><strong>Tiempo de Respuesta:</strong> Normal, Urgente o Muy Urgente</li>
+                <li><strong>Adjuntos:</strong> Suba documentos relacionados (PDF, imágenes, Word, Excel)</li>
+              </ul>
+            </li>
+            <li>Haga clic en <strong>"Radicar"</strong> para generar el número de radicado automáticamente.</li>
+          </ol>
+          
+          <p>
+            <strong>Formato de Radicado:</strong> El sistema genera números únicos en formato <code>ENTRANTE-AAAA-XXXXX</code>, donde:
+          </p>
+          <ul>
+            <li><strong>ENTRANTE:</strong> Tipo de correspondencia</li>
+            <li><strong>AAAA:</strong> Año de radicación</li>
+            <li><strong>XXXXX:</strong> Consecutivo de 5 dígitos (ej: 00001, 00002, etc.)</li>
+          </ul>
+
+          <h6>11.8.2. Radicación de Correspondencia Saliente</h6>
+          <p>
+            Para radicar correspondencia que sale de la entidad:
+          </p>
+          <ol>
+            <li>Desde el módulo de Correspondencia, seleccione <strong>"Correspondencia Saliente"</strong>.</li>
+            <li>Haga clic en <strong>"Nueva Correspondencia Saliente"</strong>.</li>
+            <li>Complete los datos del destinatario y el contenido.</li>
+            <li>El sistema generará automáticamente el radicado en formato <code>SALIENTE-AAAA-XXXXX</code>.</li>
+          </ol>
+
+          <h6>11.9. Distribución de Correspondencia</h6>
+          <p>
+            Una vez radicada, la correspondencia puede ser distribuida a diferentes oficinas y usuarios:
+          </p>
+          <ul>
+            <li><strong>Distribución Inicial:</strong> Se asigna al crear la radicación</li>
+            <li><strong>Redistribución:</strong> Puede reasignarse a otras oficinas o usuarios según necesidad</li>
+            <li><strong>Distribución Múltiple:</strong> Una correspondencia puede enviarse a varias oficinas simultáneamente</li>
+          </ul>
+
+          <h6>11.10. Respuestas a Correspondencia</h6>
+          <p>
+            Para responder a una correspondencia entrante:
+          </p>
+          <ol>
+            <li>Acceda al detalle de la correspondencia que desea responder.</li>
+            <li>Haga clic en <strong>"Responder"</strong>.</li>
+            <li>Complete el formulario de respuesta:
+              <ul>
+                <li>Asunto de la respuesta</li>
+                <li>Contenido del mensaje</li>
+                <li>Adjuntos si es necesario</li>
+              </ul>
+            </li>
+            <li>La respuesta se vinculará automáticamente a la correspondencia original.</li>
+            <li>Se generará un radicado saliente asociado a la respuesta.</li>
+          </ol>
+
+          <h6>11.11. Sellos de Radicado</h6>
+          <p>
+            El sistema genera automáticamente sellos de radicado en formato PDF que incluyen:
+          </p>
+          <ul>
+            <li><strong>Número de radicado:</strong> Identificación única</li>
+            <li><strong>Fecha y hora de radicación:</strong> Timestamp oficial</li>
+            <li><strong>Código QR:</strong> Para verificación rápida de autenticidad</li>
+            <li><strong>Logo institucional:</strong> Identificación del Hospital del Sarare</li>
+          </ul>
+          <p>
+            Los sellos pueden imprimirse y adherirse a documentos físicos o incluirse en respuestas digitales.
+          </p>
+
+          <h6>11.12. Historial y Trazabilidad</h6>
+          <p>
+            El sistema registra automáticamente todos los movimientos de la correspondencia:
+          </p>
+          <ul>
+            <li><strong>Radicación:</strong> Fecha, hora y usuario que radicó</li>
+            <li><strong>Distribuciones:</strong> Cambios de oficina o usuario</li>
+            <li><strong>Lecturas:</strong> Cuándo y quién leyó la correspondencia</li>
+            <li><strong>Respuestas:</strong> Vinculación con correspondencias salientes</li>
+            <li><strong>Cambios de estado:</strong> Historial completo de estados</li>
+          </ul>
+
+          <h6>11.13. Control de Plazos (SLA)</h6>
+          <p>
+            El sistema calcula automáticamente los plazos de respuesta según:
+          </p>
+          <ul>
+            <li><strong>TRD (Tabla de Retención Documental):</strong> Plazos definidos por serie/subserie</li>
+            <li><strong>Tipo de Respuesta:</strong> Normal (10 días), Urgente (5 días), Muy Urgente (3 días)</li>
+            <li><strong>Calendario Laboral:</strong> Considera días hábiles, excluyendo fines de semana y festivos</li>
+          </ul>
+          <p>
+            El sistema muestra alertas visuales cuando se aproxima o se excede la fecha límite de respuesta.
+          </p>
+
+          <h6>11.14. Compartir Correspondencia</h6>
+          <p>
+            Puede compartir correspondencia con otros usuarios u oficinas:
+          </p>
+          <ol>
+            <li>Desde el detalle de la correspondencia, haga clic en <strong>"Compartir"</strong>.</li>
+            <li>Seleccione los usuarios u oficinas con quienes compartir.</li>
+            <li>Agregue una nota opcional explicando el motivo del compartimiento.</li>
+            <li>Los usuarios compartidos podrán ver la correspondencia en su bandeja.</li>
+          </ol>
+
+          <h6>11.15. Características Técnicas</h6>
+          <ul>
+            <li><strong>Seguridad:</strong> Solo usuarios autorizados pueden acceder a su correspondencia</li>
+            <li><strong>Privacidad:</strong> Cada usuario solo ve sus propias asignaciones</li>
+            <li><strong>Rendimiento:</strong> Sistema optimizado para manejar grandes volúmenes de correspondencia</li>
+            <li><strong>Compatibilidad:</strong> Funciona en todos los navegadores modernos</li>
+            <li><strong>Integración con Email:</strong> Radicación automática desde correos electrónicos entrantes</li>
+          </ul>
+
+          <div class="alert alert-info">
+            <strong>💡 Consejo:</strong> Mantenga su bandeja de correspondencia actualizada revisando regularmente las notificaciones para no perder información importante. Revise los plazos de respuesta para cumplir con los tiempos establecidos.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 12. Seguridad y Restricciones -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading12" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse12" aria-expanded="false" aria-controls="collapse12">
+        <h5 class="mb-0">
+                            <i class="bi bi-shield-lock"></i> 12. Seguridad y Restricciones <span>🔒</span>
+        </h5>
+      </div>
+                                  <div id="collapse12" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <h6>Eliminación y Modificación</h6>
+          <ul>
+            <li>No se pueden eliminar FUIDs ya creados.</li>
+            <li>Solo el creador de un registro puede eliminarlo.</li>
+            <li>La modificación de series y subseries está restringida al administrador del sistema.</li>
+          </ul>
+          <h6>Accesibilidad y Visibilidad</h6>
+          <ul>
+            <li>Cada usuario solo ve los FUIDs y registros de su propia oficina.</li>
+            <li>Se requiere permiso especial para consultar información de otras oficinas.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 13. Responsables -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading13" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse13" aria-expanded="false" aria-controls="collapse13">
+        <h5 class="mb-0">
+                            <i class="bi bi-person-check"></i> 13. Responsables <span>📝</span>
+        </h5>
+      </div>
+                                  <div id="collapse13" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <ul>
+            <li><strong>Elaborado por:</strong> Nombre, cargo y firma de la persona encargada de crear el inventario; lugar y fecha de elaboración.</li>
+            <li><strong>Entregado por:</strong> Nombre, cargo y firma de quien hace entrega del inventario; lugar y fecha de entrega.</li>
+            <li><strong>Recibido por:</strong> Nombre, cargo y firma de quien recibe el inventario; lugar y fecha de recepción.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 14. Manual de Préstamo Documental -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading14" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse14" aria-expanded="false" aria-controls="collapse14">
+        <h5 class="mb-0">
+                            <i class="bi bi-book-half"></i> 14. Manual de Préstamo Documental <span>📚</span>
+        </h5>
+      </div>
+                                  <div id="collapse14" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <h6>14.1. Introducción al Préstamo Documental</h6>
+          <p>
+            El sistema de préstamo documental permite a los funcionarios del Hospital del Sarare solicitar documentos del archivo central de manera digital, ya sea en formato físico o digital. Este módulo garantiza la trazabilidad y el control de los documentos prestados.
+          </p>
+
+          <h6>14.2. Tipos de Préstamo</h6>
+          <ul>
+            <li><strong>Préstamo Físico:</strong> Solicitud de documentos físicos que deben ser retirados y devueltos al archivo central.</li>
+                                <li><strong>Préstamo Digital:</strong> Solicitud de documentos digitalizados que se entregan en formato PDF.</li>
+          </ul>
+
+          <h6>14.3. Flujo del Préstamo</h6>
+          <ol>
+            <li><strong>Solicitud:</strong> El usuario solicita un préstamo indicando el tipo, descripción del documento y código TRD si aplica.</li>
+            <li><strong>Procesamiento:</strong> El personal de Archivo Central revisa la solicitud y puede:
+              <ul>
+                <li>Aceptar y cargar evidencia escaneada (el préstamo pasa automáticamente a "ENTREGADO")</li>
+                <li>Rechazar la solicitud (indicando el motivo)</li>
+              </ul>
+            </li>
+            <li><strong>Entrega:</strong> Una vez cargada la evidencia, el préstamo cambia a estado "ENTREGADO".</li>
+            <li><strong>Confirmación:</strong> El solicitante confirma la recepción del documento.</li>
+            <li><strong>Devolución:</strong> Para préstamos físicos, se registra la devolución del documento al archivo.</li>
+          </ol>
+
+          <h6>14.4. Cómo Solicitar un Préstamo</h6>
+          <ol>
+            <li>Acceda al módulo de préstamos desde la barra lateral.</li>
+            <li>Haga clic en <strong>"Nueva Solicitud"</strong>.</li>
+            <li>Complete el formulario:
+              <ul>
+                                    <li>Seleccione el tipo de préstamo (Físico o Digital)</li>
+                <li>Ingrese la descripción del documento solicitado</li>
+                <li>Indique el código TRD si lo conoce</li>
+                <li>Seleccione la serie y subserie documental</li>
+              </ul>
+            </li>
+            <li>Haga clic en <strong>"Enviar Solicitud"</strong>.</li>
+          </ol>
+
+          <h6>14.5. Gestión por área responsable</h6>
+          <p>El personal del área responsable puede gestionar las solicitudes desde la opción <strong>"Gestión de Préstamos"</strong>:</p>
+          <ol>
+            <li>Al recibir una solicitud en estado "SOLICITADO", el archivo central debe:
+              <ul>
+                <li>Seleccionar la acción: <strong>"Aceptar y cargar evidencia"</strong> o <strong>"Rechazar préstamo"</strong></li>
+                <li>Si acepta: subir uno o múltiples archivos escaneados (PDF, Word o Excel) con un máximo de 10 MB en total</li>
+                <li>Si rechaza: indicar el motivo del rechazo</li>
+              </ul>
+            </li>
+            <li>Al cargar la evidencia, el préstamo pasa automáticamente a estado "ENTREGADO".</li>
+            <li>El sistema registra automáticamente el cambio de estado en el historial.</li>
+          </ol>
+
+          <h6>14.6. Confirmación de Recepción</h6>
+          <p>Una vez que el préstamo está en estado "ENTREGADO", el solicitante debe:</p>
+          <ol>
+            <li>Ir a <strong>"Mis Préstamos"</strong>.</li>
+            <li>Seleccionar el préstamo entregado.</li>
+            <li>Hacer clic en <strong>"Aceptar / rechazar entrega"</strong>.</li>
+            <li>Confirmar que recibió el documento correcto o indicar si hay algún problema.</li>
+          </ol>
+
+          <h6>14.7. Devolución de Préstamos Físicos</h6>
+          <p>Para préstamos físicos, el archivo central debe registrar la devolución:</p>
+          <ol>
+            <li>Cuando el documento es devuelto, el archivo central accede a la gestión del préstamo.</li>
+            <li>Marca la opción <strong>"Documento devuelto físicamente"</strong>.</li>
+            <li>Si el documento presenta daños, marca <strong>"Presenta daños o faltantes"</strong> y describe las observaciones.</li>
+            <li>El préstamo cambia a estado "DEVUELTO".</li>
+          </ol>
+
+          <h6>14.8. Estados del Préstamo</h6>
+          <ul>
+            <li><strong>SOLICITADO:</strong> El usuario ha enviado la solicitud y está pendiente de procesamiento.</li>
+            <li><strong>ENTREGADO:</strong> El archivo central ha cargado la evidencia y el documento está disponible.</li>
+            <li><strong>PRESTAMO_ACTIVO:</strong> El solicitante ha confirmado la recepción del documento.</li>
+            <li><strong>DEVUELTO:</strong> El documento físico ha sido devuelto al archivo central.</li>
+            <li><strong>RECHAZADO:</strong> La solicitud fue rechazada por el archivo central.</li>
+            <li><strong>RECHAZADO_POR_USUARIO:</strong> El solicitante rechazó la entrega.</li>
+            <li><strong>VENCIDO:</strong> El préstamo físico ha excedido su fecha de vencimiento.</li>
+          </ul>
+
+          <h6>14.9. Carga de Múltiples Archivos</h6>
+          <p>El sistema permite subir múltiples archivos escaneados para un mismo préstamo:</p>
+          <ul>
+            <li>Formatos permitidos: PDF, Word (.doc, .docx), Excel (.xls, .xlsx)</li>
+            <li>Límite total: 10 MB acumulados entre todos los archivos</li>
+            <li>Puede seleccionar varios archivos a la vez usando la opción de selección múltiple</li>
+            <li>Los archivos se pueden eliminar individualmente si es necesario</li>
+          </ul>
+
+          <h6>14.10. Consulta de Historial</h6>
+          <p>Todos los movimientos del préstamo se registran en el historial, incluyendo:</p>
+          <ul>
+            <li>Fecha y hora de cada cambio de estado</li>
+            <li>Usuario que realizó la acción</li>
+            <li>Descripción del evento</li>
+            <li>Observaciones adicionales</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- 15. Contacto y Soporte -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading15" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse15" aria-expanded="false" aria-controls="collapse15">
+        <h5 class="mb-0">
+                            <i class="bi bi-headset"></i> 15. Contacto y Soporte <span>📞</span>
+        </h5>
+      </div>
+                                  <div id="collapse15" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <p>
+            Para consultas técnicas o inconvenientes en el uso del sistema, comuníquese con la <strong>Oficina Central de Archivo</strong> del Hospital del Sarare.
+          </p>
+          <p>
+            <strong>Correo:</strong> <a href="mailto:ingdiegoter1998@gmail.com">ingdiegoter1998@gmail.com</a><br>
+            <strong>Teléfonos:</strong> 3108660167 / 313 3570831
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 16. Comunicaciones Internas (Oficios) -->
+    <div class="card mb-3">
+                    <div class="card-header" id="heading16" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapse16" aria-expanded="false" aria-controls="collapse16">
+        <h5 class="mb-0">
+                            <i class="bi bi-file-earmark-text"></i> 16. Comunicaciones Internas (Oficios) <span>📄</span>
+        </h5>
+      </div>
+                                  <div id="collapse16" class="accordion-collapse collapse" data-bs-parent="#accordion">
+        <div class="card-body">
+          <h6>16.1. Introducción a las Comunicaciones Internas</h6>
+          <p>
+            Las Comunicaciones Internas (también conocidas como Oficios) son documentos oficiales que se generan dentro del Hospital del Sarare para la comunicación formal entre oficinas, procesos o usuarios. El sistema genera automáticamente documentos PDF con formato oficial que incluyen encabezado, pie de página y firma digital.
+          </p>
+          
+          <h6>16.2. Acceso al Módulo de Comunicaciones Internas</h6>
+          <ol>
+            <li>Desde el menú principal, acceda a <strong>"Correspondencia"</strong>.</li>
+            <li>Seleccione <strong>"Comunicaciones Internas"</strong> en el menú lateral.</li>
+            <li>Verá las opciones: <strong>"Recibidas"</strong>, <strong>"Enviadas"</strong> y <strong>"Nueva Comunicación"</strong>.</li>
+          </ol>
+
+          <h6>16.3. Tipos de Distribución</h6>
+          <p>
+            Al crear una comunicación interna, debe seleccionar el tipo de distribución:
+          </p>
+          <ul>
+            <li><strong>Usuario Específico:</strong> La comunicación se envía a uno o varios usuarios específicos. No requiere aprobación del líder ni firma digital.</li>
+            <li><strong>Oficina Completa (Subproceso):</strong> Se distribuye a todos los usuarios de una oficina específica. Requiere aprobación del líder y firma digital.</li>
+            <li><strong>Proceso Completo:</strong> Se distribuye a todos los usuarios de un proceso completo. Requiere aprobación del líder y firma digital. <strong>No permite respuestas.</strong></li>
+            <li><strong>Toda la Entidad:</strong> Se distribuye a todos los usuarios del sistema. Requiere aprobación del líder y firma digital.</li>
+          </ul>
+
+          <h6>16.4. Crear una Comunicación Interna</h6>
+          <ol>
+            <li>Haga clic en <strong>"Nueva Comunicación"</strong>.</li>
+            <li>Complete el formulario:
+              <ul>
+                <li><strong>Ciudad:</strong> Ciudad de origen (por defecto: Saravena)</li>
+                <li><strong>Fecha del Documento:</strong> Fecha que aparecerá en el PDF oficial</li>
+                <li><strong>Tipo de Distribución:</strong> Seleccione según su necesidad (Usuario, Oficina, Proceso o Entidad)</li>
+                <li><strong>Destinatarios:</strong>
+                  <ul>
+                    <li>Si es <strong>Usuario:</strong> Seleccione uno o varios usuarios específicos</li>
+                    <li>Si es <strong>Oficina:</strong> Seleccione la oficina (subproceso) destino</li>
+                    <li>Si es <strong>Proceso:</strong> Seleccione el proceso destino</li>
+                    <li>Si es <strong>Entidad:</strong> No requiere selección (va a todos)</li>
+                  </ul>
+                </li>
+                <li><strong>Asunto:</strong> Título o tema de la comunicación</li>
+                <li><strong>Cuerpo:</strong> Contenido principal del oficio (texto completo)</li>
+              </ul>
+            </li>
+            <li>Haga clic en <strong>"Guardar Borrador"</strong> para guardar sin enviar, o <strong>"Enviar para Aprobación"</strong> si está listo.</li>
+          </ol>
+
+          <h6>16.5. Flujo de Estados de una Comunicación Interna</h6>
+          <p>
+            Las comunicaciones internas siguen un flujo de estados:
+          </p>
+          <ol>
+            <li><strong>BORRADOR:</strong> Estado inicial. Puede editarse y modificarse libremente.</li>
+            <li><strong>PENDIENTE_APROBACION:</strong> Enviada para revisión del líder de oficina. No puede editarse.</li>
+            <li><strong>APROBADA:</strong> El líder aprobó la comunicación. Si requiere firma digital, debe subirse antes de distribuir.</li>
+            <li><strong>RECHAZADA:</strong> El líder rechazó la comunicación. Puede incluir motivo de rechazo. Fin del flujo.</li>
+            <li><strong>DISTRIBUIDA:</strong> La comunicación fue enviada a los destinatarios. Se generó el PDF oficial y el radicado.</li>
+            <li><strong>RESPONDIDA:</strong> Se creó una respuesta a esta comunicación.</li>
+            <li><strong>ANULADA:</strong> La comunicación fue anulada por el remitente o administrador.</li>
+          </ol>
+
+          <h6>16.6. Aprobación de Comunicaciones (Líderes de Oficina)</h6>
+          <p>
+            Los usuarios con rol de <strong>"Líder de Oficina"</strong> pueden aprobar o rechazar comunicaciones:
+          </p>
+          <ol>
+            <li>Acceda a <strong>"Comunicaciones Internas"</strong> → <strong>"Pendientes de Aprobación"</strong>.</li>
+            <li>Revise el contenido de la comunicación.</li>
+            <li>Decida:
+              <ul>
+                <li><strong>Aprobar:</strong> La comunicación pasa a estado "APROBADA". Si requiere firma, deberá subirla antes de distribuir.</li>
+                <li><strong>Rechazar:</strong> Indique el motivo del rechazo. La comunicación queda en estado "RECHAZADA".</li>
+              </ul>
+            </li>
+          </ol>
+
+          <h6>16.7. Firma Digital de Comunicaciones</h6>
+          <p>
+            Las comunicaciones que requieren firma digital (Oficina, Proceso o Entidad) deben ser firmadas antes de distribuirse:
+          </p>
+          <ol>
+            <li>Una vez aprobada la comunicación, acceda a <strong>"Configurar Firma Digital"</strong> (si aún no tiene firma configurada).</li>
+            <li>Dibuje su firma en el área designada o suba una imagen de su firma.</li>
+            <li>Guarde la firma. Esta quedará asociada a su perfil.</li>
+            <li>Para comunicaciones que requieren firma:
+              <ul>
+                <li>Descargue el PDF generado automáticamente.</li>
+                <li>Fírmelo digitalmente con su certificado digital o herramienta de firma.</li>
+                <li>Suba el PDF firmado en la opción <strong>"Subir Firma Digital"</strong>.</li>
+              </ul>
+            </li>
+            <li>Una vez subida la firma, la comunicación puede ser distribuida.</li>
+          </ol>
+
+          <h6>16.8. Distribución de Comunicaciones</h6>
+          <p>
+            Para distribuir una comunicación aprobada (y firmada si aplica):
+          </p>
+          <ol>
+            <li>Acceda al detalle de la comunicación en estado "APROBADA".</li>
+            <li>Verifique que tenga firma digital si es requerida.</li>
+            <li>Haga clic en <strong>"Distribuir"</strong>.</li>
+            <li>El sistema:
+              <ul>
+                <li>Genera automáticamente el número de radicado (formato: <code>SIGLA-XX-XXX</code>)</li>
+                <li>Crea el PDF oficial con encabezado, contenido y pie de página</li>
+                <li>Envía notificaciones a todos los destinatarios</li>
+                <li>Cambia el estado a "DISTRIBUIDA"</li>
+              </ul>
+            </li>
+          </ol>
+
+          <h6>16.9. Formato de Radicado de Comunicaciones Internas</h6>
+          <p>
+            El sistema genera radicados automáticamente con el formato: <code>SIGLA-XX-XXX</code>
+          </p>
+          <ul>
+            <li><strong>SIGLA:</strong> Sigla del proceso de la oficina remitente (ej: SIS, ADM, JUR)</li>
+            <li><strong>XX:</strong> Código de la oficina (2 dígitos, consecutivo del subproceso)</li>
+            <li><strong>XXX:</strong> Consecutivo de comunicaciones de esa oficina (3 dígitos, reinicia cada año)</li>
+          </ul>
+          <p>
+            <strong>Ejemplo:</strong> <code>SIS-03-045</code> = Sistema de Información, Oficina 03, Comunicación 45 del año.
+          </p>
+
+          <h6>16.10. Responder a Comunicaciones Internas</h6>
+          <p>
+            Puede responder a comunicaciones recibidas, excepto las de tipo "PROCESO" (normativas):
+          </p>
+          <ol>
+            <li>Acceda a la comunicación recibida desde <strong>"Recibidas"</strong>.</li>
+            <li>Haga clic en <strong>"Responder"</strong> (solo disponible si tiene permisos).</li>
+            <li>Complete el formulario de respuesta:
+              <ul>
+                <li>El asunto se pre-llena con "RE: [Asunto original]"</li>
+                <li>Escriba el contenido de su respuesta</li>
+                <li>La respuesta se vinculará automáticamente a la comunicación original</li>
+              </ul>
+            </li>
+            <li>Envíe la respuesta siguiendo el mismo flujo de aprobación y distribución.</li>
+          </ol>
+          <p class="text-warning">
+            <strong>⚠️ Restricciones de Respuesta:</strong>
+          </p>
+          <ul>
+            <li><strong>PROCESO:</strong> Nadie puede responder (normativas institucionales)</li>
+            <li><strong>OFICINA:</strong> Solo el líder de la oficina destinataria puede responder</li>
+            <li><strong>USUARIO:</strong> Solo el usuario específico destinatario puede responder</li>
+            <li><strong>ENTIDAD:</strong> Solo usuarios que recibieron la comunicación pueden responder</li>
+          </ul>
+
+          <h6>16.11. Bandejas de Comunicaciones Internas</h6>
+          <ul>
+            <li><strong>Recibidas:</strong> Muestra todas las comunicaciones que le fueron enviadas a usted, su oficina, proceso o a toda la entidad.</li>
+            <li><strong>Enviadas:</strong> Muestra todas las comunicaciones que usted ha creado y enviado.</li>
+            <li><strong>Pendientes de Aprobación:</strong> (Solo líderes) Comunicaciones que requieren su revisión y aprobación.</li>
+          </ul>
+
+          <h6>16.12. Visualización y Descarga de PDFs</h6>
+          <p>
+            Una vez distribuida, cada comunicación genera un PDF oficial que incluye:
+          </p>
+          <ul>
+            <li><strong>Encabezado:</strong> Logo y datos institucionales del Hospital del Sarare</li>
+            <li><strong>Ciudad y Fecha:</strong> Lugar y fecha del documento</li>
+            <li><strong>Radicado:</strong> Número único de identificación</li>
+            <li><strong>Remitente:</strong> Oficina, usuario y cargo que envía</li>
+            <li><strong>Destinatario:</strong> Oficina, proceso o usuarios destinatarios</li>
+            <li><strong>Asunto:</strong> Título de la comunicación</li>
+            <li><strong>Cuerpo:</strong> Contenido completo del oficio</li>
+            <li><strong>Firmas:</strong> Firma del revisor (líder) y del remitente</li>
+            <li><strong>Pie de Página:</strong> Información de contacto institucional</li>
+          </ul>
+          <p>
+            Puede previsualizar o descargar el PDF desde el detalle de la comunicación.
+          </p>
+
+          <h6>16.13. Trazabilidad y Historial</h6>
+          <p>
+            El sistema registra automáticamente:
+          </p>
+          <ul>
+            <li><strong>Creación:</strong> Fecha, hora y usuario que creó la comunicación</li>
+            <li><strong>Aprobaciones/Rechazos:</strong> Líder que aprobó o rechazó, con fecha y motivo</li>
+            <li><strong>Distribución:</strong> Cuándo y a quién se distribuyó</li>
+            <li><strong>Lecturas:</strong> Qué usuarios leyeron la comunicación y cuándo</li>
+            <li><strong>Respuestas:</strong> Comunicaciones que responden a esta</li>
+            <li><strong>Cambios de Estado:</strong> Historial completo de estados</li>
+          </ul>
+
+          <h6>16.14. Notificaciones de Comunicaciones Internas</h6>
+          <p>
+            El sistema envía notificaciones automáticas cuando:
+          </p>
+          <ul>
+            <li>Se le asigna una nueva comunicación</li>
+            <li>Una comunicación pendiente de aprobación requiere su atención (líderes)</li>
+            <li>Una comunicación que creó fue aprobada o rechazada</li>
+            <li>Alguien responde a una comunicación que envió</li>
+          </ul>
+
+          <div class="alert alert-info">
+            <strong>💡 Consejo:</strong> Revise regularmente sus comunicaciones recibidas y pendientes de aprobación. Las comunicaciones de tipo PROCESO y ENTIDAD son de carácter oficial y requieren atención prioritaria.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- Fin de Accordion -->
+</main>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JS -->
+<script src="/static/correspondencia/vendor/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Inicializar accordion de Bootstrap 5
+  document.addEventListener('DOMContentLoaded', function() {
+    const accordionButtons = document.querySelectorAll('[data-bs-toggle="collapse"]');
+    accordionButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        // Bootstrap 5 maneja el accordion automáticamente
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

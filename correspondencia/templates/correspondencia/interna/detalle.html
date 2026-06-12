@@ -1,0 +1,792 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static humanize %}
+
+{% block title %}Detalle de Comunicación Interna{% endblock %}
+{% block page_title %}Detalle de Comunicación Interna{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'correspondencia/css/comunicacion-interna-hub-detalle.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="interna-module-page interna-detail-page">
+    <div class="internal-module-shell">
+        <div id="moduleInlineFlashHost" class="module-inline-flash-host"></div>
+
+        {% if comunicacion.estado == 'RECHAZADA' %}
+        <section class="module-banner is-danger">
+            <div class="module-banner-icon"><i class="bi bi-x-circle-fill"></i></div>
+            <div>
+                <h3 class="module-section-title">Comunicación rechazada</h3>
+                <p>Esta comunicación fue rechazada por {{ comunicacion.revisado_nombre }}.</p>
+                {% if comunicacion.motivo_rechazo %}
+                <p><strong>Motivo:</strong> {{ comunicacion.motivo_rechazo }}</p>
+                {% endif %}
+            </div>
+        </section>
+        {% elif comunicacion.estado == 'APROBADA' and comunicacion.requiere_firma %}
+        <section class="module-banner is-warning">
+            <div class="module-banner-icon"><i class="bi bi-hourglass-split"></i></div>
+            <div>
+                <h3 class="module-section-title">Pendiente de firma digital</h3>
+                <p>La comunicación ya fue aprobada, pero todavía requiere la firma digital del líder antes de la distribución final.</p>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if comunicacion.comunicacion_origen %}
+        <section class="module-banner is-info">
+            <div class="module-banner-icon"><i class="bi bi-reply-fill"></i></div>
+            <div>
+                <h3 class="module-section-title">Esta pieza es una respuesta</h3>
+                <p>
+                    Comunicación original:
+                    <a href="{% url 'correspondencia:interna_detalle' comunicacion.comunicacion_origen.pk %}">
+                        {{ comunicacion.comunicacion_origen.radicado|default:"BORRADOR" }} - {{ comunicacion.comunicacion_origen.asunto }}
+                    </a>
+                </p>
+                <p>
+                    Fecha original: {{ comunicacion.comunicacion_origen.fecha_documento|date:"d/m/Y" }}
+                    {% if comunicacion.comunicacion_origen.remitente_oficina %}
+                    | De: {{ comunicacion.comunicacion_origen.remitente_oficina.nombre }}
+                    {% endif %}
+                </p>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if comunicacion.tiene_respuestas and not comunicacion.comunicacion_origen %}
+        {% with num_respuestas=comunicacion.contar_respuestas %}
+        <section class="module-banner is-success">
+            <div class="module-banner-icon"><i class="bi bi-chat-left-text-fill"></i></div>
+            <div>
+                <h3 class="module-section-title">Esta comunicación tiene {{ num_respuestas }} respuesta{{ num_respuestas|pluralize:"s" }}</h3>
+                {% for respuesta in comunicacion.get_respuestas_ordenadas|slice:":2" %}
+                <p>
+                    {% if respuesta.es_respuesta_destacada %}⭐ {% endif %}
+                    <a href="{% url 'correspondencia:interna_detalle' respuesta.pk %}">{{ respuesta.radicado|default:"BORRADOR" }} - {{ respuesta.asunto|truncatechars:50 }}</a>
+                    <span class="module-status-pill {% if respuesta.estado == 'DISTRIBUIDA' %}is-success{% elif respuesta.estado == 'PENDIENTE_APROBACION' %}is-warning{% else %}is-neutral{% endif %}">{{ respuesta.get_estado_display }}</span>
+                </p>
+                {% endfor %}
+                <a href="{% url 'correspondencia:interna_historial_respuestas' comunicacion.pk %}" class="module-action-link mt-2">
+                    <i class="bi bi-list-ul"></i>Ver todas las respuestas ({{ num_respuestas }})
+                </a>
+            </div>
+        </section>
+        {% endwith %}
+        {% endif %}
+
+        <section class="module-hero module-hero--single-column">
+            <div class="module-hero-copy">
+                <span class="module-kicker"><i class="bi bi-file-earmark-richtext"></i>Detalle documental</span>
+                <h1 class="module-title">{{ comunicacion.asunto }}</h1>
+                <p class="module-subtitle">Consulta el documento, sus anexos, trazabilidad, respuestas y acciones disponibles sin perder el contexto del flujo interno.</p>
+
+                <div class="module-hero-meta mt-3">
+                    <div class="module-chip-row module-chip-row--inline">
+                        <span class="module-chip"><i class="bi bi-upc-scan"></i>{{ comunicacion.radicado|default:"BORRADOR" }}</span>
+                        <span class="module-status-pill {% if comunicacion.estado == 'DISTRIBUIDA' or comunicacion.estado == 'RESPONDIDA' %}is-success{% elif comunicacion.estado == 'BORRADOR' %}is-neutral{% elif comunicacion.estado == 'RECHAZADA' %}is-danger{% elif comunicacion.estado == 'APROBADA' %}is-info{% else %}is-warning{% endif %}">{{ comunicacion.get_estado_display }}</span>
+                    </div>
+                    <div class="module-chip-row module-chip-row--inline module-chip-row--muted">
+                        {% if comunicacion.trd %}<span class="module-chip-soft"><i class="bi bi-diagram-2"></i>TRD {{ comunicacion.trd }}</span>{% endif %}
+                        {% if comunicacion.archivo_firmado %}<span class="module-chip-soft"><i class="bi bi-pen-fill"></i>Documento firmado</span>{% endif %}
+                        <span class="module-chip-soft"><i class="bi bi-calendar-event"></i>{{ comunicacion.fecha_documento|date:"d/m/Y" }}</span>
+                        {% if comunicacion.ciudad %}<span class="module-chip-soft"><i class="bi bi-geo-alt"></i>{{ comunicacion.ciudad }}</span>{% endif %}
+                        <span class="module-chip-soft"><i class="bi bi-paperclip"></i>{{ comunicacion.anexos.count }} anexo{{ comunicacion.anexos.count|pluralize:"s" }}</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="module-detail-grid">
+            <div class="module-button-stack">
+                <section class="module-card">
+                    <div class="module-panel-head">
+                        <h2 class="module-panel-title"><i class="bi bi-journal-text me-2"></i>Resumen del documento</h2>
+                        <p class="module-copy">Metadatos principales y contenido base de la comunicación interna.</p>
+                    </div>
+                    <div class="module-panel-body">
+                        <div class="module-summary-grid">
+                            <div class="module-summary-card">
+                                <span class="module-detail-label">Número de radicado</span>
+                                <div class="module-detail-value">{{ comunicacion.radicado|default:"BORRADOR" }}</div>
+                            </div>
+                            {% if comunicacion.comunicacion_origen and comunicacion.comunicacion_origen.radicado %}
+                            <div class="module-summary-card">
+                                <span class="module-detail-label">En respuesta a</span>
+                                <div class="module-detail-value">{{ comunicacion.comunicacion_origen.radicado }}</div>
+                            </div>
+                            {% endif %}
+                            <div class="module-summary-card">
+                                <span class="module-detail-label">Fecha del documento</span>
+                                <div class="module-detail-value">{% with fecha=comunicacion.fecha_documento %}{{ fecha|date:"j" }} de {{ fecha|date:"F" }} de {{ fecha|date:"Y" }}{% endwith %}</div>
+                            </div>
+                            <div class="module-summary-card">
+                                <span class="module-detail-label">Ciudad</span>
+                                <div class="module-detail-value">{{ comunicacion.ciudad }}</div>
+                            </div>
+                            <div class="module-summary-card">
+                                <span class="module-detail-label">Remitente</span>
+                                <div class="module-detail-value">{{ comunicacion.remitente_oficina.nombre }}</div>
+                                <div class="module-copy mt-2">{{ comunicacion.remitente_nombre }}{% if comunicacion.remitente_cargo %} - {{ comunicacion.remitente_cargo }}{% endif %}</div>
+                            </div>
+                            <div class="module-summary-card">
+                                <span class="module-detail-label">Proyectado por</span>
+                                <div class="module-detail-value">{{ comunicacion.remitente_nombre }}</div>
+                                {% if comunicacion.remitente_cargo %}<div class="module-copy mt-2">{{ comunicacion.remitente_cargo }}</div>{% endif %}
+                            </div>
+                            {% if comunicacion.revisado_por %}
+                            <div class="module-summary-card">
+                                <span class="module-detail-label">Revisado por</span>
+                                <div class="module-detail-value">{{ comunicacion.revisado_nombre }}</div>
+                                <div class="module-copy mt-2">{{ comunicacion.revisado_cargo }}{% if comunicacion.fecha_revision %} | {{ comunicacion.fecha_revision|date:"d/m/Y H:i" }}{% endif %}</div>
+                            </div>
+                            {% endif %}
+                            {% if comunicacion.fecha_distribucion %}
+                            <div class="module-summary-card">
+                                <span class="module-detail-label">Fecha de distribución</span>
+                                <div class="module-detail-value">{{ comunicacion.fecha_distribucion|date:"d/m/Y H:i" }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="module-info-item mt-3">
+                            <span class="module-detail-label">Destinatario</span>
+                            <div class="module-detail-value">
+                                {% if comunicacion.es_a_toda_entidad or comunicacion.tipo_distribucion == 'ENTIDAD' %}
+                                    {% with entidad=comunicacion.remitente_oficina.unidad_administrativa.entidad_productora %}
+                                        <span class="module-status-pill is-info"><i class="bi bi-people-fill"></i>{{ entidad.nombre|upper }}</span>
+                                    {% endwith %}
+                                {% elif comunicacion.tipo_distribucion == 'PROCESO' %}
+                                    {% if comunicacion.destinatario_proceso %}
+                                        <span class="module-status-pill is-info"><i class="bi bi-diagram-3-fill"></i>Funcionarios del Proceso: {{ comunicacion.destinatario_proceso.nombre }}</span>
+                                    {% else %}
+                                        <span class="module-status-pill is-info">Funcionarios del Proceso</span>
+                                    {% endif %}
+                                {% elif comunicacion.tipo_distribucion == 'OFICINA' %}
+                                    {% if comunicacion.destinatarios_multiples.exists %}
+                                        {% for dest in comunicacion.destinatarios_multiples.all %}
+                                            {% if dest.tipo == 'OFICINA' %}
+                                                <span class="module-status-pill is-info mb-2"><i class="bi bi-building-fill"></i>{{ dest.oficina.nombre }}</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% elif comunicacion.destinatario_oficina %}
+                                        <span class="module-status-pill is-info"><i class="bi bi-building-fill"></i>{{ comunicacion.destinatario_oficina.nombre }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    {% if comunicacion.destinatarios_multiples.exists %}
+                                        {% regroup comunicacion.destinatarios_multiples.all by tipo as destinatarios_agrupados %}
+                                        {% for grupo in destinatarios_agrupados %}
+                                            {% if grupo.grouper == 'USUARIO' %}
+                                                <div class="mb-2"><strong>Usuarios:</strong></div>
+                                                {% for dest in grupo.list %}
+                                                    <span class="module-status-pill is-success mb-2"><i class="bi bi-person-fill"></i>{{ dest.usuario.get_full_name|default:dest.usuario.username }}{% if dest.usuario.perfil.oficina %} ({{ dest.usuario.perfil.oficina.nombre }}){% endif %}</span>
+                                                {% endfor %}
+                                            {% elif grupo.grouper == 'OFICINA' %}
+                                                <div class="mt-2 mb-2"><strong>Oficinas completas:</strong></div>
+                                                {% for dest in grupo.list %}
+                                                    <span class="module-status-pill is-info mb-2"><i class="bi bi-building-fill"></i>{{ dest.oficina.nombre }}</span>
+                                                {% endfor %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% elif comunicacion.destinatario_oficina or comunicacion.destinatario_usuario %}
+                                        {% if comunicacion.destinatario_oficina %}<div>{{ comunicacion.destinatario_oficina.nombre }}</div>{% endif %}
+                                        {% if comunicacion.destinatario_usuario %}<div class="module-copy mt-2">{{ comunicacion.destinatario_usuario.get_full_name }}</div>{% endif %}
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="module-info-item mt-3">
+                            <span class="module-detail-label">Asunto</span>
+                            <div class="module-detail-value">{{ comunicacion.asunto }}</div>
+                        </div>
+
+                        <div class="mt-3">
+                            <span class="module-detail-label">Contenido</span>
+                            <div class="module-rich-text">{{ comunicacion.cuerpo|linebreaks }}</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="module-card">
+                    <div class="module-panel-head">
+                        <h2 class="module-panel-title"><i class="bi bi-paperclip me-2"></i>Anexos</h2>
+                        <p class="module-copy">Archivos adjuntos relacionados con esta comunicación.</p>
+                    </div>
+                    <div class="module-panel-body">
+                        {% if comunicacion.anexos.exists %}
+                            <div class="module-button-stack">
+                                {% for anexo in comunicacion.anexos.all %}
+                                <div class="module-file-item">
+                                    <div class="module-file-top">
+                                        <div>
+                                            <div class="module-detail-value">
+                                                {% if anexo.get_tipo_archivo == 'PDF' %}
+                                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                                                {% elif anexo.get_tipo_archivo == 'Word' %}
+                                                    <i class="bi bi-file-earmark-word text-primary me-2"></i>
+                                                {% elif anexo.get_tipo_archivo == 'Excel' %}
+                                                    <i class="bi bi-file-earmark-excel text-success me-2"></i>
+                                                {% else %}
+                                                    <i class="bi bi-file-earmark me-2"></i>
+                                                {% endif %}
+                                                {{ anexo.nombre_original }}
+                                            </div>
+                                            <div class="module-copy mt-2">{{ anexo.get_tipo_archivo }} | {{ anexo.fecha_carga|date:"d/m/Y H:i" }}</div>
+                                        </div>
+                                        <div class="module-file-actions">
+                                            <a href="{{ anexo.archivo.url }}" class="btn btn-sm btn-outline-primary" target="_blank" title="Descargar"><i class="bi bi-download"></i></a>
+                                            {% if anexo.es_pdf %}
+                                            <button type="button" class="btn btn-sm btn-outline-info btn-preview-pdf" data-pdf-url="{{ anexo.archivo.url }}" data-pdf-nombre="{{ anexo.nombre_original }}" title="Vista previa"><i class="bi bi-eye"></i></button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="module-empty-card">
+                                <div class="module-empty-icon"><i class="bi bi-paperclip"></i></div>
+                                <h3 class="module-section-title">Sin anexos</h3>
+                                <p class="module-copy">No hay archivos adjuntos a esta comunicación.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </section>
+
+                {% if historial %}
+                <section class="module-card">
+                    <div class="module-panel-head">
+                        <h2 class="module-panel-title"><i class="bi bi-clock-history me-2"></i>Historial de la comunicación</h2>
+                        <p class="module-copy">Eventos registrados sobre revisión, lectura, distribución y cambios de estado.</p>
+                    </div>
+                    <div class="module-panel-body">
+                        <div class="module-history-list">
+                            {% for evento in historial %}
+                            <div class="module-history-item">
+                                <div class="module-history-top">
+                                    <strong class="module-detail-value">{{ evento.get_evento_display }}</strong>
+                                    <span class="module-copy">{{ evento.fecha|date:"d/m/Y H:i" }}</span>
+                                </div>
+                                {% if evento.descripcion %}<div class="module-copy">{{ evento.descripcion }}</div>{% endif %}
+                                {% if evento.usuario %}<div class="module-copy">Por: {{ evento.usuario.get_full_name|default:evento.usuario.username }}</div>{% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+                {% endif %}
+
+                {% if comunicacion.respuestas.exists %}
+                <section class="module-card">
+                    <div class="module-panel-head">
+                        <h2 class="module-panel-title"><i class="bi bi-reply-all-fill me-2"></i>Respuestas vinculadas</h2>
+                        <p class="module-copy">Respuestas registradas directamente sobre esta comunicación.</p>
+                    </div>
+                    <div class="module-panel-body">
+                        <div class="module-response-list">
+                            {% for respuesta in comunicacion.respuestas.all %}
+                            <div class="module-response-item">
+                                <div class="module-response-top">
+                                    <div>
+                                        <strong class="module-detail-value">{{ respuesta.radicado|default:"BORRADOR" }}</strong>
+                                        <div class="module-copy mt-2">{{ respuesta.asunto }}</div>
+                                    </div>
+                                    <span class="module-status-pill {% if respuesta.estado == 'DISTRIBUIDA' %}is-success{% elif respuesta.estado == 'PENDIENTE_APROBACION' %}is-warning{% else %}is-neutral{% endif %}">{{ respuesta.get_estado_display }}</span>
+                                </div>
+                                <div>
+                                    <a href="{% url 'correspondencia:interna_detalle' respuesta.pk %}" class="module-action-link"><i class="bi bi-eye"></i>Ver respuesta</a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+                {% endif %}
+            </div>
+
+            <aside class="module-side-stack">
+                <section class="module-side-card">
+                    <div class="module-side-head">
+                        <h2 class="module-side-title"><i class="bi bi-gear me-2"></i>Acciones disponibles</h2>
+                    </div>
+                    <div class="module-side-body">
+                        <div class="module-button-stack">
+                            {% if comunicacion.estado == 'BORRADOR' %}
+                                {% with grupos=request.user.groups.all|join:"," %}
+                                {% if comunicacion.remitente_usuario == request.user or "Lider de Oficina" in grupos and comunicacion.remitente_oficina == request.user.perfil.oficina %}
+                                <button type="button" class="module-btn is-success" id="btnAceptarBorrador" data-comunicacion-pk="{{ comunicacion.pk }}" data-endpoint="{% url 'correspondencia:aceptar_borrador_ajax' comunicacion.pk %}">
+                                    <i class="bi bi-check-circle"></i>Aceptar como comunicación interna
+                                </button>
+                                <button type="button" class="module-btn is-warning" data-bs-toggle="modal" data-bs-target="#modalEditarComunicacionInterna" data-comunicacion-pk="{{ comunicacion.pk }}">
+                                    <i class="bi bi-pencil-fill"></i>Editar comunicación
+                                </button>
+                                {% endif %}
+                                {% endwith %}
+                            {% elif comunicacion.estado == 'PENDIENTE_APROBACION' %}
+                                {% with grupos=request.user.groups.all|join:"," %}
+                                {% if comunicacion.remitente_usuario == request.user or "Lider de Oficina" in grupos and comunicacion.remitente_oficina == request.user.perfil.oficina %}
+                                <button type="button" class="module-btn is-warning" data-bs-toggle="modal" data-bs-target="#modalEditarComunicacionInterna" data-comunicacion-pk="{{ comunicacion.pk }}">
+                                    <i class="bi bi-pencil-fill"></i>Editar comunicación
+                                </button>
+                                <button type="button" class="module-btn is-secondary" id="btnRevertirBorrador" data-comunicacion-pk="{{ comunicacion.pk }}" data-endpoint="{% url 'correspondencia:revertir_borrador_ajax' comunicacion.pk %}">
+                                    <i class="bi bi-arrow-counterclockwise"></i>Revertir a borrador
+                                </button>
+                                {% endif %}
+                                {% endwith %}
+                            {% endif %}
+
+                            {% if comunicacion.estado == 'PENDIENTE_APROBACION' %}
+                                {% with grupos=request.user.groups.all|join:"," %}
+                                {% if "Lider de Oficina" in grupos and comunicacion.remitente_oficina == request.user.perfil.oficina %}
+                                <a href="{% url 'correspondencia:interna_aprobar' comunicacion.pk %}" class="module-btn is-success">
+                                    <i class="bi bi-check-circle"></i>Revisar y aprobar
+                                </a>
+                                {% else %}
+                                <div class="module-note">
+                                    <i class="bi bi-hourglass-split me-2"></i>Pendiente de aprobación por el líder de oficina.
+                                </div>
+                                {% endif %}
+                                {% endwith %}
+                            {% endif %}
+
+                            {% if comunicacion.estado == 'APROBADA' and comunicacion.requiere_firma %}
+                                {% with grupos=request.user.groups.all|join:"," %}
+                                {% if "Lider de Oficina" in grupos and comunicacion.remitente_oficina == request.user.perfil.oficina %}
+                                <button type="button" class="module-btn is-success" data-bs-toggle="modal" data-bs-target="#modalFirmarDigital">
+                                    <i class="bi bi-pen-fill"></i>Firmar y distribuir
+                                </button>
+                                {% endif %}
+                                {% endwith %}
+                            {% endif %}
+
+                            {% if comunicacion.estado == 'DISTRIBUIDA' %}
+                                {% if comunicacion.comunicacion_origen %}
+                                <div class="module-note">
+                                    <i class="bi bi-info-circle-fill me-2"></i>Las respuestas no se pueden responder. El flujo es solo ida y vuelta.
+                                </div>
+                                {% elif comunicacion.tipo_distribucion == 'PROCESO' %}
+                                <div class="module-note">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Las comunicaciones a procesos completos no requieren respuesta.
+                                </div>
+                                {% elif puede_responder %}
+                                    {% if comunicacion.tiene_respuestas %}
+                                    <div class="module-note">Esta comunicación ya tiene {{ comunicacion.contar_respuestas }} respuesta{{ comunicacion.contar_respuestas|pluralize:"s" }}. Puedes agregar otra respuesta.</div>
+                                    {% endif %}
+                                    <button type="button" class="module-btn is-info" data-bs-toggle="modal" data-bs-target="#modalComunicacionInterna" data-mode="responder" data-comunicacion-pk="{{ comunicacion.pk }}" data-comunicacion-asunto="{{ comunicacion.asunto }}" data-remitente-id="{{ comunicacion.remitente_usuario.pk }}" data-remitente-nombre="{{ comunicacion.remitente_usuario.get_full_name|default:comunicacion.remitente_usuario.username }}" data-remitente-oficina="{{ comunicacion.remitente_oficina.nombre }}" data-remitente-oficina-id="{{ comunicacion.remitente_oficina.pk }}">
+                                        <i class="bi bi-reply-fill"></i>Responder
+                                    </button>
+                                {% else %}
+                                <div class="module-note">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    {% if comunicacion.tipo_distribucion == 'OFICINA' %}
+                                        Solo el líder de una oficina destinataria puede responder a esta comunicación.
+                                    {% elif comunicacion.tipo_distribucion == 'USUARIO' %}
+                                        Solo los usuarios destinatarios pueden responder esta comunicación.
+                                    {% elif comunicacion.tipo_distribucion == 'ENTIDAD' or comunicacion.es_a_toda_entidad %}
+                                        Solo los usuarios que recibieron esta comunicación pueden responder.
+                                    {% else %}
+                                        No tiene permiso para responder esta comunicación.
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            {% endif %}
+
+                            {% if comunicacion.requiere_firma and comunicacion.archivo_firmado %}
+                                <a href="{{ comunicacion.archivo_firmado.url }}" target="_blank" class="module-btn">
+                                    <i class="bi bi-eye"></i>Previsualizar documento firmado
+                                </a>
+                                <a href="{{ comunicacion.archivo_firmado.url }}" download class="module-btn is-success">
+                                    <i class="bi bi-download"></i>Descargar documento firmado
+                                </a>
+                                {% if comunicacion.archivo_generado %}
+                                <a href="{% url 'correspondencia:interna_descargar' comunicacion.pk %}" class="module-btn-outline">
+                                    <i class="bi bi-file-earmark"></i>Ver borrador sin firma
+                                </a>
+                                {% endif %}
+                            {% elif comunicacion.archivo_generado %}
+                                <a href="/calendario/documento/{{ comunicacion.pk }}" target="_blank" class="module-btn">
+                                    <i class="bi bi-eye"></i>Previsualizar PDF
+                                </a>
+                                <a href="{% url 'correspondencia:interna_descargar' comunicacion.pk %}" class="module-btn is-success">
+                                    <i class="bi bi-download"></i>Descargar PDF
+                                </a>
+                            {% elif comunicacion.estado == 'BORRADOR' %}
+                                <div class="module-note"><i class="bi bi-file-earmark me-2"></i>Borrador. Aún no se ha generado el documento.</div>
+                            {% elif comunicacion.estado == 'PENDIENTE_APROBACION' %}
+                                <div class="module-note"><i class="bi bi-exclamation-triangle me-2"></i>El PDF se generará cuando la comunicación sea aprobada.</div>
+                            {% endif %}
+
+                            <a href="{% url 'correspondencia:interna_bienvenida' %}" class="module-btn-outline">
+                                <i class="bi bi-arrow-left"></i>Volver a internas
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                {% if comunicacion.estado == 'DISTRIBUIDA' or comunicacion.estado == 'RESPONDIDA' %}
+                <section class="module-side-card">
+                    <div class="module-side-head">
+                        <h2 class="module-side-title"><i class="bi bi-eye me-2"></i>Trazabilidad de lectura</h2>
+                    </div>
+                    <div class="module-side-body">
+                        <p class="module-copy">Consulta quiénes han leído la comunicación y en qué momento.</p>
+                        <a href="{% url 'correspondencia:interna_trazabilidad' comunicacion.pk %}" class="module-action-link mt-3">
+                            <i class="bi bi-graph-up"></i>Ver trazabilidad
+                        </a>
+                    </div>
+                </section>
+                {% endif %}
+
+                {% if not comunicacion.comunicacion_origen %}
+                <section class="module-side-card">
+                    <div class="module-side-head">
+                        <h2 class="module-side-title"><i class="bi bi-chat-left-text me-2"></i>Historial de respuestas</h2>
+                    </div>
+                    <div class="module-side-body">
+                        <p class="module-copy">Accede al consolidado de respuestas vinculadas a esta comunicación.</p>
+                        <a href="{% url 'correspondencia:interna_historial_respuestas' comunicacion.pk %}" class="module-action-link mt-3">
+                            <i class="bi bi-list-ul"></i>Ver historial de respuestas{% if comunicacion.tiene_respuestas %} ({{ comunicacion.contar_respuestas }}){% endif %}
+                        </a>
+                    </div>
+                </section>
+                {% endif %}
+
+                <section class="module-side-card">
+                    <div class="module-side-head">
+                        <h2 class="module-side-title"><i class="bi bi-info-circle me-2"></i>Información adicional</h2>
+                    </div>
+                    <div class="module-side-body">
+                        <div class="module-side-note">Esta comunicación interna genera un documento oficial en PDF y conserva trazabilidad sobre revisión, lectura, respuestas y distribución.</div>
+                        {% if comunicacion.es_a_toda_entidad %}
+                        <div class="module-side-note mt-3"><strong>Comunicación a toda la entidad:</strong> requiere firma digital del líder antes de ser distribuida.</div>
+                        {% endif %}
+                    </div>
+                </section>
+            </aside>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para firmar digitalmente -->
+{% if comunicacion.estado == 'APROBADA' and comunicacion.requiere_firma %}
+<div class="modal fade module-signature-modal" id="modalFirmarDigital" tabindex="-1" aria-labelledby="modalFirmarDigitalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalFirmarDigitalLabel">
+                    <i class="bi bi-pen-fill me-2"></i>Firmar y Distribuir Comunicación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form method="post" action="{% url 'correspondencia:interna_subir_firma' comunicacion.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Al confirmar, su firma digital será aplicada automáticamente al documento y la comunicación será distribuida 
+                        {% if comunicacion.tipo_distribucion == 'ENTIDAD' %}a toda la entidad{% elif comunicacion.tipo_distribucion == 'PROCESO' %}al proceso completo{% elif comunicacion.tipo_distribucion == 'OFICINA' %}a la oficina completa{% endif %}.
+                    </div>
+                    
+                        <div class="card mb-3 module-signature-preview">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted mb-2">Vista previa de su firma:</h6>
+                            {% if request.user.perfil.firma_digital %}
+                            <img src="{{ request.user.perfil.firma_digital.url }}" alt="Su firma" class="img-fluid border rounded p-2 bg-white" style="max-height: 100px;">
+                            <p class="small text-success mt-2 mb-0">
+                                <i class="bi bi-check-circle-fill me-1"></i>Firma configurada correctamente
+                            </p>
+                            {% else %}
+                            <div class="alert alert-warning mb-0">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <strong>No tiene firma configurada.</strong><br>
+                                <a href="{% url 'correspondencia:interna_configurar_firma' %}" class="alert-link">
+                                    Configure su firma digital aquí
+                                </a> antes de continuar.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <p class="text-muted small mb-0">
+                        <i class="bi bi-shield-check me-1"></i>
+                        Su firma digital tiene validez legal conforme a la Ley 527 de 1999.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    {% if request.user.perfil.firma_digital %}
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-pen-fill me-2"></i>Firmar y Distribuir
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-success" disabled>
+                        <i class="bi bi-pen-fill me-2"></i>Firmar y Distribuir
+                    </button>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal para vista previa de PDF -->
+<div class="modal fade" id="modalPreviewPdf" tabindex="-1" aria-labelledby="modalPreviewPdfLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered module-preview-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalPreviewPdfLabel">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>
+                    <span id="previewPdfNombre">Vista Previa</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body p-0">
+                <iframe id="previewPdfFrame" src="" style="width: 100%; height: 75vh; border: none;"></iframe>
+            </div>
+            <div class="modal-footer">
+                <a id="previewPdfDownload" href="#" class="btn btn-primary" target="_blank">
+                    <i class="bi bi-download me-1"></i>Descargar
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Comunicación Interna (para crear y responder) -->
+{% include 'correspondencia/partials/modals/modal_comunicacion_interna.html' %}
+
+<!-- Modal de Edición de Comunicación Interna -->
+{% include 'correspondencia/partials/modals/modal_editar_comunicacion_interna.html' %}
+
+<script>
+// Flash in-app para acciones AJAX del detalle
+document.addEventListener('DOMContentLoaded', function() {
+    const flashHost = document.getElementById('moduleInlineFlashHost');
+
+    function renderFlash(payload) {
+        if (!flashHost || !payload || !payload.message) {
+            return;
+        }
+
+        const variantClass = payload.level === 'error'
+            ? 'is-danger'
+            : payload.level === 'warning'
+                ? 'is-warning'
+                : payload.level === 'info'
+                    ? 'is-info'
+                    : 'is-success';
+
+        const iconClass = payload.level === 'error'
+            ? 'bi-exclamation-octagon-fill'
+            : payload.level === 'warning'
+                ? 'bi-exclamation-triangle-fill'
+                : payload.level === 'info'
+                    ? 'bi-info-circle-fill'
+                    : 'bi-check-circle-fill';
+
+        const container = document.createElement('section');
+        container.className = `module-banner ${variantClass} module-inline-flash`;
+        container.innerHTML = `
+            <div class="module-banner-icon"><i class="bi ${iconClass}"></i></div>
+            <div class="module-inline-flash-copy">
+                <h3 class="module-section-title">${payload.title || 'Actualización realizada'}</h3>
+                <p class="mb-0">${payload.message}</p>
+            </div>
+            <button type="button" class="module-inline-flash-close" aria-label="Cerrar mensaje">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        `;
+
+        flashHost.innerHTML = '';
+        flashHost.appendChild(container);
+        container.querySelector('.module-inline-flash-close').addEventListener('click', function() {
+            container.remove();
+        });
+    }
+
+    window.showComunicacionInternaFlash = renderFlash;
+    window.queueComunicacionInternaFlash = function(payload) {
+        sessionStorage.setItem('ci_detail_flash', JSON.stringify(payload));
+    };
+
+    const pendingFlash = sessionStorage.getItem('ci_detail_flash');
+    if (pendingFlash) {
+        sessionStorage.removeItem('ci_detail_flash');
+        try {
+            renderFlash(JSON.parse(pendingFlash));
+        } catch (error) {
+            console.error('No se pudo renderizar el flash guardado', error);
+        }
+    }
+});
+
+// Preview de PDF
+document.addEventListener('DOMContentLoaded', function() {
+    const modalPreview = document.getElementById('modalPreviewPdf');
+    const frame = document.getElementById('previewPdfFrame');
+    const nombre = document.getElementById('previewPdfNombre');
+    const download = document.getElementById('previewPdfDownload');
+    
+    document.querySelectorAll('.btn-preview-pdf').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const pdfUrl = this.dataset.pdfUrl;
+            const pdfNombre = this.dataset.pdfNombre;
+            
+            nombre.textContent = pdfNombre || 'Vista Previa';
+            frame.src = pdfUrl;
+            download.href = pdfUrl;
+            
+            new bootstrap.Modal(modalPreview).show();
+        });
+    });
+    
+    modalPreview.addEventListener('hidden.bs.modal', function() {
+        frame.src = '';
+    });
+});
+
+// Aceptar borrador como comunicación interna
+document.addEventListener('DOMContentLoaded', function() {
+    const btnAceptar = document.getElementById('btnAceptarBorrador');
+    if (!btnAceptar) return;
+    
+    btnAceptar.addEventListener('click', function() {
+        const pk = this.getAttribute('data-comunicacion-pk');
+        const endpoint = this.getAttribute('data-endpoint');
+        
+        // Confirmar acción
+        const confirmMsg = '¿Desea aceptar este borrador como comunicación interna pre-aprobada?\n\n' +
+                          'Se generará un radicado y se procesará automáticamente.';
+        
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+        
+        // Deshabilitar botón
+        this.disabled = true;
+        const originalText = this.innerHTML;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
+        
+        // Enviar solicitud
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (window.queueComunicacionInternaFlash) {
+                    window.queueComunicacionInternaFlash({
+                        level: 'success',
+                        title: 'Comunicación aceptada',
+                        message: `${data.message}${data.radicado ? ` Radicado: ${data.radicado}.` : ''}`
+                    });
+                }
+                setTimeout(() => {
+                    window.location.reload();
+                }, 150);
+            } else {
+                if (window.showComunicacionInternaFlash) {
+                    window.showComunicacionInternaFlash({
+                        level: 'error',
+                        title: 'No fue posible aceptar el borrador',
+                        message: data.error || 'No se pudo procesar la solicitud.'
+                    });
+                }
+                this.disabled = false;
+                this.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (window.showComunicacionInternaFlash) {
+                window.showComunicacionInternaFlash({
+                    level: 'error',
+                    title: 'Error de conexión',
+                    message: error.message
+                });
+            }
+            this.disabled = false;
+            this.innerHTML = originalText;
+        });
+    });
+});
+
+// Revertir a borrador
+document.addEventListener('DOMContentLoaded', function() {
+    const btnRevertir = document.getElementById('btnRevertirBorrador');
+    if (!btnRevertir) return;
+    
+    btnRevertir.addEventListener('click', function() {
+        const pk = this.getAttribute('data-comunicacion-pk');
+        const endpoint = this.getAttribute('data-endpoint');
+        
+        // Confirmar acción
+        const confirmMsg = '¿Desea revertir esta comunicación a borrador?\n\n' +
+                          'Se perderá el estado de pendiente de aprobación y podrá editarla nuevamente.';
+        
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+        
+        // Deshabilitar botón
+        this.disabled = true;
+        const originalText = this.innerHTML;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
+        
+        // Enviar solicitud
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (window.queueComunicacionInternaFlash) {
+                    window.queueComunicacionInternaFlash({
+                        level: 'info',
+                        title: 'Comunicación revertida',
+                        message: data.message
+                    });
+                }
+                setTimeout(() => {
+                    window.location.reload();
+                }, 150);
+            } else {
+                if (window.showComunicacionInternaFlash) {
+                    window.showComunicacionInternaFlash({
+                        level: 'error',
+                        title: 'No fue posible revertir la comunicación',
+                        message: data.error || 'No se pudo procesar la solicitud.'
+                    });
+                }
+                this.disabled = false;
+                this.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (window.showComunicacionInternaFlash) {
+                window.showComunicacionInternaFlash({
+                    level: 'error',
+                    title: 'Error de conexión',
+                    message: error.message
+                });
+            }
+            this.disabled = false;
+            this.innerHTML = originalText;
+        });
+    });
+});
+</script>
+{% endblock %}

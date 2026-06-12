@@ -1,0 +1,269 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load static %}
+
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calendario-container {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        overflow: hidden;
+    }
+    
+    .calendario-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .calendario-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #343a40;
+        text-transform: capitalize;
+    }
+    
+    .calendario-nav .btn {
+        font-weight: 500;
+    }
+    
+    .calendario-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        border-right: 1px solid #dee2e6;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .calendario-weekday {
+        background: #f1f3f5;
+        color: #495057;
+        padding: 0.75rem;
+        text-align: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        border-bottom: 1px solid #dee2e6;
+        border-left: 1px solid #dee2e6;
+    }
+    
+    .calendario-weekday:first-child {
+        border-left: none;
+    }
+    
+    .calendario-dia {
+        min-height: 120px;
+        background: white;
+        border-left: 1px solid #dee2e6;
+        border-top: 1px solid #dee2e6;
+        padding: 0.5rem;
+        position: relative;
+        transition: filter 0.15s ease-in-out;
+    }
+    
+    .calendario-dia:first-child,
+    .calendario-dia:nth-child(7n+1) {
+        border-left: none;
+    }
+    
+    .calendario-dia.activo {
+        cursor: pointer;
+    }
+    
+    .calendario-dia.activo:hover {
+        filter: brightness(0.97);
+    }
+    
+    /* Día de otro mes */
+    .calendario-dia.otro-mes {
+        background-color: #fcfcfc;
+        color: #adb5bd;
+    }
+    
+    /* Colores completos por estado (corporativo) */
+    .calendario-dia.sin-registros {
+        background-color: #f1f3f5; /* gris claro */
+    }
+    .calendario-dia.pendiente-firma {
+        background-color: #fff3cd; /* amarillo suave */
+    }
+    .calendario-dia.firmado {
+        background-color: #d1e7dd; /* verde suave */
+    }
+    .calendario-dia.hoy {
+        /* hoy sobreescribe, pero sin perder legibilidad */
+        outline: 2px solid #0d6efd;
+        outline-offset: -2px;
+    }
+    
+    .dia-numero {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #343a40;
+        margin-bottom: 0.5rem;
+        display: inline-block;
+    }
+
+    /* Badge pequeño con el número de correspondencias (costado inferior) */
+    .badge-cantidad {
+        position: absolute;
+        right: 0.5rem;
+        bottom: 0.5rem;
+        min-width: 36px;
+        height: 26px;
+        padding: 0 8px;
+        border-radius: 6px;
+        border: 1px solid rgba(0,0,0,0.12);
+        background: rgba(255,255,255,0.85);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-weight: 700;
+        color: #212529;
+        font-size: 0.9rem;
+        line-height: 1;
+        backdrop-filter: blur(2px);
+    }
+    .badge-cantidad i { font-size: 0.95rem; }
+    
+    .check-icon {
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        color: #198754;
+        font-size: 1.1rem;
+    }
+    
+    /* Leyenda */
+    .leyenda {
+        padding: 1rem;
+        background: white;
+        border-top: 1px solid #dee2e6;
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+    }
+    
+    .leyenda-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        color: #495057;
+    }
+    
+    .leyenda-box {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .box-pendiente { background-color: #fff3cd; border-color: #ffecb5; }
+    .box-firmado { background-color: #d1e7dd; border-color: #badbcc; }
+    .box-sin { background-color: #f1f3f5; }
+    .box-hoy { background-color: white; border-color: #0d6efd; }
+    
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{% url 'correspondencia:historial_correspondencia' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Volver al Historial
+        </a>
+    </div>
+
+    <div class="calendario-container">
+        <div class="calendario-header">
+            <div class="calendario-nav">
+                <a href="?year={{ prev_year }}&month={{ prev_month }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-chevron-left"></i> Anterior
+                </a>
+            </div>
+            <h2>{{ month_name }} {{ year }}</h2>
+            <div class="calendario-nav">
+                <a href="?year={{ next_year }}&month={{ next_month }}" class="btn btn-outline-secondary btn-sm">
+                    Siguiente <i class="bi bi-chevron-right"></i>
+                </a>
+            </div>
+        </div>
+        
+        <div class="calendario-grid">
+            <!-- Encabezados -->
+            <div class="calendario-weekday">Lunes</div>
+            <div class="calendario-weekday">Martes</div>
+            <div class="calendario-weekday">Miércoles</div>
+            <div class="calendario-weekday">Jueves</div>
+            <div class="calendario-weekday">Viernes</div>
+            <div class="calendario-weekday">Sábado</div>
+            <div class="calendario-weekday">Domingo</div>
+            
+            <!-- Días -->
+            {% for semana in semanas %}
+                {% for dia in semana %}
+                    {% if not dia.es_mes_actual %}
+                        <div class="calendario-dia otro-mes">
+                            <span class="dia-numero">{{ dia.fecha.day }}</span>
+                        </div>
+                    {% elif dia.es_futuro %}
+                        <div class="calendario-dia futuro">
+                            <span class="dia-numero">{{ dia.fecha.day }}</span>
+                        </div>
+                    {% else %}
+                        <div class="calendario-dia activo
+                            {% if dia.tiene_correspondencias %}
+                                {% if dia.informe and dia.informe.estado == 'FIRMADO' %}firmado{% else %}pendiente-firma{% endif %}
+                            {% else %}
+                                sin-registros
+                            {% endif %}
+                            {% if dia.es_hoy %}hoy{% endif %}"
+                             onclick="window.location.href='{% url 'correspondencia:detalle_dia_informe' dia.fecha|date:'Y-m-d' %}'">
+                            
+                            <span class="dia-numero">{{ dia.fecha.day }}</span>
+                            
+                            {% if dia.informe and dia.informe.estado == 'FIRMADO' %}
+                                <i class="bi bi-check-circle-fill check-icon" title="Informe Firmado"></i>
+                            {% endif %}
+                            
+                            {% if dia.tiene_correspondencias %}
+                                <div class="badge-cantidad" title="{{ dia.total_correspondencias }} correspondencia(s)">
+                                    <i class="bi bi-envelope-fill"></i>
+                                    {{ dia.total_correspondencias }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+        </div>
+        
+        <div class="leyenda">
+            <div class="leyenda-item">
+                <div class="leyenda-box box-hoy"></div>
+                <span>Hoy</span>
+            </div>
+            <div class="leyenda-item">
+                <div class="leyenda-box box-pendiente"></div>
+                <span>Pendiente de Firma</span>
+            </div>
+            <div class="leyenda-item">
+                <div class="leyenda-box box-firmado"></div>
+                <span>Informe Firmado</span>
+            </div>
+            <div class="leyenda-item">
+                <div class="leyenda-box box-sin"></div>
+                <span>Sin correspondencias</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

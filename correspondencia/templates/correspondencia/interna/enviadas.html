@@ -1,0 +1,242 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static humanize %}
+
+{% block title %}Comunicaciones Enviadas{% endblock %}
+{% block page_title %}{{ titulo_pagina|default:'Comunicaciones Enviadas' }}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'correspondencia/css/comunicacion-interna-bandejas.css' %}">
+    <style>
+        .interna-enviadas-page {
+            --tray-accent: #16a34a;
+            --tray-accent-strong: #166534;
+            --tray-hero-start: #f0fdf4;
+            --tray-hero-end: #ffffff;
+            --tray-kpi-bg: rgba(34, 197, 94, 0.1);
+        }
+
+        .interna-enviadas-page .internal-tray-shell {
+            width: 95%;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+{% with grupos=request.user.groups.all|join:"," %}
+{% if "Lider de Oficina" in grupos %}
+<script>
+    document.body.dataset.esLider = 'true';
+</script>
+{% endif %}
+<div class="internal-tray-page interna-enviadas-page">
+    <div class="internal-tray-shell">
+        <section class="tray-hero-card">
+            <div class="tray-hero-copy">
+                <span class="tray-kicker"><i class="bi bi-send-fill"></i>Salida interna</span>
+                <div>
+                    <h1 class="tray-hero-title">{{ titulo_pagina|default:'Comunicaciones Enviadas por Mi Oficina' }}</h1>
+                    <p class="tray-hero-subtitle">Consulta todo lo emitido por tu oficina, sin depender del usuario que proyectó o envió cada comunicación interna.</p>
+                </div>
+                <div class="tray-meta-row">
+                    <span class="tray-meta-pill"><i class="bi bi-buildings"></i>{% if oficina_actual %}{{ oficina_actual.nombre }}{% else %}Bandeja por oficina{% endif %}</span>
+                    {% if request.GET.estado %}
+                    <span class="tray-meta-pill"><i class="bi bi-funnel"></i>Estado: {{ request.GET.estado }}</span>
+                    {% endif %}
+                    {% if request.GET.q %}
+                    <span class="tray-meta-pill"><i class="bi bi-search"></i>Filtro activo: {{ request.GET.q }}</span>
+                    {% endif %}
+                </div>
+                <div class="tray-hero-actions">
+                    <button type="button" class="tray-btn-primary" data-bs-toggle="modal" data-bs-target="#modalComunicacionInternaV2"><i class="bi bi-plus-circle"></i>Nueva comunicación interna</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="tray-nav-card">
+            <div class="tray-nav-list">
+                <a href="{% url 'correspondencia:interna_recibidas' %}" class="tray-nav-link"><i class="bi bi-inbox-fill"></i>Recibidas</a>
+                <a href="{% url 'correspondencia:interna_enviadas' %}" class="tray-nav-link is-active"><i class="bi bi-send-fill"></i>Enviadas</a>
+                {% if "Lider de Oficina" in grupos %}
+                <a href="{% url 'correspondencia:interna_pendientes' %}" class="tray-nav-link"><i class="bi bi-clock-history"></i>Pendientes</a>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="tray-filter-card">
+            <div class="tray-section-head">
+                <div>
+                    <h2>Filtrar comunicaciones enviadas</h2>
+                    <p>Busca por radicado, asunto, destinatario, tipo de distribución, estado y rango de fechas.</p>
+                </div>
+                <div class="tray-summary-pills">
+                    <span class="tray-summary-pill"><i class="bi bi-clock-history"></i>Estados: borrador, pendiente, enviada, distribuida</span>
+                </div>
+            </div>
+            <div class="tray-filter-body">
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-lg-4">
+                        <label class="tray-form-label" for="busqueda-enviadas">Radicado o asunto</label>
+                        <input id="busqueda-enviadas" type="text" name="q" class="form-control tray-form-control" placeholder="Buscar por radicado o asunto..." value="{{ request.GET.q }}">
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="tray-form-label" for="destinatario-enviadas">Destinatario</label>
+                        <input id="destinatario-enviadas" type="text" name="destinatario" class="form-control tray-form-control" placeholder="Nombre o oficina destino..." value="{{ request.GET.destinatario }}">
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="tray-form-label" for="estado-enviadas">Estado</label>
+                        <select id="estado-enviadas" name="estado" class="form-select tray-form-select">
+                            <option value="">Todos los estados</option>
+                            <option value="BORRADOR" {% if request.GET.estado == 'BORRADOR' %}selected{% endif %}>Borrador</option>
+                            <option value="PENDIENTE_APROBACION" {% if request.GET.estado == 'PENDIENTE_APROBACION' %}selected{% endif %}>Pendiente de Aprobación</option>
+                            <option value="ENVIADA" {% if request.GET.estado == 'ENVIADA' %}selected{% endif %}>Enviada</option>
+                            <option value="DISTRIBUIDA" {% if request.GET.estado == 'DISTRIBUIDA' %}selected{% endif %}>Distribuida</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="tray-form-label" for="tipo-dist-enviadas">Tipo distribución</label>
+                        <select id="tipo-dist-enviadas" name="tipo_distribucion" class="form-select tray-form-select">
+                            <option value="">Todos</option>
+                            <option value="USUARIO" {% if request.GET.tipo_distribucion == 'USUARIO' %}selected{% endif %}>Usuario</option>
+                            <option value="OFICINA" {% if request.GET.tipo_distribucion == 'OFICINA' %}selected{% endif %}>Oficina</option>
+                            <option value="PROCESO" {% if request.GET.tipo_distribucion == 'PROCESO' %}selected{% endif %}>Proceso</option>
+                            <option value="ENTIDAD" {% if request.GET.tipo_distribucion == 'ENTIDAD' %}selected{% endif %}>Entidad</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="tray-form-label" for="fecha-inicio-enviadas">Fecha desde</label>
+                        <input id="fecha-inicio-enviadas" type="date" name="fecha_inicio" class="form-control tray-form-control" value="{{ request.GET.fecha_inicio }}">
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="tray-form-label" for="fecha-fin-enviadas">Fecha hasta</label>
+                        <input id="fecha-fin-enviadas" type="date" name="fecha_fin" class="form-control tray-form-control" value="{{ request.GET.fecha_fin }}">
+                    </div>
+                    <div class="col-lg-2 d-grid">
+                        <button type="submit" class="tray-btn-primary"><i class="bi bi-search"></i>Filtrar</button>
+                    </div>
+                    <div class="col-lg-2 d-grid">
+                        <a href="{% url 'correspondencia:interna_enviadas' %}" class="tray-btn-secondary text-center"><i class="bi bi-arrow-clockwise"></i>Limpiar</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        {% if comunicaciones %}
+        <section class="tray-table-card">
+            <div class="tray-table-head">
+                <div>
+                    <h2>Comunicaciones emitidas desde tu oficina</h2>
+                    <p>Visualiza el destino, quién la proyectó y el estado del flujo desde una bandeja compartida.</p>
+                </div>
+                <span class="tray-page-chip"><i class="bi bi-journal-check"></i>{% if is_paginated %}{{ page_obj.paginator.count|intcomma }} registros{% else %}{{ comunicaciones|length|intcomma }} registros{% endif %}</span>
+            </div>
+            <div class="tray-table-body">
+                <div class="table-responsive tray-table-wrap">
+                    <table class="table tray-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Radicado y fecha</th>
+                                <th>Asunto</th>
+                                <th>Destinatarios</th>
+                                <th>Proyectado por</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for com in comunicaciones %}
+                            <tr class="{% if com.estado == 'PENDIENTE_APROBACION' %}row-emphasis{% endif %}">
+                                <td>
+                                    <div class="radicado-stack">
+                                        <span class="radicado-pill"><i class="bi bi-hash"></i>{{ com.radicado|default:'BORRADOR' }}</span>
+                                        <span class="muted-copy">{{ com.fecha_documento|date:'d/m/Y' }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="subject-stack">
+                                        <span class="subject-title">{{ com.asunto|default:'Sin asunto'|truncatechars:110 }}</span>
+                                        <span class="subcopy">Salida interna preparada desde tu oficina.</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="destination-stack">
+                                        {% if com.es_a_toda_entidad or com.tipo_distribucion == 'ENTIDAD' %}
+                                        <button type="button" class="distribution-trigger is-entity" data-bs-toggle="modal" data-bs-target="#modalDestinatariosInterna" data-comunicacion-id="{{ com.id }}" data-comunicacion-radicado="{{ com.radicado }}" data-comunicacion-asunto="{{ com.asunto }}" data-tipo-distribucion="ENTIDAD" data-entidad-nombre="{% with entidad=com.remitente_oficina.unidad_administrativa.entidad_productora %}{{ entidad.nombre|default:'Toda la Entidad' }}{% endwith %}"><i class="bi bi-people-fill"></i>Toda la entidad</button>
+                                        {% elif com.tipo_distribucion == 'PROCESO' %}
+                                        <button type="button" class="distribution-trigger is-process" data-bs-toggle="modal" data-bs-target="#modalDestinatariosInterna" data-comunicacion-id="{{ com.id }}" data-comunicacion-radicado="{{ com.radicado }}" data-comunicacion-asunto="{{ com.asunto }}" data-tipo-distribucion="PROCESO" data-proceso-nombre="{{ com.destinatario_proceso.nombre|default:'Proceso' }}"><i class="bi bi-diagram-3-fill"></i>{{ com.destinatario_proceso.nombre|default:'Proceso' }}</button>
+                                        {% elif com.destinatarios_multiples.exists %}
+                                        {% with total=com.destinatarios_multiples.count %}
+                                        <button type="button" class="distribution-trigger is-entity" data-bs-toggle="modal" data-bs-target="#modalDestinatariosInterna" data-comunicacion-id="{{ com.id }}" data-comunicacion-radicado="{{ com.radicado }}" data-comunicacion-asunto="{{ com.asunto }}" data-tipo-distribucion="MULTIPLE" data-total-destinatarios="{{ total }}"><i class="bi bi-people"></i>{{ total }} destinatario{{ total|pluralize:'s' }}</button>
+                                        {% endwith %}
+                                        {% elif com.destinatario_oficina %}
+                                        <button type="button" class="distribution-trigger is-office" data-bs-toggle="modal" data-bs-target="#modalDestinatariosInterna" data-comunicacion-id="{{ com.id }}" data-comunicacion-radicado="{{ com.radicado }}" data-comunicacion-asunto="{{ com.asunto }}" data-tipo-distribucion="OFICINA" data-oficina-nombre="{{ com.destinatario_oficina.nombre }}" data-usuario-nombre="{% if com.destinatario_usuario %}{{ com.destinatario_usuario.get_full_name|default:com.destinatario_usuario.username }}{% endif %}"><i class="bi bi-building-fill"></i>{{ com.destinatario_oficina.nombre|truncatewords:2 }}{% if com.destinatario_usuario %}<span class="badge bg-primary">+1</span>{% endif %}</button>
+                                        {% elif com.destinatario_usuario %}
+                                        <button type="button" class="distribution-trigger is-user" data-bs-toggle="modal" data-bs-target="#modalDestinatariosInterna" data-comunicacion-id="{{ com.id }}" data-comunicacion-radicado="{{ com.radicado }}" data-comunicacion-asunto="{{ com.asunto }}" data-tipo-distribucion="USUARIO" data-usuario-nombre="{{ com.destinatario_usuario.get_full_name|default:com.destinatario_usuario.username }}"><i class="bi bi-person-fill"></i>{{ com.destinatario_usuario.get_full_name|default:com.destinatario_usuario.username|truncatewords:2 }}</button>
+                                        {% else %}
+                                        <span class="distribution-placeholder">Sin detalle visible</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="person-stack">
+                                        <span class="person-name">{{ com.remitente_nombre|default:'Sin remitente' }}</span>
+                                        {% if com.remitente_cargo %}
+                                        <span class="subcopy">{{ com.remitente_cargo }}</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="status-pill {% if com.estado == 'ENVIADA' %}is-success{% elif com.estado == 'BORRADOR' %}is-neutral{% elif com.estado == 'PENDIENTE_APROBACION' %}is-warning{% else %}is-danger{% endif %}">
+                                        <i class="bi {% if com.estado == 'ENVIADA' %}bi-check2-circle{% elif com.estado == 'BORRADOR' %}bi-pencil-square{% elif com.estado == 'PENDIENTE_APROBACION' %}bi-hourglass-split{% else %}bi-exclamation-triangle{% endif %}"></i>
+                                        {{ com.get_estado_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-stack">
+                                        <a href="{% url 'correspondencia:interna_detalle' com.pk %}" class="action-btn is-primary" title="Ver detalle"><i class="bi bi-eye"></i></a>
+                                        {% if com.archivo_generado %}
+                                        <a href="/calendario/documento/{{ com.pk }}" target="_blank" class="action-btn" title="Ver PDF"><i class="bi bi-file-pdf"></i></a>
+                                        {% endif %}
+                                        {% if com.estado == 'PENDIENTE_APROBACION' and "Lider de Oficina" in grupos %}
+                                        <a href="{% url 'correspondencia:interna_aprobar' com.pk %}" class="action-btn is-warning" title="Aprobar"><i class="bi bi-check-circle"></i></a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        {% else %}
+        <section class="tray-empty-card">
+            <div class="tray-empty-icon"><i class="bi bi-send"></i></div>
+            <h2>No hay comunicaciones enviadas</h2>
+            <p>Cuando redactes o radiques nuevas comunicaciones internas, aparecerán listadas aquí.</p>
+        </section>
+        {% endif %}
+
+        {% if is_paginated %}
+        <nav aria-label="Paginación">
+            <ul class="pagination pagination-modern justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}">Anterior</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}">Siguiente</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+{% include 'correspondencia/partials/modals/modal_comunicacion_interna.html' %}
+{% include 'correspondencia/partials/modals/modal_comunicacion_interna_v2.html' %}
+{% with modal_theme='success' %}
+{% include 'correspondencia/partials/modals/modal_destinatarios_interna.html' %}
+{% endwith %}
+{% endwith %}
+{% endblock %}
+

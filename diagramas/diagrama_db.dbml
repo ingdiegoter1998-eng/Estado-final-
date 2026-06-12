@@ -1,0 +1,434 @@
+// Use DBML to define your database structure
+// Sistema de Gestion Documental - Hospital de Sarare
+// Generado automaticamente desde modelos Django
+
+Table documentos_seriedocumental {
+  id integer [primary key]
+  codigo varchar [not null]
+  nombre varchar [not null]
+}
+
+Table documentos_subseriedocumental {
+  id integer [primary key]
+  codigo varchar [not null]
+  nombre varchar [not null]
+  serie integer
+}
+
+Table documentos_entidadproductora {
+  id integer [primary key]
+  nombre varchar [not null, unique]
+}
+
+Table documentos_unidadadministrativa {
+  id integer [primary key]
+  nombre varchar [not null]
+  entidad_productora integer
+}
+
+Table documentos_oficinaproductora {
+  id integer [primary key]
+  nombre varchar [not null]
+  unidad_administrativa integer
+}
+
+Table documentos_objeto {
+  id integer [primary key]
+  nombre varchar [not null, unique]
+}
+
+Table documentos_fuid {
+  id integer [primary key]
+  entidad_productora integer
+  unidad_administrativa integer
+  oficina_productora integer
+  objeto integer
+  fecha_creacion timestamp [not null]
+  creado_por integer
+  notas varchar
+  elaborado_por_nombre varchar
+  elaborado_por_cargo varchar
+  elaborado_por_lugar varchar
+  elaborado_por_fecha date
+  entregado_por_nombre varchar
+  entregado_por_cargo varchar
+  entregado_por_lugar varchar
+  entregado_por_fecha date
+  recibido_por_nombre varchar
+  recibido_por_cargo varchar
+  recibido_por_lugar varchar
+  recibido_por_fecha date
+}
+
+Table documentos_registrodearchivo {
+  id integer [primary key]
+  Estado_archivo boolean [not null]
+  numero_orden integer [not null]
+  codigo varchar
+  codigo_serie integer
+  codigo_subserie integer
+  unidad_documental varchar [not null]
+  fecha_archivo date
+  fecha_inicial date
+  fecha_final date
+  soporte_fisico boolean [not null]
+  soporte_electronico boolean [not null]
+  caja integer
+  carpeta integer
+  tomo_legajo_libro varchar
+  numero_folios integer
+  tipo varchar
+  cantidad integer
+  ubicacion varchar
+  cantidad_documentos_electronicos integer
+  tamano_documentos_electronicos varchar
+  identificador_documento varchar
+  notas text
+  creado_por integer
+  fecha_creacion timestamp [not null]
+}
+
+Table documentos_documento {
+  id integer [primary key]
+  registro integer
+  archivo varchar [not null]
+  uploaded_at timestamp [not null]
+}
+
+Table documentos_permisousuarioserie {
+  id integer [primary key]
+  usuario integer
+  serie integer
+  permiso_crear boolean [not null]
+  permiso_editar boolean [not null]
+  permiso_consultar boolean [not null]
+  permiso_eliminar boolean [not null]
+}
+
+Table documentos_tipodocumento {
+  id integer [primary key]
+  nombre varchar [not null, unique]
+}
+
+Table documentos_nacionalidad {
+  id integer [primary key]
+  nombre varchar [not null, unique]
+}
+
+Table documentos_fichapaciente {
+  consecutivo integer [primary key]
+  primer_nombre varchar [not null]
+  segundo_nombre varchar
+  primer_apellido varchar [not null]
+  segundo_apellido varchar
+  num_identificacion varchar
+  tipo_identificacion integer
+  num_identificacion_secundario varchar
+  tipo_identificacion_secundario integer
+  fecha_nacimiento date
+  primer_nombre_padre varchar
+  segundo_nombre_padre varchar
+  primer_apellido_padre varchar
+  segundo_apellido_padre varchar
+  Numero_historia_clinica integer [not null, unique]
+  caja varchar [not null]
+  carpeta varchar [not null]
+  gabeta integer
+  sexo varchar [not null]
+  activo boolean [not null]
+  estado_de_migracion boolean [not null]
+  Fecha_de_visita_de_la_tarjeta date
+  ultimo_registro_de_visita_en_la_base_de_datos date
+  año_de_registro integer
+  nacionalidad integer
+}
+
+Table documentos_perfilusuario {
+  id integer [primary key]
+  user integer [unique]
+  oficina integer
+  cargo varchar
+}
+
+Table correspondencia_entidadexterna {
+  id integer [primary key]
+  nombre varchar [not null, unique]
+  nit varchar
+  direccion varchar
+  telefono varchar
+  dominio varchar [unique]
+}
+
+Table correspondencia_contacto {
+  id integer [primary key]
+  entidad_externa integer
+  nombres varchar [not null]
+  apellidos varchar
+  cargo varchar
+  correo_electronico varchar
+  telefono_contacto varchar
+  oficina_propietaria integer
+}
+
+Table correspondencia_correspondencia {
+  id integer [primary key]
+  numero_radicado varchar [not null, unique]
+  tipo_radicado varchar [not null]
+  fecha_radicacion timestamp [not null]
+  usuario_radicador integer
+  remitente integer
+  asunto text [not null]
+  serie integer
+  subserie integer
+  medio_recepcion varchar [not null]
+  requiere_respuesta boolean [not null]
+  tiempo_respuesta varchar
+  plazo_respuesta_dias integer
+  fecha_limite_respuesta_persist timestamp
+  plazo_origen varchar [not null]
+  tramite_aplicado integer
+  estado varchar [not null]
+  leido_por_oficina boolean [not null]
+  resumen_ia text
+  sellado boolean [not null]
+  fecha_sellado timestamp
+  oficina_destino integer
+  usuario_destino_inicial integer
+}
+
+Table correspondencia_historialcorrespondencia {
+  id integer [primary key]
+  correspondencia integer
+  fecha_hora timestamp [not null]
+  evento varchar [not null]
+  usuario integer
+  descripcion text
+}
+
+Table correspondencia_adjuntocorreo {
+  id integer [primary key]
+  correspondencia integer
+  archivo varchar [not null]
+  nombre_original varchar [not null]
+  tipo_mime varchar [not null]
+  fecha_carga timestamp [not null]
+}
+
+Table correspondencia_correoentrante {
+  id integer [primary key]
+  message_id varchar [not null, unique]
+  remitente varchar [not null]
+  asunto varchar [not null]
+  cuerpo_texto text [not null]
+  cuerpo_html text [not null]
+  fecha_recepcion_original timestamp
+  fecha_lectura_imap timestamp [not null]
+  procesado boolean [not null]
+  radicado_asociado integer
+  requiere_revision_manual boolean [not null]
+  oficina_clasificada integer
+  serie_clasificada integer
+  subserie_clasificada integer
+  fecha_clasificacion timestamp
+}
+
+Table correspondencia_adjuntocorreoentrante {
+  id integer [primary key]
+  correo_entrante integer
+  archivo varchar [not null]
+  nombre_original varchar [not null]
+  tipo_mime varchar [not null]
+  fecha_carga timestamp [not null]
+}
+
+Table correspondencia_distribucioninternausuario {
+  id integer [primary key]
+  correspondencia integer
+  usuario_asignado integer
+  fecha_asignacion timestamp [not null]
+  asignado_por integer
+  leido boolean [not null]
+  fecha_lectura timestamp
+  observaciones text
+}
+
+Table correspondencia_notificacion {
+  id integer [primary key]
+  usuario integer
+  tipo varchar [not null]
+  titulo varchar [not null]
+  mensaje text [not null]
+  correspondencia integer
+  leida boolean [not null]
+  fecha_creacion timestamp [not null]
+  fecha_lectura timestamp
+  url varchar
+}
+
+Table correspondencia_correspondenciasalida {
+  id integer [primary key]
+  respuesta_a integer
+  numero_radicado_salida varchar [not null, unique]
+  fecha_creacion timestamp [not null]
+  usuario_redactor integer
+  fecha_ultima_modificacion timestamp [not null]
+  oficina_emisora integer
+  oficina_emisora_nombre varchar
+  redactor_nombre varchar
+  redactor_cargo varchar
+  destinatario_contacto integer
+  destinatario_email varchar [not null]
+  asunto varchar [not null]
+  cuerpo text [not null]
+  estado varchar [not null]
+  usuario_aprobador integer
+  fecha_aprobacion timestamp
+  motivo_rechazo text
+  fecha_envio timestamp
+  id_mensaje_enviado varchar
+  envio_tipo varchar
+  envio_grupo integer
+  envio_total_destinatarios integer
+  envio_detalle_snapshot varchar
+}
+
+Table correspondencia_adjuntosalida {
+  id integer [primary key]
+  correspondencia_salida integer
+  archivo varchar [not null]
+  nombre_original varchar [not null]
+  tipo_mime varchar [not null]
+  fecha_carga timestamp [not null]
+}
+
+Table correspondencia_historialsalida {
+  id integer [primary key]
+  correspondencia_salida integer
+  fecha_hora timestamp [not null]
+  tipo_evento varchar [not null]
+  usuario integer
+  descripcion text
+}
+
+Table correspondencia_salidadestinatario {
+  id integer [primary key]
+  correspondencia_salida integer
+  contacto integer
+  email_snapshot varchar [not null]
+  nombre_snapshot varchar [not null]
+  estado varchar [not null]
+  fecha_envio timestamp
+  id_mensaje_enviado varchar
+  detalle_error text
+  smtp_code varchar
+  dsn_status varchar
+  ultimo_evento_at timestamp
+}
+
+Table correspondencia_grupoagenda {
+  id integer [primary key]
+  oficina_propietaria integer
+  nombre varchar [not null]
+  descripcion text
+  creado_por integer
+  activo boolean [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Table correspondencia_comunicacionmasiva {
+  id integer [primary key]
+  oficina_emisora integer
+  usuario_creador integer
+  asunto varchar [not null]
+  cuerpo text [not null]
+  estado varchar [not null]
+  fecha_creacion timestamp [not null]
+  fecha_envio timestamp
+}
+
+Table correspondencia_comunicaciondestinatario {
+  id integer [primary key]
+  comunicacion integer
+  contacto integer
+  email_snapshot varchar [not null]
+  nombre_snapshot varchar [not null]
+  estado varchar [not null]
+  fecha_envio timestamp
+  id_mensaje_enviado varchar
+  detalle_error text
+}
+
+Table correspondencia_tramitetipo {
+  id integer [primary key]
+  codigo varchar [not null, unique]
+  nombre varchar [not null]
+  plazo_dias_habiles varchar [not null]
+  fundamento_normativo varchar [not null]
+  activo boolean [not null]
+}
+
+Table correspondencia_subserietramite {
+  id integer [primary key]
+  subserie integer [unique]
+  tramite integer
+}
+
+Table correspondencia_calendariolaboral {
+  id integer [primary key]
+  fecha date [not null, unique]
+  es_habil boolean [not null]
+}
+
+// Relaciones entre tablas
+
+Ref fk_1: documentos_subseriedocumental.serie > documentos_seriedocumental.id
+Ref fk_2: documentos_unidadadministrativa.entidad_productora > documentos_entidadproductora.id
+Ref fk_3: documentos_oficinaproductora.unidad_administrativa > documentos_unidadadministrativa.id
+Ref fk_4: documentos_fuid.entidad_productora > documentos_entidadproductora.id
+Ref fk_5: documentos_fuid.unidad_administrativa > documentos_unidadadministrativa.id
+Ref fk_6: documentos_fuid.oficina_productora > documentos_oficinaproductora.id
+Ref fk_7: documentos_fuid.objeto > documentos_objeto.id
+Ref fk_8: documentos_registrodearchivo.codigo_serie > documentos_seriedocumental.id
+Ref fk_9: documentos_registrodearchivo.codigo_subserie > documentos_subseriedocumental.id
+Ref fk_10: documentos_documento.registro > documentos_registrodearchivo.id
+Ref fk_11: documentos_permisousuarioserie.serie > documentos_seriedocumental.id
+Ref fk_12: documentos_fichapaciente.tipo_identificacion > documentos_tipodocumento.id
+Ref fk_13: documentos_fichapaciente.tipo_identificacion_secundario > documentos_tipodocumento.id
+Ref fk_14: documentos_fichapaciente.nacionalidad > documentos_nacionalidad.id
+Ref fk_15: documentos_perfilusuario.oficina > documentos_oficinaproductora.id
+Ref fk_16: correspondencia_contacto.entidad_externa > correspondencia_entidadexterna.id
+Ref fk_17: correspondencia_contacto.oficina_propietaria > documentos_oficinaproductora.id
+Ref fk_18: correspondencia_correspondencia.remitente > correspondencia_contacto.id
+Ref fk_19: correspondencia_correspondencia.serie > documentos_seriedocumental.id
+Ref fk_20: correspondencia_correspondencia.subserie > documentos_subseriedocumental.id
+Ref fk_21: correspondencia_correspondencia.tramite_aplicado > correspondencia_tramitetipo.id
+Ref fk_22: correspondencia_correspondencia.oficina_destino > documentos_oficinaproductora.id
+Ref fk_23: correspondencia_historialcorrespondencia.correspondencia > correspondencia_correspondencia.id
+Ref fk_24: correspondencia_adjuntocorreo.correspondencia > correspondencia_correspondencia.id
+Ref fk_25: correspondencia_correoentrante.radicado_asociado > correspondencia_correspondencia.id
+Ref fk_26: correspondencia_correoentrante.oficina_clasificada > documentos_oficinaproductora.id
+Ref fk_27: correspondencia_correoentrante.serie_clasificada > documentos_seriedocumental.id
+Ref fk_28: correspondencia_correoentrante.subserie_clasificada > documentos_subseriedocumental.id
+Ref fk_29: correspondencia_adjuntocorreoentrante.correo_entrante > correspondencia_correoentrante.id
+Ref fk_30: correspondencia_distribucioninternausuario.correspondencia > correspondencia_correspondencia.id
+Ref fk_31: correspondencia_notificacion.correspondencia > correspondencia_correspondencia.id
+Ref fk_32: correspondencia_correspondenciasalida.respuesta_a > correspondencia_correspondencia.id
+Ref fk_33: correspondencia_correspondenciasalida.oficina_emisora > documentos_oficinaproductora.id
+Ref fk_34: correspondencia_correspondenciasalida.destinatario_contacto > correspondencia_contacto.id
+Ref fk_35: correspondencia_correspondenciasalida.envio_grupo > correspondencia_grupoagenda.id
+Ref fk_36: correspondencia_adjuntosalida.correspondencia_salida > correspondencia_correspondenciasalida.id
+Ref fk_37: correspondencia_historialsalida.correspondencia_salida > correspondencia_correspondenciasalida.id
+Ref fk_38: correspondencia_salidadestinatario.correspondencia_salida > correspondencia_correspondenciasalida.id
+Ref fk_39: correspondencia_salidadestinatario.contacto > correspondencia_contacto.id
+Ref fk_40: correspondencia_grupoagenda.oficina_propietaria > documentos_oficinaproductora.id
+Ref fk_41: correspondencia_comunicacionmasiva.oficina_emisora > documentos_oficinaproductora.id
+Ref fk_42: correspondencia_comunicaciondestinatario.comunicacion > correspondencia_comunicacionmasiva.id
+Ref fk_43: correspondencia_comunicaciondestinatario.contacto > correspondencia_contacto.id
+Ref fk_44: correspondencia_subserietramite.subserie - documentos_subseriedocumental.id
+Ref fk_45: correspondencia_subserietramite.tramite > correspondencia_tramitetipo.id
+
+// Relaciones Many-to-Many
+
+Ref m2m_documentos_fuid_registros: documentos_fuid.id <> documentos_registrodearchivo.id
+Ref m2m_correspondencia_grupoagenda_contactos: correspondencia_grupoagenda.id <> correspondencia_contacto.id

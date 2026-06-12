@@ -1,0 +1,92 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static %}
+
+{% block title %}Firmar y Distribuir{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pen-fill me-2"></i>Firmar y Distribuir Comunicación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Información de la comunicación -->
+                    <div class="mb-4">
+                        <h6 class="text-muted">Comunicación a firmar:</h6>
+                        <div class="border rounded p-3 bg-light">
+                            <p class="mb-1"><strong>Radicado:</strong> {{ comunicacion.radicado|default:"BORRADOR" }}</p>
+                            <p class="mb-1"><strong>Asunto:</strong> {{ comunicacion.asunto }}</p>
+                            <p class="mb-1"><strong>Tipo de distribución:</strong> 
+                                {% if comunicacion.tipo_distribucion == 'ENTIDAD' %}Toda la Entidad
+                                {% elif comunicacion.tipo_distribucion == 'PROCESO' %}Proceso Completo
+                                {% elif comunicacion.tipo_distribucion == 'OFICINA' %}Oficina Completa
+                                {% else %}{{ comunicacion.tipo_distribucion }}{% endif %}
+                            </p>
+                            <p class="mb-0"><strong>Estado:</strong> 
+                                <span class="badge bg-warning">{{ comunicacion.get_estado_display }}</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Al confirmar, su firma digital será aplicada automáticamente al documento y la comunicación será distribuida 
+                        {% if comunicacion.tipo_distribucion == 'ENTIDAD' %}a toda la entidad{% elif comunicacion.tipo_distribucion == 'PROCESO' %}al proceso completo{% elif comunicacion.tipo_distribucion == 'OFICINA' %}a la oficina completa{% endif %}.
+                    </div>
+                    
+                    <!-- Vista previa de firma -->
+                    <div class="card mb-4">
+                        <div class="card-body text-center">
+                            <h6 class="text-muted mb-3">Vista previa de su firma:</h6>
+                            {% if request.user.perfil.firma_digital %}
+                            <img src="{{ request.user.perfil.firma_digital.url }}" alt="Su firma" class="img-fluid border rounded p-2 bg-white" style="max-height: 120px;">
+                            <p class="small text-success mt-3 mb-0">
+                                <i class="bi bi-check-circle-fill me-1"></i>Firma configurada correctamente
+                            </p>
+                            {% else %}
+                            <div class="alert alert-warning mb-0">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <strong>No tiene firma configurada.</strong><br>
+                                <a href="{% url 'correspondencia:interna_configurar_firma' %}" class="alert-link">
+                                    Configure su firma digital aquí
+                                </a> antes de continuar.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <p class="text-muted small">
+                        <i class="bi bi-shield-check me-1"></i>
+                        Su firma digital tiene validez legal conforme a la Ley 527 de 1999.
+                    </p>
+
+                    <!-- Botones de acción -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'correspondencia:interna_detalle' comunicacion.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Cancelar
+                            </a>
+                            {% if request.user.perfil.firma_digital %}
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-pen-fill me-2"></i>Firmar y Distribuir
+                            </button>
+                            {% else %}
+                            <button type="button" class="btn btn-success" disabled>
+                                <i class="bi bi-pen-fill me-2"></i>Firmar y Distribuir
+                            </button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

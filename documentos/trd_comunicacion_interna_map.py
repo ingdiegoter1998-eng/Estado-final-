@@ -1,0 +1,93 @@
+import unicodedata
+
+
+TRD_COMUNICACION_INTERNA_POR_OFICINA = {
+    'Gerencia - Dirección': '300.13.60',
+    'Planeación': '323.13.60',
+    'Gestión de Mercadeo y Venta de Servicios': '320.6.13.60',
+    'Comunicación e Imagen Corporativa': '322.1.28.126',
+    'Subgerencia Talento Humano': '321.13.60',
+    'Gestión de Seguridad y Salud en el Trabajo': '316.13.60',
+    'Gestión de Docencia Servicio e Investigación': '0310.02.10',
+    'Control Disciplinario Interno': '301.23',
+    'Gestión de la Calidad': '303.13.60',
+    'Gestión Ambiental': '316.26.101',
+    'Gestión y Administración del Riesgo': '323.13.60',
+    'Gestión de la Seguridad del Paciente': '310.13.60',
+    'Gestión de la Seguridad del paciente': '310.13.60',
+    'Prevención y Control de IAAS': '0310.02.15',
+    'Humanización en los Servicios de Salud': '310.13.60',
+    'Trabajo Social': '313.13.60',
+    'Sistema de Atención al Usuario': '313.13.60',
+    'Gestión del Riesgo en Salud, Rutas de Atención Integral PyM. (Vacunación, Mamografías, Toma de Muestras)': '311.13.60',
+    'Consulta General (Medicina General, Odontología General, Radiología Odontológica)': '311.13.60',
+    'Consulta Especializada y Subespecialidad (Intramural, Extramural, Telemedicina)': '311.13.60',
+    'Internación Adulto (Hospitalización Medicina Interna, Hospitalización Quirúrgicos)': '312.28.113',
+    'Internación Pediátrico (Hospitalización Pediatría)': '312.28.113',
+    'Internación Neonatal (Unidad Básica Neonatal, UCIM y UCI Neonatal)': '312.28.113',
+    'Unidad de Cuidado Crítico (Intermedio e Intensivo - Adulto)': '312.28.113',
+    'Obstetricia y Atención del Parto (Urgencias Maternas, Atención del Parto y Hospitalización Maternidad)': '312.28.113',
+    'Urgencias y Procedimientos': '314.28.115',
+    'Referencia y Contrarreferencia': '314.28.115',
+    'Servicio de Cirugía': '315.28.116',
+    'Servicio de Esterilización': '315.28.116',
+    'Servicio de Laboratorio Clínico (Toma de Muestra de Laboratorio Clínico)': '313.13.60',
+    'Servicio de Imágenes Diagnósticas (Tomografía, Radiología, Ecografía)': '313.13.60',
+    'Banco de Sangre y Servicio de Gestión Pre-Transfusional': '313.13.60',
+    'Servicio Farmacéutico': '320.2.13.60',
+    'Servicio de Terapias (Terapia Física, Respiratoria, Ocupacional, Fonoaudiología)': '313.13.60',
+    'Gestión de la Contabilidad': '320.5.13.60',
+    'Gestión del Presupuesto': '320.7.13.60',
+    'Gestión de Tesorería': '320.4.13.60',
+    'Gestión del Gasto': '320.8.13.60',
+    'Gestión de Cartera': '320.6.13.60',
+    'Facturación': '320.9.13.60',
+    'Cuentas Médicas y Gestión de Glosas': '303.13.60',
+    'Defensa Jurídica': '301.06',
+    'Contratación': '320.6.13.60',
+    'Gestión de las Tecnologías y Sistemas de Información': '322.1.28.126',
+    'Historias Clínicas': '320.3.11.57',
+    'Gestión Documental (Archivo Central y Unidad de Correspondencia)': '320.3.04.30',
+    'Unidad de Vigilancia Epidemiológica': '322.2.09.52',
+    'Unidad de Estadísticas y Análisis de Datos': '322.13.60',
+    'Almacén/Gestión de Insumos, Suministros, Inventario y Activos.': '320.1.13.60',
+    'Gestión del Mantenimiento de la Infraestructura Física Hospitalaria, Equipos Industriales y Vehículos': '323.1.13.60',
+    'Gestión Biomédica': '323.1.10.54',
+    'Servicios Básicos': '321.2.28.125',
+    'Gestión de Redes de Tecnología y Equipos Informáticos': '322.1.28.126',
+    'Control Interno': '302.13.60',
+    'COORDINACIÓN ENFERMERIA': '313.13.60',
+    'COORDINACIÓN MÉDICA': '313.13.60',
+    'Subgerencia administrativa y financiera': '320.13.60',
+    'Subgerencia cientifica': '310.13.30',
+}
+
+
+def normalizar_nombre_oficina(valor):
+    texto = unicodedata.normalize('NFKD', (valor or '').strip())
+    texto = ''.join(ch for ch in texto if not unicodedata.combining(ch))
+    texto = texto.lower()
+    texto = texto.replace('.', ' ')
+    texto = texto.replace(',', ' ')
+    texto = texto.replace('-', ' ')
+    texto = ' '.join(texto.split())
+    return texto
+
+
+def normalizar_codigo_trd(valor):
+    texto = str(valor or '').strip()
+    if not texto:
+        return None
+    texto = texto.replace(',', '.')
+    texto = '.'.join(segmento.strip() for segmento in texto.split('.') if segmento.strip())
+    return texto or None
+
+
+TRD_COMUNICACION_INTERNA_NORMALIZADO = {
+    normalizar_nombre_oficina(nombre): normalizar_codigo_trd(codigo)
+    for nombre, codigo in TRD_COMUNICACION_INTERNA_POR_OFICINA.items()
+}
+
+
+def obtener_trd_comunicacion_interna_por_nombre(nombre_oficina):
+    return TRD_COMUNICACION_INTERNA_NORMALIZADO.get(normalizar_nombre_oficina(nombre_oficina))

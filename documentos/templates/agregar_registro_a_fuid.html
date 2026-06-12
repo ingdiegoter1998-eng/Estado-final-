@@ -1,0 +1,715 @@
+{% load static %}
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agregar Registro al FUID</title>
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+    * {
+        font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+        background: #f5f7fa;
+        color: #2c3e50;
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* Layout con sidebar */
+    .fuid-layout {
+        display: flex;
+        min-height: 100vh;
+        align-items: flex-start;
+    }
+    
+    .fuid-content {
+        flex: 1;
+        min-width: 0;
+        background: #f5f7fa;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .fuid-main {
+        flex: 1;
+        padding: 1rem 1.5rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+    }
+    
+    /* Navbar mejorado */
+    .fuid-navbar {
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        padding: 1rem 2rem;
+        margin-bottom: 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    
+    .fuid-navbar-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .fuid-navbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #003366;
+        text-decoration: none;
+    }
+    
+    .fuid-navbar-brand i {
+        font-size: 1.8rem;
+        color: #0077cc;
+    }
+    
+    .fuid-navbar-user {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .fuid-navbar-greeting {
+        color: #5a6c7d;
+        font-size: 0.95rem;
+    }
+    
+    .fuid-navbar-logout {
+        background: #f0f0f0;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        color: #003366;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    
+    .fuid-navbar-logout:hover {
+        background: #e0e0e0;
+        color: #005599;
+    }
+    
+    /* Hero section */
+    .fuid-form-hero {
+        background: linear-gradient(135deg, #003366 0%, #005599 50%, #0077cc 100%);
+        border-radius: 10px;
+        box-shadow: 0 4px 16px rgba(0, 51, 102, 0.2);
+        margin: 1rem 0 1.5rem;
+        padding: 1.25rem 1.5rem;
+        color: white;
+    }
+    
+    .fuid-form-hero h1 {
+        font-size: 1.4rem;
+        font-weight: 800;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    /* Cards mejoradas */
+    .fuid-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: 1px solid #e1e8ed;
+    }
+    
+    .fuid-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        border-color: #cbd5e0;
+    }
+    
+    .fuid-card-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-bottom: 2px solid #e1e8ed;
+        padding: 0.75rem 1rem;
+    }
+    
+    .fuid-card-header h5 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #003366;
+    }
+    
+    .fuid-card-body {
+        padding: 1rem;
+    }
+    
+    /* Formularios mejorados */
+    .form-label {
+        font-weight: 600;
+        color: #003366;
+        margin-bottom: 0.35rem;
+        font-size: 0.8rem;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #e1e8ed;
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #0077cc;
+        box-shadow: 0 0 0 3px rgba(0, 119, 204, 0.1);
+        outline: none;
+    }
+    
+    /* Títulos de sección */
+    .section-subtitle {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #003366;
+        margin: 1rem 0 0.75rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 2px solid #e1e8ed;
+    }
+    
+    /* Botones mejorados */
+    .btn-success, .btn-primary {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+        border: none !important;
+        padding: 0.75rem 2rem !important;
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3) !important;
+        color: white !important;
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #0077cc 0%, #005599 100%) !important;
+        box-shadow: 0 2px 8px rgba(0, 119, 204, 0.3) !important;
+    }
+    
+    .btn-success:hover, .btn-primary:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4) !important;
+        color: white !important;
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        color: white;
+    }
+    
+    .gap-3 {
+        gap: 1rem;
+    }
+    
+    .hidden {
+        display: none;
+    }
+    
+    #toggleCamposOpcionales.form-check-input {
+        border: 2px solid #000 !important;
+        background-color: #fff;
+    }
+
+    #toggleCamposOpcionales.form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #000;
+    }
+    
+    .form-check {
+        margin-bottom: 0.75rem;
+    }
+    
+    .border {
+        border: 1px solid #e1e8ed !important;
+        border-radius: 8px;
+    }
+    </style>
+</head>
+<body>
+<div class="fuid-layout">
+    {% include 'partials/sidebar_nav.html' %}
+    <div class="fuid-content">
+        <!-- Navbar Mejorado -->
+        <nav class="fuid-navbar">
+            <div class="fuid-navbar-content">
+                <div class="fuid-navbar-brand">
+                    <i class="bi bi-file-plus-fill"></i>
+                    <span>Agregar Registro a FUID</span>
+                </div>
+                <div class="fuid-navbar-user">
+                    {% if request.user.is_authenticated %}
+                        <span class="fuid-navbar-greeting">
+                            <i class="bi bi-person-circle me-1"></i>
+                            {{ request.user.get_full_name|default:request.user.username }}
+                        </span>
+                        <form method="post" action="{% url 'logout' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="fuid-navbar-logout">
+                                <i class="bi bi-box-arrow-right me-1"></i>Cerrar sesión
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="fuid-navbar-logout">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+
+        <!-- Contenido Principal -->
+        <main class="fuid-main">
+            <!-- Hero Section -->
+            <div class="fuid-form-hero">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1><i class="bi bi-file-plus me-2"></i>Agregar Registro al FUID #{{ fuid.id }}</h1>
+                    <a href="{% url 'detalle_fuid' fuid.id %}" class="btn btn-secondary" style="background: white; color: #003366;">
+                        <i class="bi bi-arrow-left me-2"></i>Volver al FUID
+</a>
+                </div>
+            </div>
+
+{% if messages %}
+            <div class="mb-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+            <div class="fuid-card">
+                <div class="fuid-card-header">
+                    <h5><i class="bi bi-info-circle me-2"></i>Datos del Registro</h5>
+                </div>
+                <div class="fuid-card-body">
+                    <form method="post" enctype="multipart/form-data" id="registroForm">
+        {% csrf_token %}
+        {{ form.errors }}
+
+                        <div class="row mb-2">
+                            <div class="col-md-3">
+            <label for="{{ form.codigo.id_for_label }}" class="form-label">Código</label>
+            {{ form.codigo|add_class:"form-control" }}
+        </div>
+                            <div class="col-md-3">
+            <label for="{{ form.codigo_serie.id_for_label }}" class="form-label">Serie</label>
+            {{ form.codigo_serie|add_class:"form-select" }}
+        </div>
+                            <div class="col-md-3">
+            <label for="{{ form.codigo_subserie.id_for_label }}" class="form-label">Subserie</label>
+            <select id="{{ form.codigo_subserie.id_for_label }}" class="form-select" name="{{ form.codigo_subserie.html_name }}">
+                <option value="">Seleccione una subserie</option>
+            </select>
+        </div>
+                            <div class="col-md-3">
+            <label for="{{ form.unidad_documental.id_for_label }}" class="form-label">Unidad Documental</label>
+            {{ form.unidad_documental|add_class:"form-control" }}
+                            </div>
+        </div>
+
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+            <label for="{{ form.fecha_inicial.id_for_label }}" class="form-label">Fecha Inicial</label>
+            {{ form.fecha_inicial|add_class:"form-control" }}
+        </div>
+                            <div class="col-md-6">
+            <label for="{{ form.fecha_final.id_for_label }}" class="form-label">Fecha Final</label>
+            {{ form.fecha_final|add_class:"form-control" }}
+                            </div>
+        </div>
+
+                        <h5 class="section-subtitle"><i class="bi bi-check-square me-2"></i>Tipo de Soporte</h5>
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <div class="form-check">
+            {{ form.soporte_fisico }}
+            <label class="form-check-label" for="{{ form.soporte_fisico.id_for_label }}">Soporte Físico</label>
+        </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check">
+            {{ form.soporte_electronico }}
+            <label class="form-check-label" for="{{ form.soporte_electronico.id_for_label }}">Soporte Electrónico</label>
+        </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="toggleCamposOpcionales">
+            <label class="form-check-label" for="toggleCamposOpcionales">
+                                        Campos opcionales (Historias clínicas/laborales)
+            </label>
+                                </div>
+                            </div>
+        </div>
+
+        <!-- Contenedor para campos opcionales -->
+        <div id="camposOpcionales" class="border p-3 mb-3 rounded shadow-sm hidden">
+             <h6 class="mb-3 text-secondary"><i class="bi bi-person-badge"></i> Detalles Específicos</h6>
+                            <div class="row mb-2">
+                                <div class="col-md-6">
+                <label for="{{ form.identificador_documento.id_for_label }}" class="form-label">
+                    Identificador documental 
+                    <i class="bi bi-info-circle" data-bs-toggle="tooltip" data-bs-placement="right"
+                    title="Solo diligencie este campo si se trata de una Historia Clínica u otro documento que lo requiera."></i>
+                </label>
+                {{ form.identificador_documento|add_class:"form-control" }}
+            </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mt-4">
+                {{ form.Estado_archivo }}
+                <label class="form-check-label" for="{{ form.Estado_archivo.id_for_label }}">Registro vigente</label>
+                                    </div>
+                                </div>
+            </div>
+        </div>
+
+        <!-- Campos relacionados con Soporte Físico -->
+                        <div id="soporteFisicoFields" class="fuid-card mt-3 hidden">
+                            <div class="fuid-card-header">
+                                <h5><i class="bi bi-archive me-2"></i>Datos de Soporte Físico</h5>
+                            </div>
+                            <div class="fuid-card-body">
+                                <div class="row mb-2">
+                                    <div class="col-md-3">
+                <label for="{{ form.caja.id_for_label }}" class="form-label">Caja</label>
+                {{ form.caja|add_class:"form-control" }}
+            </div>
+                                    <div class="col-md-3">
+                <label for="{{ form.carpeta.id_for_label }}" class="form-label">Carpeta</label>
+                {{ form.carpeta|add_class:"form-control" }}
+            </div>
+                                    <div class="col-md-3">
+                <label for="tomo_legajo_libro" class="form-label">Tomo/Legajo/Libro</label>
+                <select id="tomo_legajo_libro" class="form-select">
+                    <option value="">Seleccione una opción</option>
+                    <option value="Tomo">Tomo</option>
+                    <option value="Legajo">Legajo</option>
+                    <option value="Libro">Libro</option>
+                </select>
+                <input type="hidden" id="hidden_tomo_legajo_libro" name="{{ form.tomo_legajo_libro.html_name }}" value="{{ form.tomo_legajo_libro.value|default_if_none:'' }}">
+            </div>
+                                    <div class="col-md-3">
+                <label for="{{ form.numero_folios.id_for_label }}" class="form-label">Número de Folios</label>
+                {{ form.numero_folios|add_class:"form-control" }}
+            </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-6">
+                <label for="{{ form.tipo.id_for_label }}" class="form-label">Tipo</label>
+                {{ form.tipo|add_class:"form-control" }}
+            </div>
+                                    <div class="col-md-6">
+                <label for="{{ form.cantidad.id_for_label }}" class="form-label">Cantidad</label>
+                {{ form.cantidad|add_class:"form-control" }}
+                                    </div>
+                                </div>
+            </div>
+        </div>
+
+        <!-- Campos relacionados con Soporte Electrónico -->
+                        <div id="soporteElectronicoFields" class="fuid-card mt-3 hidden">
+                            <div class="fuid-card-header">
+                                <h5><i class="bi bi-file-earmark-arrow-up me-2"></i>Datos de Soporte Electrónico</h5>
+                            </div>
+                            <div class="fuid-card-body">
+                                <div class="row mb-2">
+                                    <div class="col-md-6">
+                <label for="{{ form.ubicacion.id_for_label }}" class="form-label">Ubicación</label>
+                {{ form.ubicacion|add_class:"form-control" }}
+            </div>
+                                    <div class="col-md-6">
+                <label for="{{ form.cantidad_documentos_electronicos.id_for_label }}" class="form-label">Cantidad de Documentos Electrónicos</label>
+                {{ form.cantidad_documentos_electronicos|add_class:"form-control" }}
+            </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-6">
+                <label class="form-label">Tamaño del Documento</label>
+                <div class="input-group">
+                    <input type="number" id="tamano_valor" class="form-control" placeholder="Valor" min="0" step="any">
+                    <select id="tamano_unidad" class="form-select" style="max-width: 100px;">
+                        <option value="KB">KB</option>
+                        <option value="MB" selected>MB</option> 
+                        <option value="GB">GB</option>
+                    </select>
+                </div>
+                {{ form.tamano_documentos_electronicos }}
+            </div>
+                                    <div class="col-md-6">
+                <label for="{{ form.archivo.id_for_label }}" class="form-label">Adjuntar Documento</label>
+                {{ form.archivo|add_class:"form-control" }}
+                <small class="form-text text-muted">El archivo no debe superar los 10 MB.</small>
+            </div>
+        </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-2">
+                            <div class="col-md-12">
+            <label for="{{ form.notas.id_for_label }}" class="form-label">Notas</label>
+            {{ form.notas|add_class:"form-control" }}
+                            </div>
+        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top" style="display: flex !important; visibility: visible !important; opacity: 1 !important;">
+                            <a href="{% url 'detalle_fuid' fuid.id %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary" style="display: inline-block !important; visibility: visible !important; opacity: 1 !important;">
+                                <i class="bi bi-save me-2"></i>Guardar Registro
+                            </button>
+                        </div>
+    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Loader oculto -->
+<div id="loaderOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.8);z-index:9999;justify-content:center;align-items:center;">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-3 text-primary fw-bold">Subiendo documento...</p>
+</div>
+
+<script src="/static/correspondencia/vendor/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.querySelector('form');
+        const loader = document.getElementById('loaderOverlay');
+    
+        form.addEventListener('submit', function () {
+            const soporteElectronicoCheckbox = document.getElementById('{{ form.soporte_electronico.id_for_label }}');
+            const archivoInput = document.getElementById('{{ form.archivo.id_for_label }}');
+            if (soporteElectronicoCheckbox.checked && archivoInput.files.length > 0) {
+                 loader.style.display = 'flex';
+            }
+        });
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const soporteFisicoCheckbox = document.getElementById('{{ form.soporte_fisico.id_for_label }}');
+    const soporteElectronicoCheckbox = document.getElementById('{{ form.soporte_electronico.id_for_label }}');
+    const soporteFisicoFields = document.getElementById('soporteFisicoFields');
+    const soporteElectronicoFields = document.getElementById('soporteElectronicoFields');
+    const serieSelect = document.getElementById('{{ form.codigo_serie.id_for_label }}');
+    const subserieSelect = document.getElementById('{{ form.codigo_subserie.id_for_label }}');
+    const toggleOpcionalesCheckbox = document.getElementById('toggleCamposOpcionales');
+    const camposOpcionalesDiv = document.getElementById('camposOpcionales');
+
+    function toggleFields() {
+        const fisicosActivos = soporteFisicoCheckbox.checked;
+        soporteFisicoFields.classList.toggle('hidden', !fisicosActivos);
+        soporteFisicoFields.querySelectorAll('input, select, textarea').forEach(el => el.disabled = !fisicosActivos);
+
+        const electronicosActivos = soporteElectronicoCheckbox.checked;
+        soporteElectronicoFields.classList.toggle('hidden', !electronicosActivos);
+        soporteElectronicoFields.querySelectorAll('input, select, textarea').forEach(el => el.disabled = !electronicosActivos);
+         if (electronicosActivos) {
+             document.getElementById('{{ form.archivo.id_for_label }}').disabled = false;
+        }
+    }
+
+    function toggleCamposOpcionales() {
+        const opcionalesActivos = toggleOpcionalesCheckbox.checked;
+        camposOpcionalesDiv.classList.toggle('hidden', !opcionalesActivos);
+        camposOpcionalesDiv.querySelectorAll('input, select, textarea').forEach(el => el.disabled = !opcionalesActivos);
+    }
+
+    toggleFields(); 
+    toggleCamposOpcionales();
+
+    soporteFisicoCheckbox.addEventListener('change', toggleFields);
+    soporteElectronicoCheckbox.addEventListener('change', toggleFields);
+    toggleOpcionalesCheckbox.addEventListener('change', toggleCamposOpcionales);
+
+    function cargarSubseries(serieId) {
+        if (!serieId) {
+            subserieSelect.innerHTML = '<option value="">Seleccione una serie primero</option>';
+            return;
+        }
+        fetch("{% url 'cargar_subseries' %}?serie_id=" + serieId)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                 return response.json();
+            })
+            .then(data => {
+                subserieSelect.innerHTML = '<option value="">Seleccione una subserie</option>';
+                if (data && data.length > 0) {
+                    data.forEach(subserie => {
+                        const option = document.createElement('option');
+                        option.value = subserie.id;
+                        option.textContent = subserie.nombre;
+                        if (subserie.id == "{{ form.codigo_subserie.value|default_if_none:'' }}") {
+                            option.selected = true;
+                        }
+                        subserieSelect.appendChild(option);
+                    });
+                } else {
+                     subserieSelect.innerHTML = '<option value="">No hay subseries para esta serie</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Error cargando subseries:', error);
+                subserieSelect.innerHTML = '<option value="">Error al cargar</option>';
+            });
+    }
+    if (serieSelect.value) {
+        cargarSubseries(serieSelect.value);
+    }
+    serieSelect.addEventListener('change', function() {
+        cargarSubseries(this.value);
+    });
+});
+</script>
+
+<script>
+    const serieSelectUnidad = document.getElementById('{{ form.codigo_serie.id_for_label }}');
+    const subserieSelectUnidad = document.getElementById('{{ form.codigo_subserie.id_for_label }}');
+    const unidadDocumentalInput = document.getElementById('{{ form.unidad_documental.id_for_label }}');
+
+    if (serieSelectUnidad && subserieSelectUnidad && unidadDocumentalInput) {
+        function soloNombre(txt) {
+            return txt.split('-').slice(1).join('-').trim() || txt.trim();
+        }
+
+        function actualizarUnidadDocumental() {
+            const serieNombre = soloNombre(serieSelectUnidad.options[serieSelectUnidad.selectedIndex]?.text || "");
+            const subserieNombre = soloNombre(subserieSelectUnidad.options[subserieSelectUnidad.selectedIndex]?.text || "");
+            const serieValue = serieSelectUnidad.value;
+            const subserieValue = subserieSelectUnidad.value;
+            const haySerie = serieValue && serieNombre && serieNombre !== "--------";
+            const haySubserie = subserieValue && subserieNombre && subserieNombre !== "Seleccione una subserie" && subserieNombre !== "No hay subseries para esta serie" && subserieNombre !== "Error al cargar";
+
+            let nuevaUnidad = "";
+            if (haySerie) {
+                nuevaUnidad = haySubserie ? `${serieNombre} - ${subserieNombre}` : serieNombre;
+            }
+
+            if (!unidadDocumentalInput.value || unidadDocumentalInput.dataset.autofill === "true") {
+                unidadDocumentalInput.value = nuevaUnidad;
+                unidadDocumentalInput.dataset.autofill = "true";
+            }
+        }
+
+        serieSelectUnidad.addEventListener('change', actualizarUnidadDocumental);
+        subserieSelectUnidad.addEventListener('change', actualizarUnidadDocumental);
+
+        unidadDocumentalInput.addEventListener('input', function() {
+            this.dataset.autofill = "false";
+        });
+
+        actualizarUnidadDocumental();
+    }
+</script>
+
+<script>
+    const selectTomoLegajo = document.getElementById('tomo_legajo_libro');
+    const hiddenTomoLegajo = document.getElementById('hidden_tomo_legajo_libro');
+    
+    if (selectTomoLegajo && hiddenTomoLegajo) {
+        if (hiddenTomoLegajo.value) {
+            selectTomoLegajo.value = hiddenTomoLegajo.value;
+        }
+        
+        selectTomoLegajo.addEventListener('change', function () {
+            hiddenTomoLegajo.value = this.value;
+        });
+    }
+</script>
+
+<script>
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tamanoValorInput = document.getElementById('tamano_valor');
+    const tamanoUnidadSelect = document.getElementById('tamano_unidad');
+    const tamanoHiddenInput = document.getElementById('{{ form.tamano_documentos_electronicos.id_for_label }}');
+
+    function actualizarCampoOculto() {
+        const valor = tamanoValorInput.value.trim();
+        const unidad = tamanoUnidadSelect.value;
+        if (valor && !isNaN(valor)) {
+            tamanoHiddenInput.value = `${parseFloat(valor)} ${unidad}`;
+        } else {
+            tamanoHiddenInput.value = '';
+        }
+    }
+
+    function parsearYEstablecerValorInicial() {
+        const valorActual = tamanoHiddenInput.value;
+        if (valorActual) {
+            const partes = valorActual.split(' ');
+            if (partes.length === 2) {
+                const valorNumerico = parseFloat(partes[0]);
+                const unidad = partes[1].toUpperCase();
+                if (!isNaN(valorNumerico)) {
+                    tamanoValorInput.value = valorNumerico;
+                    const opcionUnidad = tamanoUnidadSelect.querySelector(`option[value="${unidad}"]`);
+                    if (opcionUnidad) {
+                        tamanoUnidadSelect.value = unidad;
+                    } else {
+                       tamanoUnidadSelect.value = 'MB'; 
+                    }
+                }
+            }
+        }
+    }
+
+    tamanoValorInput.addEventListener('input', actualizarCampoOculto);
+    tamanoUnidadSelect.addEventListener('change', actualizarCampoOculto);
+    parsearYEstablecerValorInicial();
+});
+</script>
+
+</body>
+</html>

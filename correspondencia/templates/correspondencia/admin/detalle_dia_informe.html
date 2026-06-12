@@ -1,0 +1,1056 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .info-card {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .estado-badge {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+    }
+    
+    .estado-firmado {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .estado-pendiente {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .upload-zone {
+        border: 2px dashed #dee2e6;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s;
+        cursor: pointer;
+        background: #f8f9fa;
+    }
+    
+    .upload-zone:hover, .upload-zone.dragover {
+        border-color: #28a745;
+        background: #e8f5e9;
+    }
+    
+    .upload-zone i {
+        font-size: 3rem;
+        color: #6c757d;
+        margin-bottom: 1rem;
+    }
+    
+    .upload-zone.dragover i {
+        color: #28a745;
+    }
+    
+    .archivo-actual {
+        background: #e8f5e9;
+        border-radius: 8px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .archivo-actual i {
+        font-size: 2rem;
+        color: #28a745;
+    }
+    
+    .historial-item {
+        padding: 0.75rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .historial-item:last-child {
+        border-bottom: none;
+    }
+    
+    .tabla-correspondencias {
+        font-size: 0.9rem;
+    }
+    
+    .tabla-correspondencias th {
+        background: #1a5276;
+        color: white;
+        font-weight: 500;
+    }
+    
+    /* Estilos para firmas digitales */
+    .firma-badge {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .firma-badge:hover {
+        transform: scale(1.05);
+    }
+    
+    .firma-canvas-container {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        background: #fff;
+        position: relative;
+    }
+    
+    #firma-canvas {
+        width: 100%;
+        height: 200px;
+        cursor: crosshair;
+        touch-action: none;
+    }
+    
+    .firma-canvas-container.drawing {
+        border-color: #1a5276;
+    }
+    
+    .stats-firmas {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .stat-firma-item {
+        flex: 1;
+        min-width: 100px;
+        text-align: center;
+        padding: 0.75rem;
+        border-radius: 8px;
+        background: #f8f9fa;
+    }
+    
+    .stat-firma-item.firmadas {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .stat-firma-item.pendientes {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .btn-firma-recolectar {
+        position: relative;
+    }
+    
+    .firma-preview {
+        max-width: 120px;
+        max-height: 60px;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    
+    /* Transición del chevron en collapse */
+    #chevron-subir-firmado, #chevron-historial {
+        transition: transform 0.3s ease;
+    }
+    
+    .card-header[data-bs-toggle="collapse"]:hover {
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Card de Información del Día -->
+        <div class="card info-card mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-date me-2"></i>
+                        Informe del {{ fecha|date:"l d \d\e F \d\e Y" }}
+                    </h5>
+                    <span class="estado-badge {% if informe.estado == 'FIRMADO' %}estado-firmado{% else %}estado-pendiente{% endif %}">
+                        {% if informe.estado == 'FIRMADO' %}
+                            <i class="bi bi-check-circle-fill me-1"></i> Firmado
+                        {% else %}
+                            <i class="bi bi-clock me-1"></i> Pendiente de Firma
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-primary mb-0">{{ correspondencias.count }}</h3>
+                        <small class="text-muted">Correspondencias</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-info mb-0">{{ historial_descargas.count }}</h3>
+                        <small class="text-muted">Descargas</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-success mb-0">{{ stats_firmas.firmadas }}/{{ stats_firmas.total }}</h3>
+                        <small class="text-muted">Firmas Recibidas</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        {% if informe.fecha_subida_firma %}
+                            <h6 class="text-success mb-0">{{ informe.fecha_subida_firma|date:"d/m/Y H:i" }}</h6>
+                            <small class="text-muted">Fecha de Firma</small>
+                        {% else %}
+                            <h6 class="text-warning mb-0">-</h6>
+                            <small class="text-muted">Sin firmar</small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Barra de progreso de firmas -->
+                {% if stats_firmas.total > 0 %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>Progreso de firmas</small>
+                        <small><strong>{{ stats_firmas.porcentaje }}%</strong></small>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: {{ stats_firmas.porcentaje }}%"
+                             aria-valuenow="{{ stats_firmas.porcentaje }}" 
+                             aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Botón de Descarga -->
+                <div class="d-grid gap-2 mb-3">
+                    <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#modalDescargarPlanilla">
+                        <i class="bi bi-download me-2"></i>
+                        Descargar Informe Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabla de Correspondencias -->
+        <div class="card info-card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="bi bi-list-ul me-2"></i>
+                    Correspondencias del Día ({{ correspondencias.count }})
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table tabla-correspondencias table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Radicado</th>
+                                <th>Hora</th>
+                                <th>Remitente</th>
+                                <th>Asunto</th>
+                                <th>Funcionario</th>
+                                <th>¿Respuesta?</th>
+                                <th class="text-center">Planilla</th>
+                                <th class="text-center">Firma</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for corr in correspondencias %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'correspondencia:detalle_correspondencia' corr.pk %}">
+                                        {{ corr.numero_radicado }}
+                                    </a>
+                                </td>
+                                <td>{{ corr.fecha_radicacion|date:"H:i" }}</td>
+                                <td>
+                                    {% if corr.remitente %}
+                                        {{ corr.remitente.nombre_completo|truncatechars:25 }}
+                                        {% if corr.remitente.entidad_externa %}
+                                            <br><small class="text-muted">{{ corr.remitente.entidad_externa.nombre|truncatechars:30 }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ corr.asunto|truncatechars:40 }}</td>
+                                <td>
+                                    {% if corr.usuario_destino_inicial %}
+                                        {{ corr.usuario_destino_inicial.get_full_name|default:corr.usuario_destino_inicial.username }}
+                                        {% if corr.usuario_destino_inicial.perfil.oficina %}
+                                            <br><small class="text-muted">{{ corr.usuario_destino_inicial.perfil.oficina.nombre|truncatechars:20 }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if corr.requiere_respuesta %}
+                                        <span class="badge bg-warning text-dark">Sí</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if corr.en_planilla %}
+                                        <span class="badge bg-success" title="Descargada y en la planilla">
+                                            <i class="bi bi-check-circle-fill me-1"></i>En Planilla
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-light text-muted" title="No descargada">
+                                            <i class="bi bi-dash-circle me-1"></i>No descargada
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if corr.firma_recibida %}
+                                        <!-- Ya tiene firma - click para ver -->
+                                        <button type="button" 
+                                                class="btn btn-sm btn-success firma-badge btn-ver-firma"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalVerFirma"
+                                                data-radicado="{{ corr.numero_radicado }}"
+                                                data-nombre="{{ corr.firma_recibida.nombre_firmante }}"
+                                                data-cargo="{{ corr.firma_recibida.cargo_firmante|default:'' }}"
+                                                data-fecha="{{ corr.firma_recibida.fecha_firma|date:'d/m/Y H:i' }}"
+                                                data-imagen="{{ corr.firma_recibida.firma_imagen.url }}"
+                                                data-recolector="{{ corr.firma_recibida.recolector.get_full_name|default:corr.firma_recibida.recolector.username|default:'N/A' }}"
+                                                data-observaciones="{{ corr.firma_recibida.observaciones|default:'' }}"
+                                                title="Click para ver firma">
+                                            <i class="bi bi-pen-fill me-1"></i>Firmado
+                                        </button>
+                                    {% else %}
+                                        <!-- Botón para recolectar firma -->
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-primary btn-firma-recolectar"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalFirma"
+                                                data-correspondencia-id="{{ corr.pk }}"
+                                                data-radicado="{{ corr.numero_radicado }}"
+                                                data-funcionario="{% if corr.usuario_destino_inicial %}{{ corr.usuario_destino_inicial.get_full_name|default:corr.usuario_destino_inicial.username|default:'N/A' }}{% else %}N/A{% endif %}"
+                                                data-cargo="{% if corr.usuario_destino_inicial and corr.usuario_destino_inicial.perfil.cargo %}{{ corr.usuario_destino_inicial.perfil.cargo }}{% endif %}"
+                                                data-oficina="{% if corr.usuario_destino_inicial and corr.usuario_destino_inicial.perfil.oficina %}{{ corr.usuario_destino_inicial.perfil.oficina.nombre }}{% endif %}">
+                                            <i class="bi bi-pen me-1"></i>Firmar
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    No hay correspondencias registradas para este día.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card de Subida de Archivo Firmado (Colapsable) -->
+        <div class="card info-card mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center" 
+                 style="cursor: pointer;"
+                 data-bs-toggle="collapse" 
+                 data-bs-target="#collapseSubirFirmado" 
+                 aria-expanded="false" 
+                 aria-controls="collapseSubirFirmado">
+                <h6 class="mb-0">
+                    <i class="bi bi-upload me-2"></i>
+                    Subir Archivo Firmado
+                    {% if informe.archivo_firmado %}
+                        <span class="badge bg-light text-success ms-2">
+                            <i class="bi bi-check-circle-fill"></i> Archivo subido
+                        </span>
+                    {% endif %}
+                </h6>
+                <i class="bi bi-chevron-down" id="chevron-subir-firmado"></i>
+            </div>
+            <div class="collapse" id="collapseSubirFirmado">
+                <div class="card-body">
+                    {% if informe.archivo_firmado %}
+                        <div class="archivo-actual mb-3">
+                            <i class="bi bi-file-earmark-check-fill"></i>
+                            <div class="flex-grow-1">
+                                <strong>Archivo Firmado</strong><br>
+                                <small class="text-muted">
+                                    Subido el {{ informe.fecha_subida_firma|date:"d/m/Y H:i" }}
+                                    {% if informe.subido_por %}
+                                        por {{ informe.subido_por.get_full_name|default:informe.subido_por.username }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <a href="{{ informe.archivo_firmado.url }}" target="_blank" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </div>
+                        <p class="text-muted small mb-2">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Puede reemplazar el archivo subiendo uno nuevo.
+                        </p>
+                    {% endif %}
+                    
+                    <form id="form-subir-firmado" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="hidden" name="fecha" value="{{ fecha_str }}">
+                        
+                        <div class="upload-zone" id="upload-zone">
+                            <i class="bi bi-cloud-upload"></i>
+                            <p class="mb-2">Arrastre el archivo aquí o haga clic para seleccionar</p>
+                            <small class="text-muted">PDF o imagen (máx. 10MB)</small>
+                            <input type="file" name="archivo_firmado" id="archivo-input" 
+                                   accept=".pdf,.jpg,.jpeg,.png" class="d-none">
+                        </div>
+                        
+                        <div id="archivo-seleccionado" class="d-none mt-3">
+                            <div class="d-flex align-items-center gap-2 p-2 bg-light rounded">
+                                <i class="bi bi-file-earmark text-primary"></i>
+                                <span id="nombre-archivo" class="flex-grow-1"></span>
+                                <button type="button" class="btn btn-sm btn-outline-danger" id="btn-quitar">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success w-100 mt-3" id="btn-subir" disabled>
+                            <i class="bi bi-upload me-2"></i>Subir Archivo Firmado
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card de Historial de Descargas (Colapsable) -->
+        <div class="card info-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center" 
+                 style="cursor: pointer;"
+                 data-bs-toggle="collapse" 
+                 data-bs-target="#collapseHistorialDescargas" 
+                 aria-expanded="false" 
+                 aria-controls="collapseHistorialDescargas">
+                <h6 class="mb-0">
+                    <i class="bi bi-clock-history me-2"></i>
+                    Historial de Descargas
+                    <span class="badge bg-secondary ms-2">{{ historial_descargas.count }}</span>
+                </h6>
+                <i class="bi bi-chevron-down" id="chevron-historial"></i>
+            </div>
+            <div class="collapse" id="collapseHistorialDescargas">
+                <div class="card-body p-0">
+                    {% if historial_descargas %}
+                        {% for descarga in historial_descargas %}
+                            <div class="historial-item">
+                                <div>
+                                    <strong>{{ descarga.usuario.get_full_name|default:descarga.usuario.username }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ descarga.fecha_descarga|naturaltime }}</small>
+                                </div>
+                                <small class="text-muted">
+                                    {{ descarga.fecha_descarga|date:"H:i" }}
+                                </small>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox"></i>
+                            <p class="mb-0">Sin descargas registradas</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Descargar Planilla -->
+<div class="modal fade" id="modalDescargarPlanilla" tabindex="-1" aria-labelledby="modalDescargarPlanillaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalDescargarPlanillaLabel">
+                    <i class="bi bi-download me-2"></i>Descargar Planilla
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formDescargarPlanilla" method="get" action="{% url 'correspondencia:informe_correspondencia_excel' %}">
+                <div class="modal-body">
+                    <input type="hidden" name="fecha" value="{{ fecha_str }}">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Seleccionar rango de horas:</label>
+                        <div class="d-grid gap-2 mb-3">
+                            <button type="button" class="btn btn-outline-primary" onclick="setHoras('07:00', '12:30')">
+                                <i class="bi bi-sunrise me-2"></i>Planilla de la Mañana (7:00 AM - 12:30 PM)
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="setHoras('14:00', '18:00')">
+                                <i class="bi bi-sunset me-2"></i>Planilla de la Tarde (2:00 PM - 6:00 PM)
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="hora_inicio" class="form-label">
+                                <i class="bi bi-clock me-1"></i>Hora Inicio
+                            </label>
+                            <input type="time" class="form-control" id="hora_inicio" name="hora_inicio" value="07:00" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="hora_fin" class="form-label">
+                                <i class="bi bi-clock-fill me-1"></i>Hora Fin
+                            </label>
+                            <input type="time" class="form-control" id="hora_fin" name="hora_fin" value="12:30" required>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <small>Las correspondencias incluidas en la descarga se marcarán como "descargada y en la planilla".</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-download me-2"></i>Descargar Planilla
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Recolectar Firma Digital -->
+<div class="modal fade" id="modalFirma" tabindex="-1" aria-labelledby="modalFirmaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalFirmaLabel">
+                    <i class="bi bi-pen me-2"></i>Recolectar Firma Digital
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formFirma">
+                {% csrf_token %}
+                <input type="hidden" id="firma-correspondencia-id" name="correspondencia_id">
+                <div class="modal-body">
+                    <!-- Info de la correspondencia -->
+                    <div class="alert alert-info mb-4">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong><i class="bi bi-file-earmark me-1"></i>Radicado:</strong>
+                                <span id="firma-radicado-display"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong><i class="bi bi-building me-1"></i>Oficina:</strong>
+                                <span id="firma-oficina-display"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Datos del firmante -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="firma-nombre" class="form-label">
+                                <i class="bi bi-person me-1"></i>Nombre del Firmante <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="firma-nombre" name="nombre_firmante" required>
+                            <small class="text-muted">Nombre del funcionario que recibe la correspondencia</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="firma-cargo" class="form-label">
+                                <i class="bi bi-briefcase me-1"></i>Cargo
+                            </label>
+                            <input type="text" class="form-control" id="firma-cargo" name="cargo_firmante">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="firma-observaciones" class="form-label">
+                            <i class="bi bi-chat-left-text me-1"></i>Observaciones
+                        </label>
+                        <textarea class="form-control" id="firma-observaciones" name="observaciones" rows="2"
+                                  placeholder="Observaciones opcionales sobre la recepción..."></textarea>
+                    </div>
+                    
+                    <!-- Canvas para la firma -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-pen me-1"></i>Firma Digital <span class="text-danger">*</span>
+                        </label>
+                        <div class="firma-canvas-container" id="firma-canvas-container">
+                            <canvas id="firma-canvas"></canvas>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Firme con el dedo o stylus en dispositivos táctiles, o con el mouse en PC.
+                            </small>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="btn-limpiar-firma">
+                                <i class="bi bi-eraser me-1"></i>Limpiar
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <input type="hidden" id="firma-imagen-data" name="firma_imagen">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg me-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="btn-guardar-firma">
+                        <i class="bi bi-check-lg me-1"></i>Guardar Firma
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Ver Firma Digital -->
+<div class="modal fade" id="modalVerFirma" tabindex="-1" aria-labelledby="modalVerFirmaLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="modalVerFirmaLabel">
+                    <i class="bi bi-pen-fill me-2"></i>Firma Recibida
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Info del radicado -->
+                <div class="alert alert-success mb-3">
+                    <strong><i class="bi bi-file-earmark me-1"></i>Radicado:</strong>
+                    <span id="ver-firma-radicado"></span>
+                </div>
+                
+                <!-- Imagen de la firma -->
+                <div class="text-center mb-3">
+                    <div class="border rounded p-3 bg-light">
+                        <img id="ver-firma-imagen" src="" alt="Firma digital" 
+                             class="img-fluid" style="max-height: 200px; background: white;">
+                    </div>
+                </div>
+                
+                <!-- Datos del firmante -->
+                <table class="table table-sm table-borderless mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold text-muted" style="width: 140px;">
+                                <i class="bi bi-person me-1"></i>Firmante:
+                            </td>
+                            <td id="ver-firma-nombre"></td>
+                        </tr>
+                        <tr id="fila-cargo" class="d-none">
+                            <td class="fw-bold text-muted">
+                                <i class="bi bi-briefcase me-1"></i>Cargo:
+                            </td>
+                            <td id="ver-firma-cargo"></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">
+                                <i class="bi bi-calendar-check me-1"></i>Fecha:
+                            </td>
+                            <td id="ver-firma-fecha"></td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold text-muted">
+                                <i class="bi bi-person-check me-1"></i>Recolector:
+                            </td>
+                            <td id="ver-firma-recolector"></td>
+                        </tr>
+                        <tr id="fila-observaciones" class="d-none">
+                            <td class="fw-bold text-muted">
+                                <i class="bi bi-chat-left-text me-1"></i>Observaciones:
+                            </td>
+                            <td id="ver-firma-observaciones"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-lg me-1"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'correspondencia:calendario_informes' %}?year={{ fecha.year }}&month={{ fecha.month }}" 
+       class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Volver al Calendario
+    </a>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Función para establecer horas desde los botones predefinidos
+function setHoras(inicio, fin) {
+    document.getElementById('hora_inicio').value = inicio;
+    document.getElementById('hora_fin').value = fin;
+}
+
+$(document).ready(function() {
+    // ========================
+    // ZONA DE UPLOAD ARCHIVO FIRMADO
+    // ========================
+    const uploadZone = $('#upload-zone');
+    const archivoInput = $('#archivo-input');
+    const archivoSeleccionado = $('#archivo-seleccionado');
+    const nombreArchivo = $('#nombre-archivo');
+    const btnSubir = $('#btn-subir');
+    const btnQuitar = $('#btn-quitar');
+    const form = $('#form-subir-firmado');
+    
+    // Click en zona de upload
+    uploadZone.on('click', function() {
+        archivoInput.click();
+    });
+    
+    // Drag and drop
+    uploadZone.on('dragover', function(e) {
+        e.preventDefault();
+        $(this).addClass('dragover');
+    });
+    
+    uploadZone.on('dragleave', function(e) {
+        e.preventDefault();
+        $(this).removeClass('dragover');
+    });
+    
+    uploadZone.on('drop', function(e) {
+        e.preventDefault();
+        $(this).removeClass('dragover');
+        const files = e.originalEvent.dataTransfer.files;
+        if (files.length) {
+            archivoInput[0].files = files;
+            mostrarArchivo(files[0]);
+        }
+    });
+    
+    // Cambio en input file
+    archivoInput.on('change', function() {
+        if (this.files.length) {
+            mostrarArchivo(this.files[0]);
+        }
+    });
+    
+    // Quitar archivo
+    btnQuitar.on('click', function() {
+        archivoInput.val('');
+        archivoSeleccionado.addClass('d-none');
+        btnSubir.prop('disabled', true);
+    });
+    
+    function mostrarArchivo(file) {
+        nombreArchivo.text(file.name);
+        archivoSeleccionado.removeClass('d-none');
+        btnSubir.prop('disabled', false);
+    }
+    
+    // Submit del formulario
+    form.on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        btnSubir.prop('disabled', true).html('<i class="bi bi-hourglass-split me-2"></i>Subiendo...');
+        
+        $.ajax({
+            url: '{% url "correspondencia:subir_informe_firmado" %}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    // Mostrar mensaje de éxito y recargar
+                    alert(response.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.error);
+                    btnSubir.prop('disabled', false).html('<i class="bi bi-upload me-2"></i>Subir Archivo Firmado');
+                }
+            },
+            error: function() {
+                alert('Error al subir el archivo. Intente nuevamente.');
+                btnSubir.prop('disabled', false).html('<i class="bi bi-upload me-2"></i>Subir Archivo Firmado');
+            }
+        });
+    });
+    
+    // ========================
+    // CANVAS DE FIRMA DIGITAL
+    // ========================
+    let canvas, ctx;
+    let isDrawing = false;
+    let lastX = 0, lastY = 0;
+    let hasSignature = false;
+    
+    function initCanvas() {
+        canvas = document.getElementById('firma-canvas');
+        if (!canvas) return;
+        
+        ctx = canvas.getContext('2d');
+        
+        // Ajustar tamaño del canvas al contenedor
+        const container = document.getElementById('firma-canvas-container');
+        canvas.width = container.offsetWidth - 4; // -4 por el borde
+        canvas.height = 200;
+        
+        // Configurar estilo del trazo
+        ctx.strokeStyle = '#1a5276';
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // Fondo blanco
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Event listeners para mouse
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        
+        // Event listeners para touch (tablet/móvil)
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+        canvas.addEventListener('touchend', stopDrawing);
+    }
+    
+    function getMousePos(e) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top
+        };
+    }
+    
+    function getTouchPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        return {
+            x: touch.clientX - rect.left,
+            y: touch.clientY - rect.top
+        };
+    }
+    
+    function startDrawing(e) {
+        isDrawing = true;
+        const pos = getMousePos(e);
+        lastX = pos.x;
+        lastY = pos.y;
+        $('#firma-canvas-container').addClass('drawing');
+    }
+    
+    function handleTouchStart(e) {
+        e.preventDefault();
+        isDrawing = true;
+        const pos = getTouchPos(e);
+        lastX = pos.x;
+        lastY = pos.y;
+        $('#firma-canvas-container').addClass('drawing');
+    }
+    
+    function draw(e) {
+        if (!isDrawing) return;
+        
+        const pos = getMousePos(e);
+        
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        
+        lastX = pos.x;
+        lastY = pos.y;
+        hasSignature = true;
+    }
+    
+    function handleTouchMove(e) {
+        e.preventDefault();
+        if (!isDrawing) return;
+        
+        const pos = getTouchPos(e);
+        
+        ctx.beginPath();
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+        
+        lastX = pos.x;
+        lastY = pos.y;
+        hasSignature = true;
+    }
+    
+    function stopDrawing() {
+        isDrawing = false;
+        $('#firma-canvas-container').removeClass('drawing');
+    }
+    
+    function clearCanvas() {
+        if (!ctx) return;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        hasSignature = false;
+    }
+    
+    // Botón limpiar firma
+    $('#btn-limpiar-firma').on('click', clearCanvas);
+    
+    // Inicializar popovers de Bootstrap
+    const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+    const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
+    
+    // Modal de firma - cargar datos
+    $('#modalFirma').on('show.bs.modal', function(e) {
+        const button = $(e.relatedTarget);
+        const correspondenciaId = button.data('correspondencia-id');
+        const radicado = button.data('radicado');
+        const funcionario = button.data('funcionario');
+        const cargo = button.data('cargo');
+        const oficina = button.data('oficina');
+        
+        // Llenar campos
+        $('#firma-correspondencia-id').val(correspondenciaId);
+        $('#firma-radicado-display').text(radicado);
+        $('#firma-oficina-display').text(oficina || 'N/A');
+        $('#firma-nombre').val(funcionario !== 'N/A' ? funcionario : '');
+        $('#firma-cargo').val(cargo || '');
+        
+        // Reiniciar
+        hasSignature = false;
+    });
+    
+    // Inicializar canvas cuando el modal se muestra
+    $('#modalFirma').on('shown.bs.modal', function() {
+        initCanvas();
+    });
+    
+    // Limpiar al cerrar modal
+    $('#modalFirma').on('hidden.bs.modal', function() {
+        $('#formFirma')[0].reset();
+        clearCanvas();
+    });
+    
+    // Submit formulario de firma
+    $('#formFirma').on('submit', function(e) {
+        e.preventDefault();
+        
+        // Validar nombre
+        const nombre = $('#firma-nombre').val().trim();
+        if (!nombre) {
+            alert('El nombre del firmante es obligatorio.');
+            $('#firma-nombre').focus();
+            return;
+        }
+        
+        // Validar que haya firma
+        if (!hasSignature) {
+            alert('Por favor, dibuje su firma en el área designada.');
+            return;
+        }
+        
+        // Obtener imagen del canvas como base64
+        const firmaData = canvas.toDataURL('image/png');
+        $('#firma-imagen-data').val(firmaData);
+        
+        const formData = new FormData(this);
+        const btnGuardar = $('#btn-guardar-firma');
+        
+        btnGuardar.prop('disabled', true).html('<i class="bi bi-hourglass-split me-1"></i>Guardando...');
+        
+        $.ajax({
+            url: '{% url "correspondencia:guardar_firma_correspondencia" %}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    // Cerrar modal y recargar
+                    $('#modalFirma').modal('hide');
+                    alert(response.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + response.error);
+                    btnGuardar.prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i>Guardar Firma');
+                }
+            },
+            error: function(xhr) {
+                let errorMsg = 'Error al guardar la firma. Intente nuevamente.';
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                }
+                alert(errorMsg);
+                btnGuardar.prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i>Guardar Firma');
+            }
+        });
+    });
+    
+    // ========================
+    // MODAL VER FIRMA
+    // ========================
+    $('#modalVerFirma').on('show.bs.modal', function(e) {
+        const button = $(e.relatedTarget);
+        const radicado = button.data('radicado');
+        const nombre = button.data('nombre');
+        const cargo = button.data('cargo');
+        const fecha = button.data('fecha');
+        const imagen = button.data('imagen');
+        const recolector = button.data('recolector');
+        const observaciones = button.data('observaciones');
+        
+        // Llenar datos
+        $('#ver-firma-radicado').text(radicado);
+        $('#ver-firma-nombre').text(nombre);
+        $('#ver-firma-fecha').text(fecha);
+        $('#ver-firma-recolector').text(recolector);
+        $('#ver-firma-imagen').attr('src', imagen);
+        
+        // Cargo (opcional)
+        if (cargo) {
+            $('#ver-firma-cargo').text(cargo);
+            $('#fila-cargo').removeClass('d-none');
+        } else {
+            $('#fila-cargo').addClass('d-none');
+        }
+        
+        // Observaciones (opcional)
+        if (observaciones) {
+            $('#ver-firma-observaciones').text(observaciones);
+            $('#fila-observaciones').removeClass('d-none');
+        } else {
+            $('#fila-observaciones').addClass('d-none');
+        }
+    });
+    
+    // ========================
+    // CHEVRONES COLLAPSE
+    // ========================
+    $('#collapseSubirFirmado').on('show.bs.collapse', function() {
+        $('#chevron-subir-firmado').css('transform', 'rotate(180deg)');
+    });
+    $('#collapseSubirFirmado').on('hide.bs.collapse', function() {
+        $('#chevron-subir-firmado').css('transform', 'rotate(0deg)');
+    });
+    
+    $('#collapseHistorialDescargas').on('show.bs.collapse', function() {
+        $('#chevron-historial').css('transform', 'rotate(180deg)');
+    });
+    $('#collapseHistorialDescargas').on('hide.bs.collapse', function() {
+        $('#chevron-historial').css('transform', 'rotate(0deg)');
+    });
+});
+</script>
+{% endblock %}
+

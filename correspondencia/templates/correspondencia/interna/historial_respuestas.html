@@ -1,0 +1,429 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static humanize %}
+
+{% block title %}Historial de Respuestas · {{ comunicacion.radicado|default:"BORRADOR" }}{% endblock %}
+{% block page_title %}Historial de Respuestas{% endblock %}
+
+{% block extra_css %}
+<style>
+.historial-page {
+    --h-surface: #ffffff;
+    --h-surface-muted: #f8fafc;
+    --h-border: #e2e8f0;
+    --h-muted: #64748b;
+    --h-title: #0f172a;
+    --h-primary: #6366f1;
+    --h-primary-soft: rgba(99,102,241,.10);
+    --h-success: #22c55e;
+    --h-warning: #f59e0b;
+    --h-danger: #ef4444;
+    --h-shadow: 0 18px 42px -28px rgba(15,23,42,.22);
+    --h-radius: 24px;
+    --h-radius-sm: 16px;
+}
+
+.historial-page .historial-shell {
+    width: 95%;
+    max-width: 1400px;
+    margin: 0 auto 2.5rem;
+}
+
+/* ── hero ── */
+.historial-page .historial-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%);
+    border-radius: var(--h-radius);
+    padding: 2.2rem 2.5rem;
+    margin-bottom: 1.75rem;
+    box-shadow: 0 12px 36px -12px rgba(79,70,229,.35);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+.historial-page .historial-hero::after {
+    content: '';
+    position: absolute;
+    right: -40px; top: -40px;
+    width: 200px; height: 200px;
+    background: rgba(255,255,255,.06);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.historial-page .hero-copy { flex: 1; }
+.historial-page .hero-copy h2 {
+    font-size: 1.45rem;
+    font-weight: 800;
+    margin: 0 0 .35rem;
+    letter-spacing: -.01em;
+}
+.historial-page .hero-copy p {
+    margin: 0;
+    opacity: .85;
+    font-size: .92rem;
+    line-height: 1.5;
+}
+.historial-page .hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-top: .9rem;
+}
+.historial-page .hero-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .4rem .85rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,.18);
+    backdrop-filter: blur(4px);
+    font-size: .8rem;
+    font-weight: 600;
+}
+.historial-page .hero-aside {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+}
+.historial-page .hero-orb {
+    width: 72px; height: 72px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,.15);
+    font-size: 1.75rem;
+}
+.historial-page .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin-top: 1.1rem;
+}
+.historial-page .hero-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .55rem 1.15rem;
+    border-radius: var(--h-radius-sm);
+    font-weight: 700;
+    font-size: .85rem;
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,.25);
+    color: #fff;
+    background: rgba(255,255,255,.12);
+    transition: all .2s;
+}
+.historial-page .hero-btn:hover {
+    background: rgba(255,255,255,.22);
+    color: #fff;
+}
+
+/* ── alert respuesta ── */
+.historial-page .alert-respuesta {
+    border-radius: var(--h-radius);
+    border: 1px solid rgba(99,102,241,.2);
+    background: linear-gradient(180deg, #eef2ff 0%, #e0e7ff 100%);
+    padding: 1.8rem 2rem;
+    color: #312e81;
+}
+.historial-page .alert-respuesta h5 { font-weight: 800; margin-bottom: .5rem; }
+.historial-page .alert-respuesta a { color: #4f46e5; font-weight: 700; }
+
+/* ── KPI strip ── */
+.historial-page .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+}
+.historial-page .kpi-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: var(--h-radius);
+    background: var(--h-surface);
+    border: 1px solid var(--h-border);
+    box-shadow: var(--h-shadow);
+    transition: transform .15s, box-shadow .15s;
+}
+.historial-page .kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 48px -24px rgba(15,23,42,.28);
+}
+.historial-page .kpi-icon {
+    width: 48px; height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+.historial-page .kpi-icon.is-primary  { background: var(--h-primary-soft); color: var(--h-primary); }
+.historial-page .kpi-icon.is-warning  { background: rgba(245,158,11,.12); color: #b45309; }
+.historial-page .kpi-icon.is-muted    { background: rgba(100,116,139,.1); color: var(--h-muted); }
+.historial-page .kpi-body small { display: block; color: var(--h-muted); font-size: .78rem; font-weight: 600; }
+.historial-page .kpi-body strong { display: block; font-size: 1.6rem; font-weight: 800; color: var(--h-title); line-height: 1.15; }
+
+/* ── respuestas card ── */
+.historial-page .respuestas-card {
+    border: 1px solid var(--h-border);
+    border-radius: var(--h-radius);
+    background: var(--h-surface);
+    box-shadow: var(--h-shadow);
+    overflow: hidden;
+}
+.historial-page .respuestas-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(226,232,240,.8);
+    background: linear-gradient(180deg, #ffffff 0%, var(--h-surface-muted) 100%);
+}
+.historial-page .respuestas-card-head h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--h-title);
+}
+.historial-page .count-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .3rem .7rem;
+    border-radius: 999px;
+    background: var(--h-primary-soft);
+    color: var(--h-primary);
+    font-weight: 700;
+    font-size: .8rem;
+}
+
+/* ── list items ── */
+.historial-page .resp-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.15rem 1.5rem;
+    border-bottom: 1px solid rgba(226,232,240,.55);
+    text-decoration: none;
+    color: inherit;
+    transition: background .15s;
+}
+.historial-page .resp-item:last-child { border-bottom: none; }
+.historial-page .resp-item:hover { background: rgba(248,250,252,.85); }
+.historial-page .resp-item.is-destacada { background: rgba(245,158,11,.04); }
+.historial-page .resp-item.is-destacada:hover { background: rgba(245,158,11,.08); }
+
+.historial-page .resp-avatar {
+    width: 44px; height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+.historial-page .resp-avatar.star {
+    background: rgba(245,158,11,.14);
+    color: #b45309;
+}
+.historial-page .resp-avatar.normal {
+    background: rgba(100,116,139,.08);
+    color: var(--h-muted);
+}
+.historial-page .resp-body { flex: 1; min-width: 0; }
+.historial-page .resp-title {
+    font-weight: 800;
+    color: var(--h-title);
+    font-size: .95rem;
+    margin-bottom: .2rem;
+}
+.historial-page .resp-sub {
+    color: var(--h-muted);
+    font-size: .82rem;
+    line-height: 1.45;
+}
+.historial-page .resp-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: .4rem;
+    flex-shrink: 0;
+}
+
+/* ── estado pills ── */
+.historial-page .estado-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .3rem;
+    padding: .35rem .75rem;
+    border-radius: 999px;
+    font-size: .75rem;
+    font-weight: 700;
+}
+.historial-page .estado-borrador     { background: rgba(100,116,139,.12); color: #475569; }
+.historial-page .estado-pendiente    { background: rgba(245,158,11,.14); color: #92400e; }
+.historial-page .estado-aprobada     { background: rgba(14,165,233,.12); color: #0369a1; }
+.historial-page .estado-distribuida  { background: rgba(34,197,94,.12); color: #166534; }
+.historial-page .estado-rechazada    { background: rgba(239,68,68,.12); color: #991b1b; }
+.historial-page .estado-default      { background: rgba(15,23,42,.08); color: #334155; }
+.historial-page .destacada-pill {
+    background: rgba(245,158,11,.14);
+    color: #92400e;
+}
+
+.historial-page .time-label {
+    font-size: .78rem;
+    color: var(--h-muted);
+    font-weight: 600;
+}
+
+/* ── empty ── */
+.historial-page .empty-state {
+    padding: 3.5rem 1.5rem;
+    text-align: center;
+}
+.historial-page .empty-state i { font-size: 3.5rem; color: #cbd5e1; }
+.historial-page .empty-state p { color: var(--h-muted); margin-top: .75rem; }
+
+/* ── responsive ── */
+@media (max-width: 768px) {
+    .historial-page .historial-shell { width: 100%; padding: 0 .75rem; }
+    .historial-page .historial-hero { flex-direction: column; padding: 1.5rem; }
+    .historial-page .hero-aside { display: none; }
+    .historial-page .kpi-strip { grid-template-columns: 1fr; }
+    .historial-page .resp-item { flex-direction: column; gap: .75rem; }
+    .historial-page .resp-right { flex-direction: row; align-items: center; gap: .5rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="historial-page">
+<div class="historial-shell">
+
+    {% if es_respuesta %}
+    {# ── esta comunicación ES una respuesta ── #}
+    <div class="alert-respuesta">
+        <h5><i class="bi bi-info-circle me-2"></i>Esta comunicación es una respuesta</h5>
+        <p>El flujo de comunicación interna es solo ida y vuelta — las respuestas no generan sub-respuestas.</p>
+        {% if comunicacion_origen %}
+        <p style="margin-top:.75rem;">
+            <strong>Comunicación original:</strong>
+            <a href="{% url 'correspondencia:interna_detalle' comunicacion_origen.pk %}">
+                {{ comunicacion_origen.radicado|default:"BORRADOR" }} — {{ comunicacion_origen.asunto }}
+            </a>
+        </p>
+        {% endif %}
+    </div>
+    {% else %}
+
+    {# ── hero ── #}
+    <section class="historial-hero">
+        <div class="hero-copy">
+            <h2>Historial de respuestas</h2>
+            <p>{{ comunicacion.asunto|truncatechars:120 }}</p>
+            <div class="hero-meta">
+                <span class="hero-chip"><i class="bi bi-hash"></i> {{ comunicacion.radicado|default:"BORRADOR" }}</span>
+                <span class="hero-chip"><i class="bi bi-person"></i> {{ comunicacion.remitente_nombre|default:"—" }}</span>
+                <span class="hero-chip"><i class="bi bi-building"></i> {{ comunicacion.remitente_oficina.nombre }}</span>
+                <span class="hero-chip"><i class="bi bi-calendar3"></i> {{ comunicacion.fecha_documento|date:"d M Y" }}</span>
+            </div>
+            <div class="hero-actions">
+                <a href="{% url 'correspondencia:interna_detalle' comunicacion.pk %}" class="hero-btn">
+                    <i class="bi bi-arrow-left"></i> Volver al detalle
+                </a>
+                {% if comunicacion.estado == 'DISTRIBUIDA' %}
+                <a href="{% url 'correspondencia:interna_trazabilidad' comunicacion.pk %}" class="hero-btn">
+                    <i class="bi bi-eye"></i> Trazabilidad
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="hero-aside">
+            <div class="hero-orb"><i class="bi bi-chat-square-text-fill"></i></div>
+        </div>
+    </section>
+
+    {# ── KPI strip ── #}
+    <div class="kpi-strip">
+        <div class="kpi-card">
+            <div class="kpi-icon is-primary"><i class="bi bi-reply-all-fill"></i></div>
+            <div class="kpi-body">
+                <small>Total respuestas</small>
+                <strong>{{ estadisticas.total_respuestas }}</strong>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon is-warning"><i class="bi bi-star-fill"></i></div>
+            <div class="kpi-body">
+                <small>Destacadas</small>
+                <strong>{{ estadisticas.respuestas_destacadas }}</strong>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon is-muted"><i class="bi bi-reply"></i></div>
+            <div class="kpi-body">
+                <small>Normales</small>
+                <strong>{{ estadisticas.respuestas_normales }}</strong>
+            </div>
+        </div>
+    </div>
+
+    {# ── lista de respuestas ── #}
+    <div class="respuestas-card">
+        <div class="respuestas-card-head">
+            <h3><i class="bi bi-chat-left-text me-2"></i>Respuestas recibidas</h3>
+            <span class="count-pill">{{ estadisticas.total_respuestas }} total</span>
+        </div>
+
+        {% if respuestas %}
+            {% for resp in respuestas %}
+            <a href="{% url 'correspondencia:interna_detalle' resp.obj.pk %}" class="resp-item {% if resp.es_destacada %}is-destacada{% endif %}">
+                <div class="resp-avatar {% if resp.es_destacada %}star{% else %}normal{% endif %}">
+                    {% if resp.es_destacada %}<i class="bi bi-star-fill"></i>{% else %}<i class="bi bi-reply"></i>{% endif %}
+                </div>
+                <div class="resp-body">
+                    <div class="resp-title">
+                        {{ resp.radicado|default:"Sin radicado" }}
+                        {% if resp.es_destacada %}<span class="estado-pill destacada-pill"><i class="bi bi-star-fill"></i> Destacada</span>{% endif %}
+                    </div>
+                    <div class="resp-sub">
+                        <strong>{{ resp.remitente_nombre }}</strong> · {{ resp.oficina_nombre }}<br>
+                        {{ resp.obj.asunto|truncatechars:90 }}
+                    </div>
+                </div>
+                <div class="resp-right">
+                    {% if resp.estado == 'BORRADOR' %}
+                        <span class="estado-pill estado-borrador">{{ resp.estado_display }}</span>
+                    {% elif resp.estado == 'PENDIENTE_APROBACION' %}
+                        <span class="estado-pill estado-pendiente">{{ resp.estado_display }}</span>
+                    {% elif resp.estado == 'APROBADA' %}
+                        <span class="estado-pill estado-aprobada">{{ resp.estado_display }}</span>
+                    {% elif resp.estado == 'DISTRIBUIDA' %}
+                        <span class="estado-pill estado-distribuida"><i class="bi bi-check-circle-fill"></i> {{ resp.estado_display }}</span>
+                    {% elif resp.estado == 'RECHAZADA' %}
+                        <span class="estado-pill estado-rechazada">{{ resp.estado_display }}</span>
+                    {% else %}
+                        <span class="estado-pill estado-default">{{ resp.estado_display }}</span>
+                    {% endif %}
+                    <span class="time-label"><i class="bi bi-clock me-1"></i>{{ resp.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-chat-left-text"></i>
+                <p>Aún no se han recibido respuestas para esta comunicación.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    {% endif %}
+
+</div>
+</div>
+{% endblock %}

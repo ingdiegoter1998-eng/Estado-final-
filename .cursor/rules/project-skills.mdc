@@ -1,0 +1,14 @@
+---
+description: Enrutar tareas del repo a skills en .github/skills y .claude/skills
+alwaysApply: true
+---
+
+# Skills del proyecto
+
+Antes de implementar o diagnosticar:
+
+1. Lee `AGENTS.md` o `.github/skills/indice-skills/SKILL.md`.
+2. Carga la skill que coincida con la tarea (correos, rebotes, UI, tests, Playwright, etc.).
+3. No improvises flujos operativos de correo/Gmail si ya existe procedimiento en una skill.
+
+Producción en esta VM: Gunicorn con `hospital_document_management.settings` y SQL Server. No asumas `settings_local` ni `settings_dev_sqlite` salvo que el usuario pida desarrollo local explícito.

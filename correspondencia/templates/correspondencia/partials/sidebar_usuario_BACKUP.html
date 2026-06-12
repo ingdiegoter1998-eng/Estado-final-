@@ -1,0 +1,544 @@
+{% comment %}
+==============================================================================
+SIDEBAR DE CORRESPONDENCIA - ARCHIVO DE RESPALDO
+==============================================================================
+Este archivo contiene el código del sidebar que fue removido temporalmente.
+Puede ser reutilizado en el futuro si se necesita volver a agregar el sidebar.
+
+Última actualización: Diciembre 2025
+==============================================================================
+{% endcomment %}
+
+{% comment %}Sidebar moderna para usuarios de correspondencia{% endcomment %}
+<style>
+.main-sidebar {
+    width: 260px;
+    min-width: 260px;
+    background: #ffffff;
+    border-right: 1px solid #e1e8ed;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+    transition: width 0.2s ease;
+    z-index: 100;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.08);
+}
+
+.main-sidebar .sidebar-toggle {
+    position: absolute;
+    top: 12px;
+    right: -8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    background: #ffffff;
+    color: #003366;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 101;
+}
+
+.main-sidebar .sidebar-toggle:hover {
+    transform: translateX(2px) scale(1.05);
+    background: #f0f0f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.main-sidebar .sidebar-toggle i {
+    font-size: 1rem;
+    transition: transform 0.2s ease;
+}
+
+.main-sidebar-header {
+    flex-shrink: 0;
+    padding: 1.25rem 1rem;
+    background: linear-gradient(135deg, #003366 0%, #005599 100%);
+    border-bottom: none;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(0, 51, 102, 0.15);
+}
+
+.main-sidebar-header .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+.main-sidebar-header .sidebar-brand:hover {
+    opacity: 0.9;
+    color: #ffffff;
+}
+
+.main-sidebar-header .sidebar-brand i {
+    font-size: 1.5rem;
+    color: #ffffff;
+}
+
+.main-sidebar-content {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.75rem;
+    background: #ffffff;
+}
+
+.main-sidebar-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.main-sidebar-nav .nav-item { margin: 0; padding: 0; }
+
+.main-sidebar-nav .nav-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 0.75rem;
+    margin-top: 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #5a6c7d;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    background: #f8f9fa;
+    border-left: 3px solid transparent;
+}
+
+.main-sidebar-nav .nav-section-title:hover {
+    background-color: #e9ecef;
+    color: #003366;
+    border-left-color: #0077cc;
+}
+
+.main-sidebar-nav .nav-section-title i {
+    font-size: 0.75rem;
+    transition: transform 0.2s ease;
+}
+
+.main-sidebar-nav .nav-section-title.collapsed i { transform: rotate(-90deg); }
+
+.main-sidebar-nav .nav-section-items {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.main-sidebar-nav .nav-section-items.expanded {
+    max-height: 1000px;
+    transition: max-height 0.3s ease-in;
+}
+
+.main-sidebar-nav .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    margin: 0.15rem 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #2c3e50;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-left: 3px solid transparent;
+}
+
+.main-sidebar-nav .nav-link:hover {
+    background-color: #f0f4f8;
+    color: #003366;
+    transform: translateX(4px);
+    border-left-color: #0077cc;
+}
+
+.main-sidebar-nav .nav-link.active {
+    background: linear-gradient(135deg, #003366 0%, #005599 100%);
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 51, 102, 0.25);
+    border-left-color: #0077cc;
+}
+
+.main-sidebar-nav .nav-link i {
+    font-size: 1.05rem;
+    width: 1.2rem;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.main-sidebar-nav .nav-link.active i {
+    color: #ffffff;
+}
+
+.main-sidebar-footer {
+    flex-shrink: 0;
+    margin-top: auto;
+    padding: 1.25rem 0.75rem;
+    border-top: 2px solid #e1e8ed;
+    background: #f8f9fa;
+}
+
+.main-sidebar-footer .user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.main-sidebar-footer .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.main-sidebar-footer .user-details { min-width: 0; flex: 1; }
+.main-sidebar-footer .user-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.main-sidebar-footer .user-role {
+    font-size: 0.75rem;
+    color: #6b7280;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.main-sidebar-footer .logout-btn {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    font-size: 0.85rem;
+    background: white;
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    color: #2c3e50;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.main-sidebar-footer .logout-btn:hover {
+    background: #f0f0f0;
+    border-color: #d1d5db;
+    color: #003366;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Sidebar colapsada */
+body.sidebar-collapsed .main-sidebar {
+    width: 72px;
+    min-width: 72px;
+}
+body.sidebar-collapsed .main-sidebar .sidebar-brand span,
+body.sidebar-collapsed .main-sidebar .nav-section-title span,
+body.sidebar-collapsed .main-sidebar .nav-link span,
+body.sidebar-collapsed .main-sidebar .user-details,
+body.sidebar-collapsed .main-sidebar .logout-btn span {
+    display: none;
+}
+body.sidebar-collapsed .main-sidebar .nav-section-title {
+    justify-content: center;
+    padding: 0.75rem 0.5rem;
+}
+body.sidebar-collapsed .main-sidebar .nav-link {
+    justify-content: center;
+    padding: 0.65rem 0.5rem;
+    border-left: none;
+}
+body.sidebar-collapsed .main-sidebar .nav-link:hover {
+    transform: scale(1.1);
+}
+body.sidebar-collapsed .main-sidebar .sidebar-toggle {
+    right: -4px;
+}
+
+/* Scrollbar */
+.main-sidebar-content::-webkit-scrollbar { width: 6px; }
+.main-sidebar-content::-webkit-scrollbar-track { background: #f8f9fa; }
+.main-sidebar-content::-webkit-scrollbar-thumb { 
+    background: #cbd5e0; 
+    border-radius: 10px; 
+}
+.main-sidebar-content::-webkit-scrollbar-thumb:hover { 
+    background: #9ca3af; 
+}
+</style>
+
+<nav class="main-sidebar" id="sidebarMenu">
+    <div class="main-sidebar-header">
+        <a class="sidebar-brand" href="{% url 'welcome' %}" title="Ir al Panel General">
+            <i class="bi bi-hospital"></i>
+            <span>Gestión Docs</span>
+        </a>
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Colapsar sidebar">
+            <i class="bi bi-chevron-left" id="sidebarToggleIcon"></i>
+        </button>
+    </div>
+
+    <div class="main-sidebar-content">
+        <ul class="main-sidebar-nav">
+            <!-- Sección: Mi Correspondencia -->
+            <li class="nav-item">
+                <div class="nav-section-title" data-section="mi-correspondencia">
+                    <span>Mi Correspondencia</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="nav-section-items expanded" id="section-mi-correspondencia">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'dashboard_usuario' %}active{% endif %}" href="{% url 'correspondencia:dashboard_usuario' %}" title="Ver mi dashboard">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    
+                    <a class="nav-link" href="{% url 'correspondencia:dashboard_usuario' %}" 
+                       onclick="openCorrespondenciaSalidaModal(event)" 
+                       title="Enviar nueva correspondencia de salida">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        <span>Enviar Correspondencia</span>
+                    </a>
+                    
+                    <a class="nav-link {% if request.resolver_match.url_name == 'bandeja_personal' %}active{% endif %}" href="{% url 'correspondencia:bandeja_personal' %}" title="Ver mi bandeja personal">
+                        <i class="bi bi-person-lines-fill"></i>
+                        <span>Mi Bandeja</span>
+                    </a>
+                    
+                    <a class="nav-link {% if request.resolver_match.url_name == 'bandeja_respuestas_salientes' %}active{% endif %}" href="{% url 'correspondencia:bandeja_respuestas_salientes' %}" title="Ver mis respuestas salientes">
+                        <i class="bi bi-send-fill"></i>
+                        <span>Mis Respuestas</span>
+                    </a>
+                </div>
+            </li>
+
+            <!-- Sección: Bandejas Compartidas -->
+            <li class="nav-item">
+                <div class="nav-section-title" data-section="bandejas">
+                    <span>Bandejas Compartidas</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="nav-section-items expanded" id="section-bandejas">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'bandeja_oficina' %}active{% endif %}" href="{% url 'correspondencia:bandeja_oficina' %}" title="Ver bandeja de mi oficina">
+                        <i class="bi bi-building-check"></i>
+                        <span>Bandeja Oficina</span>
+                    </a>
+                    
+                    <a class="nav-link {% if request.resolver_match.url_name == 'bandeja_interoficina' %}active{% endif %}" href="{% url 'correspondencia:bandeja_interoficina' %}" title="Accesos compartidos por otras oficinas">
+                        <i class="bi bi-building-down"></i>
+                        <span>Bandeja Interoficina</span>
+                    </a>
+                </div>
+            </li>
+
+            <!-- Sección: Contactos -->
+            <li class="nav-item">
+                <div class="nav-section-title" data-section="contactos">
+                    <span>Contactos</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="nav-section-items expanded" id="section-contactos">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'contactos_usuario' %}active{% endif %}" href="{% url 'correspondencia:contactos_usuario' %}" title="Ver la agenda global de contactos">
+                        <i class="bi bi-journal-bookmark"></i>
+                        <span>Contactos Globales</span>
+                    </a>
+                    
+                    <a class="nav-link {% if request.resolver_match.url_name == 'grupos_agenda_index' %}active{% endif %}" href="{% url 'correspondencia:grupos_agenda_index' %}" title="Gestionar categorías de contactos">
+                        <i class="bi bi-tags"></i>
+                        <span>Categorías</span>
+                    </a>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="main-sidebar-footer">
+        {% if request.user.is_authenticated %}
+            <div class="user-profile">
+                <div class="user-avatar">
+                    {{ request.user.get_full_name|default:request.user.username|first|upper }}
+                </div>
+                <div class="user-details">
+                    <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                    {% if request.user.perfil.oficina %}
+                        <div class="user-role">{{ request.user.perfil.oficina.nombre }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <form method="post" action="{% url 'logout' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn" title="Cerrar sesión">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </form>
+        {% else %}
+            <a href="{% url 'login' %}" class="logout-btn" style="text-decoration: none;">
+                <i class="bi bi-box-arrow-in-right"></i>
+                <span>Iniciar Sesión</span>
+            </a>
+        {% endif %}
+    </div>
+</nav>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Manejo de colapsar/expandir secciones con persistencia
+    const sectionTitles = document.querySelectorAll('.main-sidebar .nav-section-title');
+    
+    // Función para guardar estado
+    function saveSectionState(sectionId, isExpanded) {
+        try {
+            const state = JSON.parse(localStorage.getItem('sidebarSectionsState') || '{}');
+            state[sectionId] = isExpanded;
+            localStorage.setItem('sidebarSectionsState', JSON.stringify(state));
+        } catch (e) {}
+    }
+
+    // Función para obtener estado
+    function getSectionState(sectionId) {
+        try {
+            const state = JSON.parse(localStorage.getItem('sidebarSectionsState') || '{}');
+            return state[sectionId];
+        } catch (e) {
+            return undefined;
+        }
+    }
+
+    sectionTitles.forEach(title => {
+        const sectionId = title.getAttribute('data-section');
+        const sectionItems = document.getElementById('section-' + sectionId);
+        if (!sectionItems) return;
+        
+        const hasActiveLink = sectionItems.querySelector('.nav-link.active') !== null;
+        let shouldBeExpanded = false;
+
+        const storedState = getSectionState(sectionId);
+        
+        if (hasActiveLink) {
+            shouldBeExpanded = true;
+            saveSectionState(sectionId, true);
+        } else if (storedState !== undefined) {
+            shouldBeExpanded = storedState;
+        }
+
+        // Aplicar estado inicial
+        if (shouldBeExpanded) {
+            sectionItems.classList.add('expanded');
+            title.classList.remove('collapsed');
+            sectionItems.style.maxHeight = sectionItems.scrollHeight + 'px';
+            setTimeout(() => {
+                 if(sectionItems.classList.contains('expanded')) {
+                     sectionItems.style.maxHeight = sectionItems.scrollHeight + 'px';
+                 }
+            }, 0);
+        } else {
+            sectionItems.classList.remove('expanded');
+            title.classList.add('collapsed');
+            sectionItems.style.maxHeight = '0';
+        }
+        
+        // Toggle al hacer clic
+        title.addEventListener('click', function() {
+            const isCollapsed = this.classList.contains('collapsed');
+            if (isCollapsed) {
+                this.classList.remove('collapsed');
+                sectionItems.classList.add('expanded');
+                sectionItems.style.maxHeight = sectionItems.scrollHeight + 'px';
+                saveSectionState(sectionId, true);
+            } else {
+                this.classList.add('collapsed');
+                sectionItems.classList.remove('expanded');
+                sectionItems.style.maxHeight = '0';
+                saveSectionState(sectionId, false);
+            }
+        });
+    });
+
+    // Toggle sidebar collapse con localStorage
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('sidebarToggleIcon');
+    
+    // Restaurar estado del localStorage
+    try {
+        const sidebarHidden = localStorage.getItem('sidebarHidden');
+        if (sidebarHidden === '1') {
+            document.body.classList.add('sidebar-collapsed');
+            if (toggleIcon) {
+                toggleIcon.classList.remove('bi-chevron-left');
+                toggleIcon.classList.add('bi-chevron-right');
+            }
+        }
+    } catch (e) {
+        console.log('No se pudo restaurar el estado de la sidebar');
+    }
+    
+    // Toggle al hacer clic
+    if (toggleBtn && toggleIcon) {
+        toggleBtn.addEventListener('click', () => {
+            const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+            
+            if (isCollapsed) {
+                toggleIcon.classList.remove('bi-chevron-left');
+                toggleIcon.classList.add('bi-chevron-right');
+                try {
+                    localStorage.setItem('sidebarHidden', '1');
+                } catch (e) {}
+            } else {
+                toggleIcon.classList.remove('bi-chevron-right');
+                toggleIcon.classList.add('bi-chevron-left');
+                try {
+                    localStorage.setItem('sidebarHidden', '0');
+                } catch (e) {}
+            }
+            
+            // Sincronizar con el botón del header
+            const headerToggleBtn = document.getElementById('sidebarToggleBtn');
+            if (headerToggleBtn) {
+                headerToggleBtn.click();
+            }
+        });
+    }
+});
+</script>
+
+

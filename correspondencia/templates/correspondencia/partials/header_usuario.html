@@ -1,0 +1,228 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&display=swap');
+
+.main-header {
+    --header-surface: rgba(255, 255, 255, 0.88);
+    --header-surface-strong: #ffffff;
+    --header-border: rgba(17, 65, 104, 0.12);
+    --header-muted: #667a8e;
+    --header-title: #143048;
+    --header-primary: #0b4f97;
+    --header-primary-deep: #003366;
+    margin: 1rem 1rem 0.35rem;
+    padding: 1rem 1.05rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 1px solid var(--header-border);
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at top left, rgba(11, 79, 151, 0.08), transparent 24%),
+        linear-gradient(180deg, var(--header-surface-strong) 0%, var(--header-surface) 100%);
+    box-shadow: 0 24px 44px -34px rgba(15, 23, 42, 0.42);
+    backdrop-filter: blur(10px);
+    font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+}
+
+.main-header .header-left {
+    min-width: 0;
+    display: grid;
+    gap: 0.35rem;
+}
+
+.main-header .header-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.42rem;
+    width: fit-content;
+    padding: 0.34rem 0.62rem;
+    border-radius: 999px;
+    background: rgba(11, 79, 151, 0.08);
+    color: var(--header-primary);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.main-header .header-title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.main-header .header-title-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--header-primary-deep), var(--header-primary));
+    color: #ffffff;
+    font-size: 1.15rem;
+    box-shadow: 0 18px 28px -18px rgba(0, 51, 102, 0.7);
+    flex: 0 0 44px;
+}
+
+.main-header .header-title-wrap {
+    display: grid;
+    gap: 0.18rem;
+    min-width: 0;
+}
+
+.main-header .header-title {
+    margin: 0;
+    color: var(--header-title);
+    font-size: clamp(1.28rem, 1.08rem + 0.56vw, 1.72rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+
+.main-header .header-subtitle {
+    margin: 0;
+    color: var(--header-muted);
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1.45;
+    max-width: 62ch;
+}
+
+.main-header .header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.main-header .dropdown {
+    position: relative;
+}
+
+/* ── Botón asistente IA en header ── */
+.main-header .header-chatbot-btn {
+    min-width: 168px;
+    height: 52px;
+    padding: 0 1.1rem;
+    border-radius: 16px;
+    border: 1.5px solid rgba(37, 99, 235, 0.25);
+    background: linear-gradient(135deg, #eef2ff 0%, #dbeafe 100%);
+    color: #1e40af;
+    box-shadow: 0 14px 28px -22px rgba(37, 99, 235, 0.4), 0 0 0 0 rgba(59, 130, 246, 0);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+    animation: chatbtnGlow 3s ease-in-out infinite;
+}
+
+@keyframes chatbtnGlow {
+    0%, 100% { box-shadow: 0 14px 28px -22px rgba(37, 99, 235, 0.4), 0 0 0 0 rgba(59, 130, 246, 0); }
+    50% { box-shadow: 0 14px 28px -22px rgba(37, 99, 235, 0.4), 0 0 12px 2px rgba(59, 130, 246, 0.18); }
+}
+
+.main-header .header-chatbot-btn:hover,
+.main-header .header-chatbot-btn:focus {
+    background: linear-gradient(135deg, #dbeafe 0%, #c7d2fe 100%);
+    border-color: rgba(37, 99, 235, 0.35);
+    box-shadow: 0 18px 32px -22px rgba(37, 99, 235, 0.5), 0 0 16px 3px rgba(59, 130, 246, 0.22);
+    transform: translateY(-1px);
+    animation: none;
+}
+
+.main-header .header-chatbot-btn i.bi-stars {
+    font-size: 1.12rem;
+}
+
+.main-header .header-chatbot-copy {
+    display: grid;
+    gap: 0.02rem;
+    text-align: left;
+    line-height: 1.1;
+}
+
+.main-header .header-chatbot-label {
+    font-size: 0.88rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.main-header .header-chatbot-meta {
+    color: #6b7280;
+    font-size: 0.74rem;
+    font-weight: 700;
+}
+
+@media (max-width: 991px) {
+    .main-header {
+        margin: 0.85rem 0.85rem 0.25rem;
+        padding: 0.9rem;
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .main-header .header-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 576px) {
+    .main-header .header-title-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+    }
+
+    .main-header .header-subtitle {
+        font-size: 0.78rem;
+    }
+
+    .main-header .header-chatbot-btn {
+        min-width: 46px;
+        padding: 0;
+    }
+
+    .main-header .header-chatbot-copy {
+        display: none;
+    }
+}
+</style>
+
+<header class="main-header">
+    <div class="header-left">
+        <span class="header-eyebrow">
+            <i class="bi bi-layout-sidebar-inset"></i>
+            Panel activo
+        </span>
+        <div class="header-title-row">
+            <span class="header-title-icon">
+                <i class="bi bi-grid-1x2-fill"></i>
+            </span>
+            <div class="header-title-wrap">
+                <h1 class="header-title">{{ page_title|default:"Bandeja" }}</h1>
+                <p class="header-subtitle">Consulta tus accesos principales, revisa novedades y gestiona correspondencia desde un entorno mas claro.</p>
+            </div>
+        </div>
+        {% block breadcrumb %}{% endblock %}
+    </div>
+
+    <div class="header-right">
+        <button type="button" class="header-chatbot-btn"
+                data-bs-toggle="modal"
+                data-bs-target="#modalAsistenteChatbot"
+                title="Abrir asistente IA y soporte técnico">
+            <i class="bi bi-stars"></i>
+            <span class="header-chatbot-copy">
+                <span class="header-chatbot-label">Asistente IA</span>
+                <span class="header-chatbot-meta">Soporte técnico</span>
+            </span>
+        </button>
+        {% include 'correspondencia/partials/notifications_dropdown.html' %}
+    </div>
+</header>

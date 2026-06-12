@@ -1,0 +1,425 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load static humanize crispy_forms_tags %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+{% block page_actions %}
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'correspondencia/css/dashboard-modern.css' %}?v=20260603">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-modern dashboard-ventanilla">
+  <div class="dashboard-shell">
+
+    <section class="ventanilla-intro section-card" aria-label="Contexto del dashboard">
+      <div class="ventanilla-intro-copy">
+        <span class="section-eyebrow">Unidad de correspondencia</span>
+        <p class="ventanilla-lead">
+          Radicación, distribución y control de plazos desde un solo tablero operativo.
+        </p>
+      </div>
+      <div class="ventanilla-intro-meta">
+        <span class="ventanilla-date">
+          <i class="bi bi-calendar3" aria-hidden="true"></i>
+          {% now "d M Y" %}
+        </span>
+      </div>
+    </section>
+
+    <!-- KPIs: Operación del día -->
+    <section class="section-card" aria-labelledby="ventanilla-kpi-operacion-title">
+      <header class="section-card-header">
+        <div>
+          <span class="section-eyebrow">Operación</span>
+          <h2 class="section-title" id="ventanilla-kpi-operacion-title">
+            <i class="bi bi-activity me-2" aria-hidden="true"></i>Flujo del día
+          </h2>
+        </div>
+      </header>
+      <div class="ventanilla-kpi-grid">
+        <article class="ventanilla-kpi is-warning">
+          <div class="ventanilla-kpi-icon" aria-hidden="true"><i class="bi bi-clock"></i></div>
+          <div class="ventanilla-kpi-body">
+            <span class="ventanilla-kpi-label">Pendientes de radicar</span>
+            <strong class="ventanilla-kpi-value">{{ kpi_pendientes_radicacion|intcomma }}</strong>
+          </div>
+        </article>
+
+        <article class="ventanilla-kpi is-success">
+          <div class="ventanilla-kpi-icon" aria-hidden="true"><i class="bi bi-file-earmark-check"></i></div>
+          <div class="ventanilla-kpi-body">
+            <span class="ventanilla-kpi-label">Radicados hoy</span>
+            <strong class="ventanilla-kpi-value">{{ kpi_radicados_hoy|intcomma }}</strong>
+          </div>
+        </article>
+
+        <article class="ventanilla-kpi is-info">
+          <div class="ventanilla-kpi-icon" aria-hidden="true"><i class="bi bi-envelope"></i></div>
+          <div class="ventanilla-kpi-body">
+            <span class="ventanilla-kpi-label">Correos recibidos</span>
+            <strong class="ventanilla-kpi-value">{{ correos_recibidos_hoy|intcomma }}</strong>
+          </div>
+        </article>
+
+        <article class="ventanilla-kpi is-slate">
+          <div class="ventanilla-kpi-icon" aria-hidden="true"><i class="bi bi-share"></i></div>
+          <div class="ventanilla-kpi-body">
+            <span class="ventanilla-kpi-label">Pendientes distribución</span>
+            <strong class="ventanilla-kpi-value">{{ pendientes_distribucion|intcomma }}</strong>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- KPIs: Plazos y rendimiento -->
+    <section class="section-card" aria-labelledby="ventanilla-kpi-sla-title">
+      <header class="section-card-header">
+        <div>
+          <span class="section-eyebrow">Plazos y rendimiento</span>
+          <h2 class="section-title" id="ventanilla-kpi-sla-title">
+            <i class="bi bi-speedometer2 me-2" aria-hidden="true"></i>SLA y métricas
+          </h2>
+        </div>
+      </header>
+      <div class="ventanilla-kpi-grid">
+        <article class="ventanilla-kpi is-critical"{% if kpi_sla_vencido %} aria-label="SLA vencido: atención requerida"{% endif %}>
+          <div class="ventanilla-kpi-icon" aria-hidden="true"><i class="bi bi-exclamation-triangle"></i></div>
+          <div class="ventanilla-kpi-body">
+            <span class="ventanilla-kpi-label">SLA vencido</span>
+            <strong class="ventanilla-kpi-value">{{ kpi_sla_vencido|intcomma }}</strong>
+          </div>
+        </article>
+
+        <article class="ventanilla-kpi is-warning">
+          <div class="ventanilla-kpi-icon" aria-hidden="true"><i class="bi bi-hourglass-split"></i></div>
+          <div class="ventanilla-kpi-body">
+            <span class="ventanilla-kpi-label">SLA por vencer</span>
+            <strong class="ventanilla-kpi-value">{{ kpi_sla_por_vencer|intcomma }}</strong>
+          </div>
+        </article>
+
+        <article class="ventanilla-kpi is-primary">
+          <div class="ventanilla-kpi-icon" aria-hidden="true"><i class="bi bi-graph-up-arrow"></i></div>
+          <div class="ventanilla-kpi-body">
+            <span class="ventanilla-kpi-label">Eficiencia</span>
+            <strong class="ventanilla-kpi-value">{{ eficiencia_radicacion }}%</strong>
+          </div>
+        </article>
+
+        <article class="ventanilla-kpi is-success">
+          <div class="ventanilla-kpi-icon" aria-hidden="true"><i class="bi bi-send"></i></div>
+          <div class="ventanilla-kpi-body">
+            <span class="ventanilla-kpi-label">Respuestas enviadas</span>
+            <strong class="ventanilla-kpi-value">{{ respuestas_enviadas_hoy|intcomma }}</strong>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Acciones rápidas unificadas -->
+    <section class="section-card ventanilla-actions-panel" aria-labelledby="ventanilla-actions-title">
+      <header class="section-card-header">
+        <div>
+          <span class="section-eyebrow">Accesos directos</span>
+          <h2 class="section-title" id="ventanilla-actions-title">
+            <i class="bi bi-lightning-charge me-2" aria-hidden="true"></i>Acciones rápidas
+          </h2>
+        </div>
+      </header>
+
+      <div class="ventanilla-actions-grid">
+        <div class="action-group">
+          <h3 class="action-group-title">
+            <i class="bi bi-file-earmark-plus" aria-hidden="true"></i>
+            Radicación
+          </h3>
+          <ul class="action-list">
+            <li>
+              <button type="button" class="action-item" data-bs-toggle="modal" data-bs-target="#modalRadicarCorreoDashboard">
+                <i class="bi bi-file-earmark-plus" aria-hidden="true"></i>
+                Radicar correspondencia
+              </button>
+            </li>
+            <li>
+              <a href="{% url 'correspondencia:historial_correspondencia' %}" class="action-item">
+                <i class="bi bi-clock-history" aria-hidden="true"></i>
+                Ver historial
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="action-group">
+          <h3 class="action-group-title">
+            <i class="bi bi-lightning" aria-hidden="true"></i>
+            Radicación Rápida
+          </h3>
+          <ul class="action-list">
+            <li>
+              <button type="button" class="action-item" data-bs-toggle="modal" data-bs-target="#modalRadicacionRapidaEntrante">
+                <i class="bi bi-box-arrow-in-down" aria-hidden="true"></i>
+                Entrante Rápida
+              </button>
+            </li>
+            <li>
+              <button type="button" class="action-item" data-bs-toggle="modal" data-bs-target="#modalRadicacionRapidaSaliente">
+                <i class="bi bi-box-arrow-up" aria-hidden="true"></i>
+                Radicación Saliente Rápida
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <div class="action-group">
+          <h3 class="action-group-title">
+            <i class="bi bi-envelope" aria-hidden="true"></i>
+            Correos
+          </h3>
+          <ul class="action-list">
+            <li>
+              <a href="{% url 'correspondencia:bandeja_correos_pendientes' %}" class="action-item">
+                <i class="bi bi-envelope-paper" aria-hidden="true"></i>
+                Ver correos entrantes
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'correspondencia:control_sincronizacion_correos' %}" class="action-item">
+                <i class="bi bi-shield-check" aria-hidden="true"></i>
+                Control sincronización
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'correspondencia:bandeja_respuestas_pendientes' %}" class="action-item">
+                <i class="bi bi-envelope-check" aria-hidden="true"></i>
+                Aprobar correos
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="action-group">
+          <h3 class="action-group-title">
+            <i class="bi bi-building" aria-hidden="true"></i>
+            Entidades
+          </h3>
+          <ul class="action-list">
+            <li>
+              <a href="#" class="action-item" role="button" data-bs-toggle="modal" data-bs-target="#modalCrearEntidad">
+                <i class="bi bi-building-add" aria-hidden="true"></i>
+                Agregar entidad
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'correspondencia:listar_entidades' %}" class="action-item">
+                <i class="bi bi-building" aria-hidden="true"></i>
+                Ver entidades
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="action-group">
+          <h3 class="action-group-title">
+            <i class="bi bi-person" aria-hidden="true"></i>
+            Contactos
+          </h3>
+          <ul class="action-list">
+            <li>
+              <button type="button" class="action-item" data-bs-toggle="modal" data-bs-target="#modalCrearContacto">
+                <i class="bi bi-person-plus" aria-hidden="true"></i>
+                Agregar contacto
+              </button>
+            </li>
+            <li>
+              <a href="{% url 'correspondencia:listar_contactos' %}" class="action-item">
+                <i class="bi bi-person-lines-fill" aria-hidden="true"></i>
+                Ver contactos
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <p class="ventanilla-foot">
+      Cumplimiento: ISO 15489 · NTC 4095 · AGN. Sistema de gestión documental del Hospital del Sarare.
+    </p>
+  </div>
+</div>
+
+<div id="dashboard-ventanilla-endpoints" hidden
+     data-defer-select-options="{% if defer_select_options %}1{% else %}0{% endif %}"
+     data-contactos-url="{% url 'correspondencia:buscar_contactos_ajax' %}"
+     data-oficinas-url="{% url 'correspondencia:buscar_oficinas' %}">
+</div>
+
+<!-- Flags para reabrir modales (evita lógica de plantillas en JS) -->
+<div id="modal-flags"
+     data-open-contacto="{% if open_contacto_modal %}1{% else %}0{% endif %}"
+     data-open-rad="{% if open_radicacion_modal %}1{% else %}0{% endif %}"
+     data-open-ent="{% if open_entidad_modal %}1{% else %}0{% endif %}"
+     data-open-rapida-entrante="{% if open_rapida_entrante_modal %}1{% else %}0{% endif %}"
+     data-open-rapida-saliente="{% if open_rapida_saliente_modal %}1{% else %}0{% endif %}">
+</div>
+
+<!-- ===================== MODALES (partials reutilizables) ===================== -->
+{% include 'correspondencia/partials/modals/modal_contacto.html' with modal_id='modalCrearContacto' form_contacto=form_contacto open_contacto_modal=open_contacto_modal %}
+
+<!-- Modal personalizado para creación de entidades -->
+<div class="modal fade" id="modalCrearEntidad" tabindex="-1" aria-labelledby="modalCrearEntidadLabel" aria-hidden="true" data-open="{{ open_entidad_modal|yesno:'true,false' }}">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" action="{% url 'correspondencia:dashboard_ventanilla' %}" id="formCrearEntidad" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="form_prefix" value="entidad">
+
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalCrearEntidadLabel">Crear Nueva Entidad</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label for="{{ form_entidad.nombre.id_for_label }}" class="form-label fw-semibold">
+                {{ form_entidad.nombre.label }}{% if form_entidad.nombre.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              {{ form_entidad.nombre }}
+              {% if form_entidad.nombre.help_text %}
+                <small class="text-muted d-block">{{ form_entidad.nombre.help_text }}</small>
+              {% endif %}
+              {% if form_entidad.nombre.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form_entidad.nombre.errors %}{{ error }}{% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label for="{{ form_entidad.nit.id_for_label }}" class="form-label fw-semibold">{{ form_entidad.nit.label }}</label>
+              {{ form_entidad.nit }}
+              {% if form_entidad.nit.help_text %}
+                <small class="text-muted d-block">{{ form_entidad.nit.help_text }}</small>
+              {% endif %}
+              {% if form_entidad.nit.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form_entidad.nit.errors %}{{ error }}{% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <label for="{{ form_entidad.telefono.id_for_label }}" class="form-label fw-semibold">{{ form_entidad.telefono.label }}</label>
+              {{ form_entidad.telefono }}
+              {% if form_entidad.telefono.help_text %}
+                <small class="text-muted d-block">{{ form_entidad.telefono.help_text }}</small>
+              {% endif %}
+              {% if form_entidad.telefono.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form_entidad.telefono.errors %}{{ error }}{% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="col-12">
+              <label for="{{ form_entidad.direccion.id_for_label }}" class="form-label fw-semibold">{{ form_entidad.direccion.label }}</label>
+              {{ form_entidad.direccion }}
+              {% if form_entidad.direccion.help_text %}
+                <small class="text-muted d-block">{{ form_entidad.direccion.help_text }}</small>
+              {% endif %}
+              {% if form_entidad.direccion.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form_entidad.direccion.errors %}{{ error }}{% endfor %}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="col-12">
+              <label for="{{ form_entidad.dominio.id_for_label }}" class="form-label fw-semibold">{{ form_entidad.dominio.label }}</label>
+              {{ form_entidad.dominio }}
+              {% if form_entidad.dominio.help_text %}
+                <small class="text-muted d-block">{{ form_entidad.dominio.help_text }}</small>
+              {% endif %}
+              {% if form_entidad.dominio.errors %}
+                <div class="invalid-feedback d-block">
+                  {% for error in form_entidad.dominio.errors %}{{ error }}{% endfor %}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Crear entidad</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% include 'correspondencia/partials/modals/modal_radicacion.html' with modal_id='modalRadicarCorreoDashboard' %}
+
+<!-- Modales de Radicación Rápida (Transición) -->
+{% include 'correspondencia/partials/modals/modal_radicacion_rapida_entrante.html' with modal_id='modalRadicacionRapidaEntrante' %}
+{% include 'correspondencia/partials/modals/modal_radicacion_rapida_saliente.html' with modal_id='modalRadicacionRapidaSaliente' %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'correspondencia/js/modals/dashboard-deferred-selects.js' %}?v=20260611"></script>
+<script src="{% static 'correspondencia/js/modals/core-modals.js' %}?v=20260610"></script>
+<script src="{% static 'correspondencia/js/sla-calculator.js' %}?v=20260613"></script>
+<script src="{% static 'correspondencia/js/modals/radicacion.js' %}?v=20260615"></script>
+<script src="{% static 'correspondencia/js/modals/modal-minimizable.js' %}?v=20260609"></script>
+<script>
+/* eslint-disable */
+document.addEventListener('DOMContentLoaded', function(){
+    // Reabrir modales tras POST inválido (flags desde data-attrs)
+    var flagEl = document.getElementById('modal-flags');
+    var openContacto = flagEl && flagEl.dataset.openContacto === '1';
+    var openRad = flagEl && flagEl.dataset.openRad === '1';
+    var openEnt = flagEl && flagEl.dataset.openEnt === '1';
+    var openRapidaEntrante = flagEl && flagEl.dataset.openRapidaEntrante === '1';
+    var openRapidaSaliente = flagEl && flagEl.dataset.openRapidaSaliente === '1';
+
+    if (openContacto && window.bootstrap) {
+        var m = document.getElementById('modalCrearContacto'); 
+        if(m) new bootstrap.Modal(m).show();
+    }
+    if (openRad && window.bootstrap) {
+        var m = document.getElementById('modalRadicarCorreoDashboard'); 
+        if(m) new bootstrap.Modal(m).show();
+    }
+    if (openEnt && window.bootstrap) {
+        var m = document.getElementById('modalCrearEntidad'); 
+        if(m) new bootstrap.Modal(m).show();
+    }
+    if (openRapidaEntrante && window.bootstrap) {
+        var m = document.getElementById('modalRadicacionRapidaEntrante'); 
+        if(m) new bootstrap.Modal(m).show();
+    }
+    if (openRapidaSaliente && window.bootstrap) {
+        var m = document.getElementById('modalRadicacionRapidaSaliente'); 
+        if(m) new bootstrap.Modal(m).show();
+    }
+
+    // JS específico de modales ya está centralizado en core-modals.js y radicacion.js
+
+    // Fallback explícito para abrir el modal de entidades si Bootstrap no lo activa automáticamente
+    var entidadTrigger = document.querySelector('[data-bs-target="#modalCrearEntidad"]');
+    if (entidadTrigger && window.bootstrap) {
+        entidadTrigger.addEventListener('click', function(ev){
+            ev.preventDefault();
+            var modalEntidad = document.getElementById('modalCrearEntidad');
+            if (modalEntidad) {
+                var instancia = bootstrap.Modal.getInstance(modalEntidad) || new bootstrap.Modal(modalEntidad);
+                instancia.show();
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

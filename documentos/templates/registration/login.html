@@ -1,0 +1,695 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Iniciar sesion</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+    <link rel="shortcut icon" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+    <link rel="apple-touch-icon" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+    <style>
+        :root {
+            --auth-navy: #0d2340;
+            --auth-blue: #1c5fd4;
+            --auth-cyan: #54b7d8;
+            --auth-gold: #d7a441;
+            --auth-ink: #102033;
+            --auth-muted: #607086;
+            --auth-line: rgba(148, 163, 184, 0.24);
+            --auth-shadow: 0 34px 84px rgba(13, 35, 64, 0.18);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            min-height: 100%;
+            margin: 0;
+        }
+
+        body.auth-page {
+            font-family: "Trebuchet MS", "Lucida Grande", "Segoe UI", sans-serif;
+            color: var(--auth-ink);
+            background:
+                radial-gradient(circle at top left, rgba(84, 183, 216, 0.25), transparent 32%),
+                radial-gradient(circle at 85% 18%, rgba(28, 95, 212, 0.16), transparent 28%),
+                linear-gradient(140deg, #eef5ff 0%, #f6f9fc 38%, #eef2f7 100%);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body.auth-page::before,
+        body.auth-page::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        body.auth-page::before {
+            background-image:
+                linear-gradient(rgba(13, 35, 64, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(13, 35, 64, 0.03) 1px, transparent 1px);
+            background-size: 64px 64px;
+            mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.68), transparent 92%);
+        }
+
+        body.auth-page::after {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.48));
+        }
+
+        .auth-shell {
+            position: relative;
+            z-index: 1;
+            width: min(1380px, 95vw);
+            margin: 0 auto;
+            padding: 2rem 0 1.35rem;
+        }
+
+        .auth-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            color: var(--auth-muted);
+            font-size: 0.92rem;
+        }
+
+        .auth-topbar-badge,
+        .auth-topbar-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.72rem 1rem;
+            border-radius: 999px;
+            border: 1px solid rgba(13, 35, 64, 0.08);
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(14px);
+        }
+
+        .auth-topbar-status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #15b26b, #71d39c);
+            box-shadow: 0 0 0 6px rgba(21, 178, 107, 0.12);
+        }
+
+        .auth-stage {
+            display: grid;
+            grid-template-columns: minmax(0, 1.08fr) minmax(430px, 0.92fr);
+            border-radius: 34px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.72);
+            box-shadow: var(--auth-shadow);
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(16px);
+        }
+
+        .auth-story {
+            position: relative;
+            padding: 3.2rem 3rem 2.8rem;
+            background: linear-gradient(160deg, rgba(13, 35, 64, 0.96), rgba(23, 52, 92, 0.92));
+            color: #f7fbff;
+            isolation: isolate;
+        }
+
+        .auth-story::before {
+            content: "";
+            position: absolute;
+            inset: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 28px;
+        }
+
+        .auth-story > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .auth-kicker,
+        .auth-pill,
+        .auth-highlight-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .auth-kicker,
+        .auth-pill {
+            padding: 0.45rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+        }
+
+        .auth-kicker {
+            background: rgba(255, 255, 255, 0.11);
+            color: rgba(247, 251, 255, 0.92);
+            margin-bottom: 1.2rem;
+        }
+
+        .auth-kicker::before,
+        .auth-pill::before,
+        .auth-highlight-label::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, var(--auth-gold), #f1cb73);
+            flex: 0 0 auto;
+        }
+
+        .auth-story h1,
+        .auth-panel-heading h2,
+        .auth-highlight-value,
+        .auth-footer-copy strong {
+            font-family: Georgia, "Times New Roman", serif;
+            letter-spacing: -0.03em;
+        }
+
+        .auth-story h1 {
+            margin: 0;
+            max-width: 12ch;
+            font-size: clamp(2.6rem, 5vw, 4.5rem);
+            line-height: 0.98;
+        }
+
+        .auth-story p.lead-copy {
+            max-width: 600px;
+            margin: 1.3rem 0 0;
+            font-size: 1.06rem;
+            line-height: 1.75;
+            color: rgba(234, 242, 250, 0.82);
+        }
+
+        .auth-highlight-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
+            margin: 2.2rem 0 2rem;
+        }
+
+        .auth-highlight {
+            border-radius: 22px;
+            padding: 1.1rem 1.05rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .auth-highlight-label {
+            color: rgba(226, 232, 240, 0.82);
+            font-size: 0.8rem;
+        }
+
+        .auth-highlight-label::before {
+            width: 8px;
+            height: 8px;
+        }
+
+        .auth-highlight-value {
+            display: block;
+            margin-top: 0.7rem;
+            font-size: 1.45rem;
+            color: #ffffff;
+        }
+
+        .auth-highlight-copy {
+            display: block;
+            margin-top: 0.4rem;
+            color: rgba(226, 232, 240, 0.7);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .auth-story-band {
+            display: grid;
+            grid-template-columns: minmax(0, 1.05fr) minmax(220px, 0.75fr);
+            gap: 1rem;
+        }
+
+        .auth-info-card,
+        .auth-steps-card {
+            border-radius: 24px;
+            padding: 1.35rem 1.4rem;
+            background: rgba(8, 20, 37, 0.24);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .auth-info-card p,
+        .auth-steps-card p,
+        .auth-steps-card li {
+            color: rgba(226, 232, 240, 0.8);
+            line-height: 1.65;
+            margin: 0;
+        }
+
+        .auth-steps-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0.9rem 0 0;
+            display: grid;
+            gap: 0.85rem;
+        }
+
+        .auth-steps-card li {
+            display: flex;
+            gap: 0.7rem;
+            align-items: flex-start;
+        }
+
+        .auth-step-index {
+            width: 1.9rem;
+            height: 1.9rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            font-weight: 700;
+            color: #ffffff;
+            flex: 0 0 auto;
+        }
+
+        .auth-panel {
+            padding: 2.45rem 2.3rem 2.25rem;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(249, 251, 255, 0.98));
+        }
+
+        .auth-panel-inner {
+            height: 100%;
+            border-radius: 28px;
+            padding: 1.65rem;
+            background: #ffffff;
+            border: 1px solid rgba(226, 232, 240, 0.88);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 1.3rem;
+        }
+
+        .auth-panel-heading {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .auth-panel-heading h2 {
+            margin: 0.65rem 0 0.35rem;
+            font-size: clamp(2rem, 3vw, 2.4rem);
+            color: var(--auth-ink);
+        }
+
+        .auth-panel-heading p {
+            margin: 0;
+            color: var(--auth-muted);
+            line-height: 1.7;
+        }
+
+        .auth-pill {
+            background: rgba(28, 95, 212, 0.08);
+            color: var(--auth-blue);
+            border: 1px solid rgba(28, 95, 212, 0.12);
+            white-space: nowrap;
+        }
+
+        .auth-pill::before {
+            background: linear-gradient(135deg, var(--auth-cyan), #9be6f2);
+        }
+
+        .auth-form {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .auth-field {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .auth-field-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: baseline;
+        }
+
+        .auth-label {
+            font-size: 0.92rem;
+            font-weight: 800;
+            color: #274060;
+            letter-spacing: 0.01em;
+        }
+
+        .auth-label-note {
+            color: var(--auth-muted);
+            font-size: 0.78rem;
+        }
+
+        .form-control {
+            min-height: 54px;
+            border-radius: 18px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            padding: 0.9rem 1rem;
+            color: var(--auth-ink);
+            background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+        }
+
+        .form-control:focus {
+            border-color: rgba(28, 95, 212, 0.5);
+            box-shadow: 0 0 0 0.28rem rgba(28, 95, 212, 0.12);
+            background: #ffffff;
+        }
+
+        .input-group {
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .input-group .form-control {
+            border-radius: 18px 0 0 18px;
+            border-right: none;
+        }
+
+        .password-toggle-btn {
+            min-width: 112px;
+            border: 1px solid rgba(148, 163, 184, 0.28);
+            border-left: none;
+            background: linear-gradient(180deg, #f7faff 0%, #eef5ff 100%);
+            color: #274060;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            padding: 0 1rem;
+            border-radius: 0 18px 18px 0;
+        }
+
+        .password-toggle-btn:focus-visible {
+            outline: none;
+            box-shadow: inset 0 0 0 1px rgba(28, 95, 212, 0.34);
+        }
+
+        .password-toggle-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .auth-alert {
+            margin: 0;
+            border: none;
+            border-radius: 18px;
+            padding: 0.95rem 1rem;
+        }
+
+        .auth-alert-danger {
+            background: linear-gradient(180deg, #fff2f2 0%, #ffe6e6 100%);
+            color: #9f1d1d;
+        }
+
+        .auth-alert-info {
+            background: linear-gradient(180deg, #f0f7ff 0%, #e7f1ff 100%);
+            color: #204980;
+        }
+
+        .btn-auth-primary {
+            min-height: 56px;
+            border: none;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #133a73 0%, #1c5fd4 56%, #2f82df 100%);
+            color: #ffffff;
+            font-weight: 800;
+            letter-spacing: 0.01em;
+            box-shadow: 0 18px 28px rgba(28, 95, 212, 0.22);
+        }
+
+        .auth-support {
+            margin-top: auto;
+            padding-top: 1.15rem;
+            border-top: 1px solid var(--auth-line);
+        }
+
+        .auth-inline-card {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: center;
+            padding: 1rem 1.05rem;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #f7faff 0%, #f2f6fb 100%);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+        }
+
+        .auth-inline-card p {
+            margin: 0;
+            color: var(--auth-muted);
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .auth-inline-card strong {
+            display: block;
+            margin-bottom: 0.15rem;
+            color: var(--auth-ink);
+        }
+
+        .auth-link {
+            color: var(--auth-blue);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.88rem;
+            white-space: nowrap;
+            padding: 0.4rem 0.9rem;
+            border-radius: 10px;
+            border: 1.5px solid var(--auth-blue);
+            transition: background 0.18s, color 0.18s;
+        }
+
+        .auth-link:hover {
+            background: var(--auth-blue);
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .auth-footer {
+            position: relative;
+            z-index: 1;
+            width: min(1380px, 95vw);
+            margin: 0 auto 1.25rem;
+            padding: 1rem 1.25rem;
+            border-radius: 22px;
+            background: rgba(13, 35, 64, 0.9);
+            color: rgba(236, 244, 251, 0.86);
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .auth-footer-copy p {
+            margin: 0.2rem 0 0;
+            font-size: 0.9rem;
+            color: rgba(226, 232, 240, 0.76);
+        }
+
+        .auth-footer-meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.7rem;
+            padding: 0.7rem 0.95rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            font-size: 0.88rem;
+        }
+
+        @media (max-width: 1200px) {
+            .auth-stage,
+            .auth-highlight-grid,
+            .auth-story-band {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 980px) {
+            .auth-stage {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-story,
+            .auth-panel {
+                padding: 2.25rem 1.5rem;
+            }
+
+            .auth-footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .auth-shell,
+            .auth-footer {
+                width: min(100%, calc(100vw - 1rem));
+            }
+
+            .auth-topbar,
+            .auth-inline-card,
+            .auth-panel-heading {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .auth-story,
+            .auth-panel,
+            .auth-panel-inner {
+                padding: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body class="auth-page auth-page-login">
+    <main class="auth-shell">
+        <div class="auth-topbar">
+            <div class="auth-topbar-badge">Hospital del Sarare · Central de Archivos</div>
+            <div class="auth-topbar-status">
+                <span class="auth-topbar-status-dot" aria-hidden="true"></span>
+                Acceso institucional con trazabilidad operativa
+            </div>
+        </div>
+
+        <div class="auth-stage">
+            <section class="auth-story" aria-label="Presentacion institucional">
+                <span class="auth-kicker">Ingreso seguro</span>
+                <h1>Gestion documental con control real de cada movimiento.</h1>
+                <p class="lead-copy">Accede a un entorno preparado para consulta, radicacion y seguimiento institucional, con una capa visual mas limpia y una operacion pensada para el ritmo diario de archivo y correspondencia.</p>
+
+                <div class="auth-highlight-grid">
+                    <article class="auth-highlight">
+                        <span class="auth-highlight-label">Operacion</span>
+                        <strong class="auth-highlight-value">Bandejas claras</strong>
+                        <span class="auth-highlight-copy">Consulta radicados, trazabilidad y acciones pendientes desde una vista mas precisa.</span>
+                    </article>
+                    <article class="auth-highlight">
+                        <span class="auth-highlight-label">Resguardo</span>
+                        <strong class="auth-highlight-value">Acceso controlado</strong>
+                        <span class="auth-highlight-copy">El ingreso se mantiene alineado con usuarios institucionales y perfiles autorizados.</span>
+                    </article>
+                    <article class="auth-highlight">
+                        <span class="auth-highlight-label">Seguimiento</span>
+                        <strong class="auth-highlight-value">Trazabilidad viva</strong>
+                        <span class="auth-highlight-copy">Cada consulta, documento y flujo conserva contexto para auditoria y respuesta.</span>
+                    </article>
+                </div>
+
+
+            </section>
+
+            <section class="auth-panel" aria-label="Formulario de acceso">
+                <div class="auth-panel-inner">
+                    <div class="auth-panel-heading">
+                        <div>
+                            <span class="auth-pill">Acceso a plataforma</span>
+                            <h2>Iniciar sesión</h2>
+                            <p>Ingresa con tu usuario y contraseña para continuar con el trabajo documental y las consultas activas.</p>
+                        </div>
+                    </div>
+
+                    {% if form.errors %}
+                        <div class="auth-alert auth-alert-danger" role="alert">
+                            Verifica el usuario y la contraseña. Si el problema persiste, solicita revisión del acceso institucional.
+                        </div>
+                    {% endif %}
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="auth-alert {% if message.tags == 'error' %}auth-alert-danger{% else %}auth-alert-info{% endif %}" role="alert">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" class="auth-form">
+                        {% csrf_token %}
+                        {% if next %}
+                            <input type="hidden" name="next" value="{{ next }}">
+                        {% endif %}
+
+                        <div class="auth-field">
+                            <div class="auth-field-head">
+                                <label for="id_username" class="auth-label">Usuario</label>
+                                <span class="auth-label-note">Credencial asignada</span>
+                            </div>
+                            <input type="text" name="username" class="form-control" id="id_username" value="{{ form.username.value|default:'' }}" autocomplete="username" required>
+                        </div>
+
+                        <div class="auth-field">
+                            <div class="auth-field-head">
+                                <label for="id_password" class="auth-label">Contraseña</label>
+                                <span class="auth-label-note">Mínimo resguardo operativo</span>
+                            </div>
+                            <div class="input-group">
+                                <input type="password" name="password" class="form-control" id="id_password" autocomplete="current-password" required>
+                                <button type="button" class="password-toggle-btn" id="togglePassword" aria-label="Mostrar contraseña" aria-pressed="false">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M1.5 12s4-7.5 10.5-7.5S22.5 12 22.5 12s-4 7.5-10.5 7.5S1.5 12 1.5 12z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                    <span>Ver</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="text-align:right;margin:-0.2rem 0 0.3rem;">
+                            <a href="{% url 'password_reset' %}" style="color:var(--auth-blue);font-size:0.84rem;font-weight:700;text-decoration:none;">¿Olvidaste tu contraseña?</a>
+                        </div>
+
+                        <button type="submit" class="btn btn-auth-primary w-100">Ingresar al sistema</button>
+                    </form>
+
+                    <div class="auth-support">
+                        <div class="auth-inline-card">
+                            <div>
+                                <strong>Acceso nuevo o pendiente</strong>
+                                <p>Si aún no cuentas con credenciales, registra tu solicitud para revisión administrativa.</p>
+                            </div>
+                            <a href="{% url 'registro' %}" class="auth-link">Solicitar&nbsp;acceso</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="auth-footer">
+        <div class="auth-footer-copy">
+            <strong>Hospital del Sarare - Central de Archivos del Sarare</strong>
+            <p>© {{ current_year }} Plataforma de gestion documental para consulta, resguardo y trazabilidad institucional.</p>
+        </div>
+        <div class="auth-footer-meta">Operacion documental con lectura clara y acceso controlado</div>
+    </footer>
+
+    <script src="/static/correspondencia/vendor/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const togglePassword = document.getElementById("togglePassword");
+        const passwordField = document.getElementById("id_password");
+
+        if (togglePassword && passwordField) {
+            togglePassword.addEventListener("click", () => {
+                const isHidden = passwordField.getAttribute("type") === "password";
+                passwordField.setAttribute("type", isHidden ? "text" : "password");
+                togglePassword.setAttribute("aria-pressed", isHidden ? "true" : "false");
+                togglePassword.setAttribute("aria-label", isHidden ? "Ocultar contraseña" : "Mostrar contraseña");
+                togglePassword.querySelector("span").textContent = isHidden ? "Ocultar" : "Ver";
+            });
+        }
+    </script>
+</body>
+</html>

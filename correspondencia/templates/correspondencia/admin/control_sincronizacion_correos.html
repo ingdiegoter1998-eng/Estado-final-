@@ -1,0 +1,330 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load humanize %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'correspondencia:control_sincronizacion_correos' %}" class="btn btn-outline-primary">
+  <i class="bi bi-arrow-clockwise"></i>
+  Refrescar
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+      <div class="card shadow-sm h-100 border-0">
+        <div class="card-body">
+          <div class="text-muted small text-uppercase mb-2">Sincronización IMAP</div>
+          <div class="d-flex align-items-center justify-content-between gap-3">
+            <div>
+              <h3 class="mb-1">
+                {% if sync_state %}
+                  {{ sync_state.get_estado_display }}
+                {% else %}
+                  Sin registro
+                {% endif %}
+              </h3>
+              <div class="text-muted small">
+                {% if sync_state and sync_state.ultimo_fin %}
+                  Último fin: {{ sync_state.ultimo_fin|date:'d/m/Y H:i:s' }}
+                {% else %}
+                  Sin ejecución finalizada registrada
+                {% endif %}
+              </div>
+            </div>
+            <span class="badge rounded-pill fs-6 {% if sync_state.estado == 'SUCCESS' %}bg-success{% elif sync_state.estado == 'RUNNING' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+              {% if sync_state %}{{ sync_state.estado }}{% else %}N/D{% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card shadow-sm h-100 border-0">
+        <div class="card-body">
+          <div class="text-muted small text-uppercase mb-2">Último correo en BD</div>
+          <h3 class="mb-1">{% if ultimo_fetch %}{{ ultimo_fetch|date:'d/m/Y H:i:s' }}{% else %}Sin datos{% endif %}</h3>
+          <div class="text-muted small">
+            {% if ultimo_correo_bd %}
+              ID {{ ultimo_correo_bd.id }} · {{ ultimo_correo_bd.remitente }}
+            {% else %}
+              No hay correos almacenados todavía.
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card shadow-sm h-100 border-0">
+        <div class="card-body">
+          <div class="text-muted small text-uppercase mb-2">Operaciones activas</div>
+          <h3 class="mb-1">{{ ejecuciones_activas|intcomma }}</h3>
+          <div class="text-muted small">Pendientes o ejecutándose desde este panel.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+      <div class="card shadow-sm h-100 border-0">
+        <div class="card-body">
+          <div class="text-muted small text-uppercase mb-2">Última verificación</div>
+          <h3 class="mb-1">
+            {% if ultima_verificacion %}
+              {{ ultima_verificacion.creado_en|date:'d/m H:i' }}
+            {% else %}
+              Sin corridas
+            {% endif %}
+          </h3>
+          <div class="text-muted small">
+            {% if ultima_verificacion %}
+              Estado {{ ultima_verificacion.estado }}
+            {% else %}
+              Aún no se ha ejecutado una auditoría desde la página.
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% if sync_state and sync_state.estado == 'RUNNING' %}
+  <div class="alert alert-warning shadow-sm" role="alert">
+    <div class="fw-semibold">La sincronización principal figura en ejecución.</div>
+    <div class="small">Inicio registrado: {{ sync_state.ultimo_inicio|date:'d/m/Y H:i:s' }}. Usa el diagnóstico operativo para confirmar si realmente sigue viva o quedó pegada.</div>
+  </div>
+  {% endif %}
+
+  <div class="row g-4">
+    <div class="col-xl-4">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">Acciones operativas</h5>
+        </div>
+        <div class="card-body">
+          <form method="post" class="d-grid gap-3">
+            {% csrf_token %}
+            <div>
+              <label for="days" class="form-label">Ventana de revisión</label>
+              <select class="form-select" id="days" name="days">
+                <option value="1">Último día</option>
+                <option value="3">Últimos 3 días</option>
+                <option value="7" selected>Últimos 7 días</option>
+                <option value="30">Últimos 30 días</option>
+                <option value="60">Últimos 60 días</option>
+              </select>
+              <div class="form-text">Si defines fecha y hora exactas abajo, ese rango tendrá prioridad sobre este selector.</div>
+            </div>
+
+            <div>
+              <label for="since" class="form-label">Desde fecha y hora exacta</label>
+              <input type="datetime-local" class="form-control" id="since" name="since" value="{{ initial_since }}">
+            </div>
+
+            <div>
+              <label for="until" class="form-label">Hasta fecha y hora exacta</label>
+              <input type="datetime-local" class="form-control" id="until" name="until" value="{{ initial_until }}">
+            </div>
+
+            <button type="submit" name="action" value="VERIFY" class="btn btn-primary text-start">
+              <i class="bi bi-search me-2"></i>Verificar cobertura Gmail vs BD
+            </button>
+            <button type="submit" name="action" value="RECOVER" class="btn btn-warning text-start">
+              <i class="bi bi-cloud-download me-2"></i>Recuperar faltantes
+            </button>
+            <button type="submit" name="action" value="DUPLICATES" class="btn btn-outline-danger text-start">
+              <i class="bi bi-files me-2"></i>Verificar duplicados
+            </button>
+            <button type="submit" name="action" value="DIAGNOSE" class="btn btn-outline-secondary text-start">
+              <i class="bi bi-cpu me-2"></i>Diagnóstico operativo
+            </button>
+            <button type="submit" name="action" value="IMAP_TEST" class="btn btn-outline-info text-start">
+              <i class="bi bi-plug me-2"></i>Probar conexión IMAP
+            </button>
+            <button type="submit" name="action" value="SYNC_NOW" class="btn btn-outline-success text-start">
+              <i class="bi bi-lightning-charge me-2"></i>Encolar sincronización inmediata
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">Último diagnóstico</h5>
+        </div>
+        <div class="card-body small">
+          {% if ultimo_diagnostico %}
+            <div class="mb-2"><strong>Fecha:</strong> {{ ultimo_diagnostico.creado_en|date:'d/m/Y H:i:s' }}</div>
+            <div class="mb-2"><strong>Estado:</strong> {{ ultimo_diagnostico.estado }}</div>
+            {% if ultimo_diagnostico.error %}
+              <div class="text-danger"><strong>Error:</strong> {{ ultimo_diagnostico.error }}</div>
+            {% else %}
+              <div class="text-muted">Selecciona el diagnóstico en el historial para ver el detalle completo.</div>
+            {% endif %}
+          {% else %}
+            <div class="text-muted">Todavía no hay diagnósticos ejecutados desde esta página.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-8">
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">Historial reciente</h5>
+          <span class="text-muted small">Últimas 15 ejecuciones</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Fecha</th>
+                <th>Operación</th>
+                <th>Estado</th>
+                <th>Usuario</th>
+                <th class="text-end">Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for run in recientes %}
+              <tr>
+                <td>{{ run.obj.creado_en|date:'d/m/Y H:i:s' }}</td>
+                <td>{{ run.obj.get_tipo_operacion_display }}</td>
+                <td>
+                  <span class="badge {% if run.obj.estado == 'SUCCESS' %}bg-success{% elif run.obj.estado == 'WARN' %}bg-warning text-dark{% elif run.obj.estado == 'FAIL' %}bg-danger{% else %}bg-secondary{% endif %}">
+                    {{ run.obj.estado }}
+                  </span>
+                </td>
+                <td>{{ run.obj.ejecutado_por.get_full_name|default:run.obj.ejecutado_por.username|default:'Sistema' }}</td>
+                <td class="text-end">
+                  <div class="d-inline-flex gap-1">
+                    <a href="?run={{ run.obj.id }}" class="btn btn-sm btn-outline-primary">Ver</a>
+                    {% if run.obj.estado == 'PENDING' or run.obj.estado == 'RUNNING' %}
+                    <form method="post" class="d-inline">
+                      {% csrf_token %}
+                      <input type="hidden" name="admin_action" value="cancel_run">
+                      <input type="hidden" name="run_id" value="{{ run.obj.id }}">
+                      <button type="submit" class="btn btn-sm btn-outline-warning">Cancelar</button>
+                    </form>
+                    {% endif %}
+                    <form method="post" class="d-inline" onsubmit="return confirm('¿Eliminar esta ejecución del historial?');">
+                      {% csrf_token %}
+                      <input type="hidden" name="admin_action" value="delete_run">
+                      <input type="hidden" name="run_id" value="{{ run.obj.id }}">
+                      <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center text-muted py-4">Aún no hay operaciones registradas.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white">
+          <h5 class="mb-0">Detalle de ejecución</h5>
+        </div>
+        <div class="card-body">
+          {% if selected_run %}
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              <span class="badge bg-primary">{{ selected_run.obj.get_tipo_operacion_display }}</span>
+              <span class="badge {% if selected_run.obj.estado == 'SUCCESS' %}bg-success{% elif selected_run.obj.estado == 'WARN' %}bg-warning text-dark{% elif selected_run.obj.estado == 'FAIL' %}bg-danger{% else %}bg-secondary{% endif %}">{{ selected_run.obj.estado }}</span>
+              {% if selected_run.obj.task_id %}<span class="badge bg-dark">Task {{ selected_run.obj.task_id }}</span>{% endif %}
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mb-3">
+              {% if selected_run.obj.estado == 'PENDING' or selected_run.obj.estado == 'RUNNING' %}
+              <form method="post" class="d-inline">
+                {% csrf_token %}
+                <input type="hidden" name="admin_action" value="cancel_run">
+                <input type="hidden" name="run_id" value="{{ selected_run.obj.id }}">
+                <button type="submit" class="btn btn-outline-warning btn-sm">
+                  <i class="bi bi-stop-circle me-1"></i>Cancelar ejecución
+                </button>
+              </form>
+              {% endif %}
+              <form method="post" class="d-inline" onsubmit="return confirm('¿Eliminar esta ejecución del historial?');">
+                {% csrf_token %}
+                <input type="hidden" name="admin_action" value="delete_run">
+                <input type="hidden" name="run_id" value="{{ selected_run.obj.id }}">
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                  <i class="bi bi-trash me-1"></i>Eliminar ejecución
+                </button>
+              </form>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <div class="border rounded p-3 h-100">
+                  <div class="text-muted small text-uppercase">Totales</div>
+                  <div class="small mt-2">
+                    <div>Encontrados Gmail: {{ selected_run.obj.total_encontrados|default:'-' }}</div>
+                    <div>Faltantes detectados: {{ selected_run.obj.total_nuevos|default:'-' }}</div>
+                    <div>Guardados: {{ selected_run.obj.total_guardados|default:'-' }}</div>
+                    <div>Adjuntos: {{ selected_run.obj.total_adjuntos|default:'-' }}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="border rounded p-3 h-100">
+                  <div class="text-muted small text-uppercase">Integridad</div>
+                  <div class="small mt-2">
+                    <div>Duplicados reales: {{ selected_run.obj.total_duplicados|default:'-' }}</div>
+                    <div>Sospechosos: {{ selected_run.obj.total_sospechosos|default:'-' }}</div>
+                    <div>Rechazados: {{ selected_run.obj.total_rechazados|default:'-' }}</div>
+                    <div>Errores: {{ selected_run.obj.total_errores|default:'-' }}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="border rounded p-3 h-100">
+                  <div class="text-muted small text-uppercase">Ejecución</div>
+                  <div class="small mt-2">
+                    <div>Creada: {{ selected_run.obj.creado_en|date:'d/m/Y H:i:s' }}</div>
+                    <div>Inicio: {{ selected_run.obj.iniciado_en|date:'d/m/Y H:i:s'|default:'-' }}</div>
+                    <div>Fin: {{ selected_run.obj.finalizado_en|date:'d/m/Y H:i:s'|default:'-' }}</div>
+                    <div>Usuario: {{ selected_run.obj.ejecutado_por.get_full_name|default:selected_run.obj.ejecutado_por.username|default:'Sistema' }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <h6>Parámetros</h6>
+              <pre class="bg-light border rounded p-3 small mb-0">{{ selected_run.obj.parametros }}</pre>
+            </div>
+
+            <div class="mb-3">
+              <h6>Resumen estructurado</h6>
+              <pre class="bg-light border rounded p-3 small mb-0">{{ selected_run.obj.resumen }}</pre>
+            </div>
+
+            {% if selected_run.obj.error %}
+            <div class="alert alert-danger">
+              <strong>Error:</strong> {{ selected_run.obj.error }}
+            </div>
+            {% endif %}
+
+            <div>
+              <h6>Salida detallada</h6>
+              <pre class="bg-dark text-light rounded p-3 small mb-0" style="max-height: 520px; overflow: auto;">{{ selected_run.obj.salida|default:'Sin salida registrada todavía.' }}</pre>
+            </div>
+          {% else %}
+            <div class="text-muted">Selecciona una ejecución del historial para inspeccionar su detalle.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

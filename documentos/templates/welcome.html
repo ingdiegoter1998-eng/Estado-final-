@@ -1,0 +1,332 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Archivos del Sarare - Inicio</title>
+    <link rel="icon" type="image/svg+xml" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+    <link rel="shortcut icon" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+    <link rel="apple-touch-icon" href="{% static 'correspondencia/img/matachito-favicon.svg' %}">
+    <!-- Bootstrap -->
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+    <!-- Google Font (consistencia con header) -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700;800&display=swap">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'correspondencia/css/notificaciones.css' %}?v=20260531-notif-unified">
+</head>
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    min-height: 100%;
+    margin: 0;
+    background:
+        radial-gradient(circle at top left, rgba(11, 79, 151, 0.12), transparent 30%),
+        linear-gradient(180deg, #f7fbff 0%, #eef5fb 52%, #e9f0f8 100%);
+    color: #143048;
+    font-family: 'IBM Plex Sans', 'Segoe UI', 'Helvetica Neue', sans-serif;
+}
+
+.welcome-layout {
+    display: flex;
+    min-height: 100vh;
+    align-items: flex-start;
+}
+
+.welcome-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.welcome-content main {
+    flex: 1;
+}
+
+/* Asegurar que el header y sus dropdowns queden encima del contenido */
+.welcome-content .main-header {
+    position: relative;
+    z-index: 50;
+}
+
+.welcome-shell {
+    width: 95%;
+    max-width: none;
+    margin: 0 auto;
+    padding: 1.5rem 0 2.5rem;
+}
+
+.welcome-hero {
+    position: relative;
+    overflow: hidden;
+    margin: 0 0 1.5rem;
+    padding: 2.2rem clamp(1.4rem, 2vw, 2.4rem);
+    border: 1px solid rgba(11, 79, 151, 0.1);
+    border-radius: 30px;
+    background:
+        linear-gradient(135deg, rgba(0, 51, 102, 0.98) 0%, rgba(11, 79, 151, 0.94) 56%, rgba(14, 99, 185, 0.92) 100%);
+    color: #f7fbff;
+    box-shadow: 0 26px 54px rgba(0, 51, 102, 0.18);
+}
+
+.welcome-hero::after {
+    content: '';
+    position: absolute;
+    inset: auto -10% -35% auto;
+    width: 340px;
+    height: 340px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.16), transparent 68%);
+}
+
+.welcome-hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+}
+
+.welcome-hero-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-bottom: 1rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(247, 251, 251, 0.92);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.welcome-hero-title {
+    margin: 0;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+}
+
+.welcome-hero-subtitle {
+    margin: 0.8rem 0 0;
+    max-width: 58ch;
+    font-size: 1.02rem;
+    line-height: 1.75;
+    color: rgba(247, 251, 251, 0.86);
+}
+
+.welcome-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.2rem;
+}
+
+.welcome-info-card {
+    position: relative;
+    overflow: hidden;
+    min-height: 100%;
+    padding: 1.65rem;
+    border: 1px solid rgba(11, 79, 151, 0.1);
+    border-radius: 26px;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 24px 48px rgba(0, 51, 102, 0.08);
+    backdrop-filter: blur(10px);
+}
+
+.welcome-info-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+}
+
+.welcome-info-card:nth-child(1)::before {
+    background: linear-gradient(90deg, #003366 0%, #0b4f97 100%);
+}
+
+.welcome-info-card:nth-child(2)::before {
+    background: linear-gradient(90deg, #0b4f97 0%, #0e63b9 100%);
+}
+
+.welcome-info-card:nth-child(3)::before {
+    background: linear-gradient(90deg, #198754 0%, #28a76d 100%);
+}
+
+.welcome-info-head {
+    display: flex;
+    align-items: center;
+    gap: 0.95rem;
+    margin-bottom: 1.2rem;
+}
+
+.welcome-info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 18px;
+    font-size: 1.2rem;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.welcome-info-card:nth-child(1) .welcome-info-icon {
+    background: rgba(0, 51, 102, 0.10);
+    color: #003366;
+}
+
+.welcome-info-card:nth-child(2) .welcome-info-icon {
+    background: rgba(11, 79, 151, 0.10);
+    color: #0b4f97;
+}
+
+.welcome-info-card:nth-child(3) .welcome-info-icon {
+    background: rgba(25, 135, 84, 0.12);
+    color: #198754;
+}
+
+.welcome-info-label {
+    display: block;
+    margin-bottom: 0.18rem;
+    color: #667a8e;
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.welcome-info-card h4 {
+    margin: 0;
+    color: #143048;
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.welcome-info-card p {
+    margin: 0;
+    color: #47606c;
+    font-size: 0.97rem;
+    line-height: 1.8;
+}
+
+@media (max-width: 992px) {
+    .welcome-shell {
+        width: 95%;
+    }
+
+    .welcome-info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .welcome-shell {
+        width: 95%;
+        padding-top: 1rem;
+    }
+
+    .welcome-hero {
+        padding: 1.5rem 1.15rem;
+        border-radius: 24px;
+    }
+
+    .welcome-info-card {
+        padding: 1.4rem;
+        border-radius: 22px;
+    }
+}
+
+</style>
+<body class="welcome-with-sidebar">
+    <div class="welcome-layout">
+        {% include 'correspondencia/partials/sidebar_usuario.html' %}
+        <div class="welcome-content">
+    <main>
+        {% include 'correspondencia/partials/header_usuario.html' with page_title="Panel General" %}
+
+        <!-- Contenido Principal -->
+        <div class="welcome-shell">
+            <section class="welcome-hero">
+                <div class="welcome-hero-content">
+                    <span class="welcome-hero-kicker">
+                        <i class="bi bi-building"></i>
+                        Gestión documental institucional
+                    </span>
+                    <h1 class="welcome-hero-title">Hospital del Sarare</h1>
+                    <p class="welcome-hero-subtitle">Una portada institucional más clara, alineada con la línea visual actual y enfocada únicamente en la misión, la visión y el compromiso del sistema.</p>
+                </div>
+            </section>
+
+            <section class="welcome-info-grid">
+                <article class="welcome-info-card">
+                    <div class="welcome-info-head">
+                        <div class="welcome-info-icon">
+                            <i class="bi bi-heart-pulse"></i>
+                        </div>
+                        <div>
+                            <span class="welcome-info-label">Propósito</span>
+                            <h4>Misión</h4>
+                        </div>
+                    </div>
+                    <p>Gestionar de manera eficiente y segura la documentación institucional del Hospital del Sarare, garantizando la integridad, accesibilidad y trazabilidad de la información para el mejoramiento continuo de los servicios de salud.</p>
+                </article>
+
+                <article class="welcome-info-card">
+                    <div class="welcome-info-head">
+                        <div class="welcome-info-icon">
+                            <i class="bi bi-eye"></i>
+                        </div>
+                        <div>
+                            <span class="welcome-info-label">Proyección</span>
+                            <h4>Visión</h4>
+                        </div>
+                    </div>
+                    <p>Ser reconocidos como el sistema de gestión documental más eficiente y confiable del sector salud, facilitando el acceso oportuno a la información y contribuyendo a la excelencia en la atención al paciente.</p>
+                </article>
+
+                <article class="welcome-info-card">
+                    <div class="welcome-info-head">
+                        <div class="welcome-info-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div>
+                            <span class="welcome-info-label">Garantía</span>
+                            <h4>Compromiso</h4>
+                        </div>
+                    </div>
+                    <p>Garantizamos la confidencialidad, integridad y disponibilidad de la información documental, cumpliendo con los más altos estándares de calidad y normatividad vigente en el sector salud.</p>
+                </article>
+            </section>
+        </div>
+      </main>
+      
+
+    <!-- Bootstrap JS -->
+    <script src="/static/correspondencia/vendor/js/bootstrap.bundle.min.js"></script>
+    {% if request.user.is_authenticated %}
+    <!-- Notificaciones -->
+    <script src="{% static 'correspondencia/js/notificaciones.js' %}?v=20260531-notif-unified"></script>
+    <script src="{% static 'correspondencia/js/notificaciones-toast.js' %}"></script>
+    {% endif %}
+    <script>
+        // Permite usar el atajo de la sidebar moderna fuera del dashboard.
+        function openCorrespondenciaSalidaModal(event) {
+            event.preventDefault();
+            window.location.href = '{% url "correspondencia:dashboard_usuario" %}?open_modal=correspondencia_salida';
+        }
+    </script>
+    </div> <!-- welcome-content -->
+    </div> <!-- welcome-layout -->
+</body>
+</html>

@@ -1,0 +1,352 @@
+/* CORRECCIONES ESPECÍFICAS PARA EL NAVBAR */
+
+/* === CORRECCIONES DEL HEADER === */
+.main-header {
+    /* Asegurar que el header tenga la altura correcta */
+    min-height: 70px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 1rem 2rem !important;
+    background: white !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1020 !important;
+}
+
+/* === CORRECCIONES PARA EL LADO IZQUIERDO === */
+.header-left {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.25rem !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+.main-header .page-title {
+    margin: 0 !important;
+    font-size: 1.5rem !important;
+    font-weight: 700 !important;
+    color: #1e293b !important;
+    display: flex !important;
+    align-items: center !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.main-header .page-title::before {
+    content: '' !important;
+    width: 4px !important;
+    height: 1.5rem !important;
+    background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%) !important;
+    margin-right: 0.75rem !important;
+    border-radius: 2px !important;
+    flex-shrink: 0 !important;
+}
+
+/* === CORRECCIONES PARA EL LADO DERECHO === */
+.header-right {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    flex-shrink: 0 !important;
+    min-width: 0 !important;
+}
+
+/* === CORRECCIONES PARA BOTONES === */
+.header-right .btn {
+    padding: 0.5rem 0.75rem !important;
+    border-radius: 0.5rem !important;
+    transition: all 0.2s ease-in-out !important;
+    position: relative !important;
+    font-size: 0.875rem !important;
+    border: 1px solid #cbd5e1 !important;
+    background: white !important;
+    color: #475569 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 40px !important;
+    height: 40px !important;
+}
+
+.header-right .btn:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+    border-color: #2563eb !important;
+    color: #2563eb !important;
+}
+
+.header-right .btn:focus {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+    outline: none !important;
+}
+
+/* === CORRECCIONES PARA DROPDOWN === */
+.header-right .dropdown {
+    position: relative !important;
+}
+
+.header-right .dropdown-toggle::after {
+    margin-left: 0.5rem !important;
+}
+
+.dropdown-menu {
+    border: none !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
+    padding: 0.5rem 0 !important;
+    min-width: 200px !important;
+    margin-top: 0.5rem !important;
+    background: white !important;
+}
+
+/* === CORRECCIONES PARA INFORMACIÓN DEL USUARIO === */
+.user-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    padding: 0.5rem 1rem !important;
+    background: #f1f5f9 !important;
+    border-radius: 0.5rem !important;
+    border: 1px solid #e2e8f0 !important;
+    min-width: 200px !important;
+    max-width: 300px !important;
+}
+
+.user-details {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.25rem !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+.office-info {
+    font-size: 0.75rem !important;
+    color: #64748b !important;
+    display: flex !important;
+    align-items: center !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.office-info strong {
+    color: #334155 !important;
+    font-weight: 600 !important;
+}
+
+.user-name {
+    font-size: 0.875rem !important;
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* === CORRECCIONES PARA AVATAR === */
+.user-avatar {
+    position: relative !important;
+    flex-shrink: 0 !important;
+}
+
+.avatar-circle {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    font-size: 1.25rem !important;
+    transition: all 0.2s ease-in-out !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+    cursor: pointer !important;
+}
+
+.avatar-circle:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* === CORRECCIONES PARA BADGE === */
+.badge {
+    font-size: 0.6rem !important;
+    padding: 0.25rem 0.4rem !important;
+    border-radius: 50% !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    transform: translate(50%, -50%) !important;
+}
+
+.badge.bg-danger {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+    color: white !important;
+}
+
+/* === CORRECCIONES RESPONSIVE === */
+@media (max-width: 768px) {
+    .main-header {
+        padding: 1rem !important;
+        flex-direction: column !important;
+        gap: 1rem !important;
+        align-items: stretch !important;
+        min-height: auto !important;
+    }
+    
+    .header-left {
+        order: 1 !important;
+        text-align: center !important;
+    }
+    
+    .header-right {
+        order: 2 !important;
+        justify-content: space-between !important;
+        flex-wrap: wrap !important;
+        gap: 0.5rem !important;
+    }
+    
+    .user-info {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        text-align: center !important;
+        min-width: auto !important;
+        width: 100% !important;
+        max-width: none !important;
+    }
+    
+    .user-details {
+        align-items: center !important;
+    }
+    
+    .user-avatar {
+        align-self: center !important;
+    }
+    
+    .main-header .page-title {
+        font-size: 1.25rem !important;
+        justify-content: center !important;
+    }
+    
+    .main-header .page-title::before {
+        display: none !important;
+    }
+    
+    .header-right .btn {
+        min-width: 36px !important;
+        height: 36px !important;
+        padding: 0.375rem !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .header-right {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.75rem !important;
+    }
+    
+    .user-info {
+        order: 1 !important;
+    }
+    
+    .dropdown, .btn {
+        order: 2 !important;
+        align-self: center !important;
+    }
+    
+    .main-header .page-title {
+        font-size: 1.125rem !important;
+    }
+}
+
+/* === CORRECCIONES PARA ANIMACIONES === */
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.main-header {
+    animation: slideInFromTop 0.3s ease-out !important;
+}
+
+/* === CORRECCIONES PARA ESTADOS DE CARGA === */
+.header-loading {
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.header-loading::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent) !important;
+    animation: shimmer 1.5s infinite !important;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* === CORRECCIONES PARA DROPDOWN ITEMS === */
+.dropdown-header {
+    font-weight: 700 !important;
+    color: #334155 !important;
+    font-size: 0.875rem !important;
+    padding: 0.5rem 1rem !important;
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.dropdown-item {
+    padding: 0.75rem 1rem !important;
+    font-size: 0.875rem !important;
+    color: #475569 !important;
+    transition: all 0.2s ease-in-out !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.dropdown-item:hover {
+    background: #f1f5f9 !important;
+    color: #2563eb !important;
+    transform: translateX(4px) !important;
+}
+
+.dropdown-item.text-danger:hover {
+    background: #dc2626 !important;
+    color: white !important;
+}
+
+.dropdown-divider {
+    margin: 0.5rem 0 !important;
+    border-color: #e2e8f0 !important;
+} 

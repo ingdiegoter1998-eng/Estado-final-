@@ -1,0 +1,1144 @@
+{% load static %}
+<style>
+    .agenda-global-modal {
+        --agenda-ink: #163448;
+        --agenda-ink-soft: #426074;
+        --agenda-muted: #667b8c;
+        --agenda-line: rgba(22, 52, 72, 0.14);
+        --agenda-line-strong: rgba(18, 95, 110, 0.2);
+        --agenda-surface: #fffdf9;
+        --agenda-surface-alt: #f6fbfc;
+        --agenda-soft: #eef6f8;
+        --agenda-primary: #0d6d7a;
+        --agenda-primary-deep: #0a4a53;
+        --agenda-accent: #c38b35;
+        --agenda-success: #1c8c63;
+        --agenda-shadow: 0 28px 80px -36px rgba(18, 44, 62, 0.42);
+    }
+
+    .agenda-global-modal .modal-dialog {
+        max-width: min(1320px, calc(100vw - 2rem));
+        height: calc(100vh - 2rem);
+        margin: 1rem auto;
+    }
+
+    .agenda-global-modal .modal-content {
+        height: 100%;
+        max-height: calc(100vh - 2rem);
+        border: 1px solid rgba(10, 74, 83, 0.16);
+        border-radius: 30px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--agenda-shadow);
+        background:
+            radial-gradient(circle at top left, rgba(195, 139, 53, 0.14), transparent 26%),
+            linear-gradient(180deg, #fffdfa 0%, #f6fbfc 100%);
+    }
+
+    .agenda-global-modal .modal-header,
+    .agenda-global-modal .modal-footer {
+        border: 0;
+        padding: 1.4rem 1.6rem;
+        background: transparent;
+    }
+
+    .agenda-global-modal .modal-header {
+        position: sticky;
+        top: 0;
+        z-index: 4;
+        align-items: flex-start;
+        gap: 1rem;
+        border-bottom: 1px solid rgba(22, 52, 72, 0.08);
+        backdrop-filter: blur(12px);
+        background: linear-gradient(180deg, rgba(255, 253, 250, 0.97), rgba(255, 253, 250, 0.88));
+    }
+
+    .agenda-global-modal .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 0 1.6rem 1.5rem;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(13, 109, 122, 0.55) rgba(13, 109, 122, 0.08);
+    }
+
+    .agenda-global-modal .modal-body::-webkit-scrollbar {
+        width: 12px;
+    }
+
+    .agenda-global-modal .modal-body::-webkit-scrollbar-track {
+        background: rgba(13, 109, 122, 0.08);
+        border-radius: 999px;
+    }
+
+    .agenda-global-modal .modal-body::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, rgba(13, 109, 122, 0.72), rgba(10, 74, 83, 0.94));
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        border-radius: 999px;
+    }
+
+    .agenda-global-modal .modal-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 4;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid rgba(22, 52, 72, 0.08);
+        backdrop-filter: blur(12px);
+        background: linear-gradient(180deg, rgba(246, 251, 252, 0.9), rgba(246, 251, 252, 0.98));
+        box-shadow: 0 -10px 26px -24px rgba(21, 50, 67, 0.65);
+    }
+
+    .agenda-global-modal .btn-close {
+        flex: 0 0 auto;
+        padding: 0.8rem;
+        margin: 0;
+        border-radius: 999px;
+        background-color: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 10px 24px -18px rgba(15, 23, 42, 0.6);
+        opacity: 1;
+    }
+
+    .agenda-modal-hero {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        width: 100%;
+    }
+
+    .agenda-modal-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.42rem 0.78rem;
+        border-radius: 999px;
+        background: rgba(13, 109, 122, 0.1);
+        color: var(--agenda-primary-deep);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .agenda-modal-title {
+        margin: 0.75rem 0 0.4rem;
+        color: var(--agenda-ink);
+        font-size: clamp(1.45rem, 1.18rem + 0.95vw, 1.95rem);
+        font-weight: 800;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+    }
+
+    .agenda-modal-copy {
+        display: block;
+        max-width: 66ch;
+        color: var(--agenda-muted);
+        font-size: 0.95rem;
+        line-height: 1.65;
+    }
+
+    .agenda-modal-stamp {
+        flex: 0 0 auto;
+        min-width: 185px;
+        padding: 0.95rem 1.05rem;
+        border: 1px solid rgba(195, 139, 53, 0.2);
+        border-radius: 20px;
+        background: rgba(255, 247, 231, 0.9);
+        text-align: right;
+    }
+
+    .agenda-modal-stamp-label {
+        display: block;
+        color: var(--agenda-accent);
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .agenda-modal-stamp-value {
+        display: block;
+        margin-top: 0.45rem;
+        color: var(--agenda-ink);
+        font-size: 0.98rem;
+        font-weight: 800;
+    }
+
+    .agenda-modal-layout {
+        display: flex;
+        align-items: stretch;
+        gap: 1.25rem;
+        min-width: 0;
+    }
+
+    .agenda-filtros-shell {
+        flex: 0 0 auto;
+        width: 364px;
+    }
+
+    .agenda-filtros-shell .agenda-modal-panel {
+        width: 364px;
+    }
+
+    .agenda-resultados-panel {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .agenda-modal-panel {
+        border: 1px solid var(--agenda-line);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 18px 40px -34px rgba(19, 47, 63, 0.4);
+        overflow: hidden;
+    }
+
+    .agenda-modal-panel-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1rem 1.15rem;
+        border-bottom: 1px solid var(--agenda-line);
+        background: linear-gradient(135deg, rgba(13, 109, 122, 0.08), rgba(195, 139, 53, 0.08));
+    }
+
+    .agenda-modal-panel-head h6,
+    .agenda-modal-panel-head p {
+        margin: 0;
+    }
+
+    .agenda-modal-panel-head h6 {
+        color: var(--agenda-ink);
+        font-size: 0.98rem;
+        font-weight: 800;
+    }
+
+    .agenda-modal-panel-head p {
+        margin-top: 0.24rem;
+        color: var(--agenda-muted);
+        font-size: 0.84rem;
+        line-height: 1.55;
+    }
+
+    .agenda-modal-panel-body {
+        padding: 1.15rem;
+    }
+
+    .agenda-panel-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.55rem 0.9rem;
+        border: 1px solid rgba(13, 109, 122, 0.16);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.88);
+        color: var(--agenda-primary-deep);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .agenda-panel-toggle i {
+        transition: transform 0.2s ease;
+    }
+
+    .agenda-panel-toggle[aria-expanded="true"] i {
+        transform: rotate(180deg);
+    }
+
+    .agenda-global-modal .form-label {
+        margin-bottom: 0.45rem;
+        color: var(--agenda-ink);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .agenda-global-modal .form-control,
+    .agenda-global-modal .form-select {
+        min-height: 50px;
+        border: 1px solid rgba(13, 109, 122, 0.18);
+        border-radius: 16px;
+        background: #fffefa;
+        box-shadow: none;
+    }
+
+    .agenda-global-modal .form-control:focus,
+    .agenda-global-modal .form-select:focus,
+    .agenda-global-modal .form-check-input:focus {
+        border-color: rgba(13, 109, 122, 0.42);
+        box-shadow: 0 0 0 0.22rem rgba(13, 109, 122, 0.12);
+    }
+
+    .agenda-filtros-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 0.9rem;
+    }
+
+    .agenda-filtros-grid .agenda-col-span-12 { grid-column: span 12; }
+    .agenda-filtros-grid .agenda-col-span-6 { grid-column: span 6; }
+    .agenda-filtros-grid .agenda-col-span-4 { grid-column: span 4; }
+
+    .agenda-quick-note {
+        display: grid;
+        gap: 0.3rem;
+        margin-bottom: 1rem;
+        padding: 0.95rem 1rem;
+        border-radius: 18px;
+        background: rgba(21, 50, 67, 0.045);
+        color: var(--agenda-muted);
+    }
+
+    .agenda-quick-note strong {
+        color: var(--agenda-ink);
+    }
+
+    .agenda-actions-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 0.35rem;
+    }
+
+    .agenda-actions-bar .btn {
+        min-height: 42px;
+    }
+
+    .agenda-actions-bar .btn.btn-compact {
+        min-height: 38px;
+        padding: 0.42rem 0.78rem;
+        font-size: 0.82rem;
+    }
+
+    .agenda-selection-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+        padding: 1rem;
+        border: 1px solid var(--agenda-line-strong);
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(13, 109, 122, 0.05), rgba(255, 255, 255, 0.7));
+    }
+
+    .agenda-selection-card strong {
+        color: var(--agenda-ink);
+        font-size: 0.94rem;
+    }
+
+    .agenda-selection-card p {
+        margin: 0;
+        color: var(--agenda-muted);
+        font-size: 0.84rem;
+        line-height: 1.55;
+    }
+
+    .agenda-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.78rem;
+        border-radius: 999px;
+        background: rgba(28, 140, 99, 0.1);
+        color: var(--agenda-success);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+    }
+
+    .agenda-table-shell {
+        border: 1px solid var(--agenda-line);
+        border-radius: 22px;
+        overflow: hidden;
+        background: #fffdf9;
+    }
+
+    .agenda-table-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .agenda-table-note {
+        color: var(--agenda-muted);
+        font-size: 0.84rem;
+    }
+
+    .agenda-global-modal .table {
+        margin-bottom: 0;
+    }
+
+    .agenda-global-modal .table thead th {
+        padding-top: 0.95rem;
+        padding-bottom: 0.95rem;
+        border-bottom: 1px solid var(--agenda-line);
+        background: linear-gradient(180deg, #ffffff 0%, #f5fafb 100%);
+        color: var(--agenda-ink-soft);
+        font-size: 0.77rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .agenda-global-modal .table > :not(caption) > * > * {
+        padding-top: 0.95rem;
+        padding-bottom: 0.95rem;
+        border-color: rgba(22, 52, 72, 0.08);
+    }
+
+    .agenda-global-modal .table tbody tr:hover {
+        background: rgba(13, 109, 122, 0.035);
+    }
+
+    .agenda-global-modal .table-responsive {
+        border: 0;
+        max-height: 56vh;
+        overflow: auto;
+    }
+
+    .agenda-filtros-shell.collapse:not(.show) {
+        display: block;
+        width: 0;
+        overflow: hidden;
+    }
+
+    .agenda-filtros-shell.collapsing {
+        width: 0;
+        transition: width 0.28s ease;
+    }
+
+    .agenda-global-modal .contacto-principal {
+        display: grid;
+        gap: 0.18rem;
+    }
+
+    .agenda-global-modal .contacto-nombre {
+        color: var(--agenda-ink);
+        font-weight: 700;
+    }
+
+    .agenda-global-modal .contacto-meta {
+        color: var(--agenda-muted);
+        font-size: 0.8rem;
+    }
+
+    .agenda-global-modal .pagination {
+        gap: 0.2rem;
+    }
+
+    .agenda-global-modal .page-link {
+        border: 0;
+        border-radius: 12px;
+        color: var(--agenda-primary-deep);
+        background: transparent;
+        font-weight: 700;
+    }
+
+    .agenda-global-modal .page-item.active .page-link {
+        background: linear-gradient(135deg, var(--agenda-primary), var(--agenda-primary-deep));
+        color: #fff;
+        box-shadow: 0 12px 24px -18px rgba(13, 109, 122, 0.8);
+    }
+
+    .agenda-global-modal .alert {
+        border-radius: 18px;
+        border-width: 1px;
+    }
+
+    .agenda-global-modal .btn {
+        border-radius: 14px;
+        font-weight: 700;
+    }
+
+    .agenda-global-modal .btn-primary,
+    .agenda-global-modal .btn-success {
+        border-color: transparent;
+    }
+
+    .agenda-global-modal .btn-primary {
+        background: linear-gradient(135deg, var(--agenda-primary), var(--agenda-primary-deep));
+    }
+
+    .agenda-global-modal .btn-success {
+        background: linear-gradient(135deg, #1b8d62, #146d4c);
+    }
+
+    .agenda-global-modal .btn-outline-secondary,
+    .agenda-global-modal .btn-outline-info {
+        background: rgba(255, 255, 255, 0.92);
+    }
+
+    @media (max-width: 991.98px) {
+        .agenda-global-modal .modal-dialog {
+            max-width: calc(100vw - 1rem);
+            height: calc(100vh - 1rem);
+            margin: 0.5rem auto;
+        }
+
+        .agenda-modal-layout {
+            gap: 1rem;
+        }
+
+        .agenda-modal-stamp {
+            display: none;
+        }
+
+        .agenda-filtros-shell,
+        .agenda-filtros-shell .agenda-modal-panel {
+            width: min(78vw, 320px);
+        }
+
+        .agenda-global-modal .table-responsive {
+            max-height: none;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .agenda-global-modal .modal-header,
+        .agenda-global-modal .modal-body,
+        .agenda-global-modal .modal-footer {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .agenda-modal-panel-head,
+        .agenda-modal-panel-body {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .agenda-filtros-grid .agenda-col-span-12,
+        .agenda-filtros-grid .agenda-col-span-6,
+        .agenda-filtros-grid .agenda-col-span-4 {
+            grid-column: span 12;
+        }
+
+        .agenda-global-modal .modal-footer {
+            flex-direction: column-reverse;
+            align-items: stretch;
+        }
+
+        .agenda-global-modal .modal-footer > div,
+        .agenda-global-modal .modal-footer > button {
+            width: 100%;
+        }
+    }
+</style>
+<div class="modal fade agenda-global-modal" id="modalAgendaContactos" tabindex="-1" aria-labelledby="modalAgendaContactosLabel"
+     aria-hidden="true"
+     data-list-endpoint="{% url 'correspondencia:contactos_agenda_modal_ajax' %}"
+     data-entidades-endpoint="{% url 'correspondencia:buscar_entidades_ajax' %}">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="agenda-modal-hero">
+                    <div>
+                        <span class="agenda-modal-kicker">
+                            <i class="bi bi-journal-bookmark-fill"></i>
+                            Agenda institucional
+                        </span>
+                        <h5 class="modal-title agenda-modal-title" id="modalAgendaContactosLabel">Agenda Global de Contactos</h5>
+                        <small class="agenda-modal-copy" id="agendaContactosContextText">
+                            Selecciona contactos para tus destinatarios.
+                        </small>
+                    </div>
+                    <div class="agenda-modal-stamp">
+                        <span class="agenda-modal-stamp-label">Flujo asistido</span>
+                        <span class="agenda-modal-stamp-value">Busqueda, filtro y seleccion multiple</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="agendaContactosAlert" class="alert alert-danger d-none"></div>
+                <div class="agenda-modal-layout">
+                    <div id="agendaFiltrosCollapse" class="collapse collapse-horizontal agenda-filtros-shell">
+                    <section class="agenda-modal-panel">
+                        <div class="agenda-modal-panel-head">
+                            <div>
+                                <h6><i class="bi bi-funnel-fill me-2"></i>Filtros de consulta</h6>
+                                <p>Acota la agenda por entidad, disponibilidad de correo, orden y volumen de resultados.</p>
+                            </div>
+                        </div>
+                            <div class="agenda-modal-panel-body">
+                            <div class="agenda-quick-note">
+                                <strong>Uso recomendado</strong>
+                                <span>Busca por nombre, correo electrónico o entidad y conserva una selección múltiple mientras recorres páginas.</span>
+                            </div>
+
+                            <form id="agendaContactosFiltros" class="agenda-filtros-grid">
+                                <div class="agenda-col-span-12">
+                                    <label for="agendaFiltroBuscar" class="form-label">Buscar</label>
+                                    <input type="text" class="form-control" id="agendaFiltroBuscar" name="q"
+                                           placeholder="Nombre, cargo, correo o entidad">
+                                </div>
+                                <div class="agenda-col-span-12">
+                                    <label for="agendaFiltroEntidad" class="form-label">Entidad</label>
+                                    <select id="agendaFiltroEntidad" name="entidad" class="form-select">
+                                        <option value="">Todas las entidades</option>
+                                    </select>
+                                </div>
+                                <div class="agenda-col-span-6">
+                                    <label for="agendaFiltroEmail" class="form-label">Correo</label>
+                                    <select id="agendaFiltroEmail" name="tiene_email" class="form-select">
+                                        <option value="">Todos</option>
+                                        <option value="con">Con email</option>
+                                        <option value="sin">Sin email</option>
+                                    </select>
+                                </div>
+                                <div class="agenda-col-span-6">
+                                    <label for="agendaFiltroPerPage" class="form-label">Límite</label>
+                                    <select id="agendaFiltroPerPage" name="per_page" class="form-select">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                    </select>
+                                </div>
+                                <div class="agenda-col-span-12">
+                                    <label for="agendaFiltroOrden" class="form-label">Ordenar por</label>
+                                    <select id="agendaFiltroOrden" name="orden" class="form-select">
+                                        <option value="entidad">Entidad</option>
+                                        <option value="nombre">Nombre</option>
+                                        <option value="recientes">Más recientes</option>
+                                    </select>
+                                </div>
+                                <div class="agenda-col-span-12 agenda-actions-bar">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-funnel me-1"></i>Aplicar filtros
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-compact" id="agendaLimpiarFiltrosBtn">
+                                        <i class="bi bi-arrow-counterclockwise me-1"></i>Restablecer
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info btn-compact" id="agendaLimpiarSeleccionBtn">
+                                        <i class="bi bi-eraser me-1"></i>Vaciar
+                                    </button>
+                                </div>
+                            </form>
+
+                            <div class="agenda-selection-card mt-3">
+                                <span class="agenda-status-pill">
+                                    <i class="bi bi-check2-circle"></i>
+                                    Selección persistente
+                                </span>
+                                <div>
+                                    <div id="agendaContactosResumenSeleccion">Seleccionados: <strong>0</strong></div>
+                                    <p>La selección se conserva aunque navegues entre resultados antes de agregarla al formulario principal.</p>
+                                </div>
+                            </div>
+                    </section>
+                    </div>
+
+                    <section class="agenda-modal-panel agenda-resultados-panel">
+                        <div class="agenda-modal-panel-head">
+                            <div>
+                                <h6><i class="bi bi-people-fill me-2"></i>Resultados disponibles</h6>
+                                <p>Revisa contactos de forma legible y usa la casilla superior para seleccionar toda la página actual.</p>
+                            </div>
+                            <button type="button"
+                                    class="agenda-panel-toggle"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#agendaFiltrosCollapse"
+                                    aria-expanded="false"
+                                    aria-controls="agendaFiltrosCollapse">
+                                <span>Mostrar filtros</span>
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                        <div class="agenda-modal-panel-body">
+                            <div class="agenda-table-meta">
+                                <div class="agenda-table-note">La agenda muestra datos clave para decidir sin perder el contexto institucional.</div>
+                                <span class="agenda-status-pill">
+                                    <i class="bi bi-layout-text-window-reverse"></i>
+                                    Selección múltiple activa
+                                </span>
+                            </div>
+
+                            <div class="agenda-table-shell">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 48px;">
+                                                    <input type="checkbox" class="form-check-input" id="agendaSeleccionarTodos">
+                                                </th>
+                                                <th>Contacto</th>
+                                                <th>Cargo</th>
+                                                <th>Correo</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="agendaContactosTablaBody">
+                                            <tr>
+                                                <td colspan="4" class="text-center py-4 text-muted">
+                                                    Usa los filtros para cargar los contactos.
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+                                <div class="small text-muted">Pagina resultados y añade la selección cuando termines la revisión.</div>
+                                <nav aria-label="Paginación de agenda global">
+                                    <ul class="pagination pagination-sm mb-0" id="agendaContactosPagination"></ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="small text-muted">Confirma aquí la selección para insertarla en el flujo de salida o respuesta.</div>
+                <div class="d-flex flex-wrap gap-2 justify-content-end">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" id="agendaAgregarSeleccionBtn">
+                        <i class="bi bi-plus-circle me-1"></i>Agregar a destinatarios
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const modalEl = document.getElementById('modalAgendaContactos');
+    if (!modalEl || !window.bootstrap) {
+        window.abrirAgendaContactosModal = function() {
+            alert('No se pudo cargar el selector de contactos.');
+        };
+        return;
+    }
+
+    const listEndpoint = modalEl.getAttribute('data-list-endpoint');
+    const entidadesEndpoint = modalEl.getAttribute('data-entidades-endpoint');
+    const filtrosForm = modalEl.querySelector('#agendaContactosFiltros');
+    const tablaBody = modalEl.querySelector('#agendaContactosTablaBody');
+    const pagination = modalEl.querySelector('#agendaContactosPagination');
+    const resumenSeleccion = modalEl.querySelector('#agendaContactosResumenSeleccion');
+    const seleccionarTodos = modalEl.querySelector('#agendaSeleccionarTodos');
+    const limpiarFiltrosBtn = modalEl.querySelector('#agendaLimpiarFiltrosBtn');
+    const limpiarSeleccionBtn = modalEl.querySelector('#agendaLimpiarSeleccionBtn');
+    const agregarBtn = modalEl.querySelector('#agendaAgregarSeleccionBtn');
+    const alertBox = modalEl.querySelector('#agendaContactosAlert');
+    const contextText = modalEl.querySelector('#agendaContactosContextText');
+    const filtrosCollapse = modalEl.querySelector('#agendaFiltrosCollapse');
+    const filtrosToggleBtn = modalEl.querySelector('.agenda-panel-toggle');
+    const filtrosInputs = {
+        q: modalEl.querySelector('#agendaFiltroBuscar'),
+        entidad: modalEl.querySelector('#agendaFiltroEntidad'),
+        tiene_email: modalEl.querySelector('#agendaFiltroEmail'),
+        orden: modalEl.querySelector('#agendaFiltroOrden'),
+        per_page: modalEl.querySelector('#agendaFiltroPerPage'),
+    };
+
+    const state = {
+        context: 'salida',
+        filters: { q: '', entidad: '', tiene_email: '', orden: 'entidad', per_page: 10 },
+        page: 1,
+        pages: 1,
+        loading: false,
+        selected: new Map(),
+        entidadesLoaded: false,
+    };
+
+    const modalInstance = new bootstrap.Modal(modalEl);
+
+    function setAlert(message, type='danger') {
+        if (!alertBox) return;
+        if (!message) {
+            alertBox.classList.add('d-none');
+            alertBox.textContent = '';
+            return;
+        }
+        alertBox.className = `alert alert-${type}`;
+        alertBox.textContent = message;
+    }
+
+    function updateContextText() {
+        if (!contextText) return;
+        contextText.textContent = state.context === 'respuesta'
+            ? 'Selecciona contactos para responder la correspondencia.'
+            : 'Selecciona contactos para la correspondencia de salida.';
+    }
+
+    function updateFiltrosToggle(expanded) {
+        if (!filtrosToggleBtn) return;
+        const label = filtrosToggleBtn.querySelector('span');
+        filtrosToggleBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        if (label) {
+            label.textContent = expanded ? 'Ocultar filtros' : 'Mostrar filtros';
+        }
+    }
+
+    function renderRows(contactos) {
+        if (!Array.isArray(contactos) || contactos.length === 0) {
+            tablaBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center py-4 text-muted">
+                        No se encontraron contactos con los filtros aplicados.
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        const rows = contactos.map(contacto => {
+            const checked = state.selected.has(String(contacto.id)) ? 'checked' : '';
+            const correo = contacto.email ? contacto.email : '<span class="text-muted">Sin email</span>';
+            const cargo = contacto.cargo ? contacto.cargo : '<span class="text-muted">-</span>';
+            const entidad = contacto.entidad ? contacto.entidad : 'Entidad no registrada';
+
+            return `
+                <tr>
+                    <td>
+                        <input class="form-check-input agenda-contacto-checkbox" type="checkbox"
+                               data-id="${contacto.id}"
+                               data-nombre="${contacto.nombre.replace(/"/g, '&quot;')}"
+                               data-email="${(contacto.email || '').replace(/"/g, '&quot;')}"
+                               ${checked}>
+                    </td>
+                    <td>
+                        <div class="contacto-principal">
+                            <div class="contacto-nombre">${contacto.nombre}</div>
+                            <small class="contacto-meta">${entidad}</small>
+                        </div>
+                    </td>
+                    <td>${cargo}</td>
+                    <td>${correo}</td>
+                </tr>`;
+        }).join('');
+        tablaBody.innerHTML = rows;
+    }
+
+    function renderPagination() {
+        pagination.innerHTML = '';
+        if (state.pages <= 1) return;
+        const createItem = (page, label, disabled=false, active=false) => {
+            const li = document.createElement('li');
+            li.className = `page-item ${disabled ? 'disabled' : ''} ${active ? 'active' : ''}`;
+            const a = document.createElement('a');
+            a.className = 'page-link';
+            a.href = '#';
+            a.dataset.page = page;
+            a.textContent = label;
+            if (!disabled && !active) {
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    loadContactos(parseInt(page, 10));
+                });
+            }
+            li.appendChild(a);
+            pagination.appendChild(li);
+        };
+        createItem(state.page - 1, '«', state.page === 1);
+        for (let i = 1; i <= state.pages; i++) {
+            if (i === 1 || i === state.pages || Math.abs(i - state.page) <= 1 || state.pages <= 5) {
+                createItem(i, i, false, i === state.page);
+            } else if (Math.abs(i - state.page) === 2) {
+                const ellipsis = document.createElement('li');
+                ellipsis.className = 'page-item disabled';
+                ellipsis.innerHTML = '<span class="page-link">…</span>';
+                pagination.appendChild(ellipsis);
+            }
+        }
+        createItem(state.page + 1, '»', state.page === state.pages);
+    }
+
+    function updateSelectionSummary() {
+        if (!resumenSeleccion) return;
+        resumenSeleccion.innerHTML = `Seleccionados: <strong>${state.selected.size}</strong>`;
+        seleccionarTodos.checked = state.selected.size > 0 &&
+            tablaBody.querySelectorAll('.agenda-contacto-checkbox').length > 0 &&
+            Array.from(tablaBody.querySelectorAll('.agenda-contacto-checkbox')).every(chk => chk.checked);
+    }
+
+    function aplicarSeleccionDesdeTabla() {
+        tablaBody.querySelectorAll('.agenda-contacto-checkbox').forEach(chk => {
+            chk.addEventListener('change', (e) => {
+                const target = e.target;
+                const contacto = {
+                    id: target.dataset.id,
+                    nombre: target.dataset.nombre,
+                    email: target.dataset.email || '',
+                };
+                if (target.checked) {
+                    state.selected.set(String(contacto.id), contacto);
+                } else {
+                    state.selected.delete(String(contacto.id));
+                }
+                updateSelectionSummary();
+            });
+        });
+    }
+
+    function loadContactos(page=1) {
+        if (!listEndpoint) {
+            setAlert('No se encontró el endpoint de contactos.');
+            return;
+        }
+        state.page = page;
+        state.filters.q = filtrosInputs.q.value.trim();
+        state.filters.entidad = filtrosInputs.entidad.value;
+        state.filters.tiene_email = filtrosInputs.tiene_email.value;
+        state.filters.orden = filtrosInputs.orden.value;
+        state.filters.per_page = parseInt(filtrosInputs.per_page.value, 10) || 10;
+
+        const params = new URLSearchParams({
+            page: state.page,
+            per_page: state.filters.per_page,
+            q: state.filters.q,
+            entidad: state.filters.entidad,
+            tiene_email: state.filters.tiene_email,
+            orden: state.filters.orden,
+        });
+
+        setAlert(null);
+        state.loading = true;
+        tablaBody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center py-4 text-muted">
+                    <div class="spinner-border spinner-border-sm me-2"></div>
+                    Cargando contactos...
+                </td>
+            </tr>`;
+
+        fetch(`${listEndpoint}?${params.toString()}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    throw new Error(data.error || 'Error al cargar los contactos.');
+                }
+                renderRows(data.contactos);
+                aplicarSeleccionDesdeTabla();
+                state.pages = data.meta.pages;
+                renderPagination();
+                updateSelectionSummary();
+            })
+            .catch(err => {
+                setAlert(err.message || 'Error al cargar la agenda.');
+                tablaBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-danger">
+                            Ocurrió un error al cargar los contactos.
+                        </td>
+                    </tr>`;
+            })
+            .finally(() => {
+                state.loading = false;
+            });
+    }
+
+    function cargarEntidades() {
+        if (state.entidadesLoaded || !entidadesEndpoint) return;
+        fetch(entidadesEndpoint, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && Array.isArray(data.entidades)) {
+                    const options = data.entidades.map(ent => `<option value="${ent.id}">${ent.nombre}</option>`).join('');
+                    filtrosInputs.entidad.insertAdjacentHTML('beforeend', options);
+                }
+                state.entidadesLoaded = true;
+            })
+            .catch(() => {
+                state.entidadesLoaded = true;
+            });
+    }
+
+    function limpiarFiltros() {
+        filtrosInputs.q.value = '';
+        filtrosInputs.entidad.value = '';
+        filtrosInputs.tiene_email.value = '';
+        filtrosInputs.orden.value = 'entidad';
+        filtrosInputs.per_page.value = '10';
+    }
+
+    function limpiarSeleccion() {
+        state.selected.clear();
+        tablaBody.querySelectorAll('.agenda-contacto-checkbox').forEach(chk => chk.checked = false);
+        seleccionarTodos.checked = false;
+        updateSelectionSummary();
+    }
+
+    seleccionarTodos.addEventListener('change', () => {
+        const checkboxes = tablaBody.querySelectorAll('.agenda-contacto-checkbox');
+        checkboxes.forEach(chk => {
+            if (!chk.disabled) {
+                chk.checked = seleccionarTodos.checked;
+                const contacto = {
+                    id: chk.dataset.id,
+                    nombre: chk.dataset.nombre,
+                    email: chk.dataset.email || '',
+                };
+                if (chk.checked) {
+                    state.selected.set(String(contacto.id), contacto);
+                } else {
+                    state.selected.delete(String(contacto.id));
+                }
+            }
+        });
+        updateSelectionSummary();
+    });
+
+    filtrosForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        loadContactos(1);
+    });
+
+    limpiarFiltrosBtn.addEventListener('click', () => {
+        limpiarFiltros();
+        loadContactos(1);
+    });
+
+    if (filtrosCollapse) {
+        filtrosCollapse.addEventListener('show.bs.collapse', () => updateFiltrosToggle(true));
+        filtrosCollapse.addEventListener('hide.bs.collapse', () => updateFiltrosToggle(false));
+        updateFiltrosToggle(filtrosCollapse.classList.contains('show'));
+    }
+
+    limpiarSeleccionBtn.addEventListener('click', limpiarSeleccion);
+
+    agregarBtn.addEventListener('click', () => {
+        if (state.selected.size === 0) {
+            setAlert('Selecciona al menos un contacto para agregar.', 'warning');
+            return;
+        }
+        const contactos = Array.from(state.selected.values()).map(contacto => ({
+            id: contacto.id,
+            nombre: contacto.nombre,
+            email: contacto.email || '',
+        }));
+
+        console.log('Modal agenda: Agregando contactos', {
+            context: state.context,
+            contactos: contactos
+        });
+
+        if (state.context === 'respuesta') {
+            // Para respuesta: usar window.seleccionarDestinatario() que ya existe
+            if (typeof window.seleccionarDestinatario === 'function') {
+                console.log('Usando window.seleccionarDestinatario para respuesta');
+                contactos.forEach(contacto => {
+                    if (contacto && contacto.id != null) {
+                        const id = parseInt(contacto.id, 10);
+                        if (!isNaN(id)) {
+                            window.seleccionarDestinatario(
+                                id,
+                                contacto.nombre || 'Contacto sin nombre',
+                                contacto.email || '',
+                                'contacto'
+                            );
+                        }
+                    }
+                });
+            } else {
+                console.error('window.seleccionarDestinatario no está disponible');
+                setAlert('Error: No se pudo agregar los contactos. Recarga la página e intenta de nuevo.', 'danger');
+                return;
+            }
+        } else if (state.context === 'salida') {
+            // Para salida: simular exactamente el comportamiento del modal padre
+            const chipsContainer = document.getElementById('salida_chips_dest');
+            const hiddenDest = document.getElementById('salida_hidden_dest_inputs');
+            const contador = document.getElementById('salida_contador_chips');
+            
+            if (!chipsContainer || !hiddenDest || !contador) {
+                console.error('No se encontraron los elementos del DOM para salida');
+                setAlert('Error: No se encontraron los elementos del formulario. Asegúrate de tener el modal de correspondencia salida abierto.', 'danger');
+                return;
+            }
+            
+            // Inicializar el Map global si no existe
+            if (!window.salidaContactosSeleccionados) {
+                window.salidaContactosSeleccionados = new Map();
+            }
+            if (!window.salidaEmailsSeleccionados) {
+                window.salidaEmailsSeleccionados = new Set();
+            }
+            
+            // Agregar cada contacto al Map global (simulando el comportamiento del modal padre)
+            contactos.forEach(contacto => {
+                if (contacto && contacto.id != null) {
+                    const contactoObj = {
+                        id: String(contacto.id),
+                        nombre: contacto.nombre || 'Contacto sin nombre',
+                        email: contacto.email || ''
+                    };
+                    // Agregar al Map global (igual que cuando se hace clic en un contacto)
+                    window.salidaContactosSeleccionados.set(contactoObj.id, contactoObj);
+                }
+            });
+            
+            // Actualizar la UI usando la función global
+            if (typeof window.actualizarChipsYHiddenInputsSalida === 'function') {
+                console.log('Actualizando UI con actualizarChipsYHiddenInputsSalida');
+                window.actualizarChipsYHiddenInputsSalida(chipsContainer, hiddenDest, contador);
+            } else {
+                console.warn('actualizarChipsYHiddenInputsSalida no está disponible, actualizando manualmente');
+                // Fallback: actualizar manualmente
+                chipsContainer.innerHTML = '';
+                hiddenDest.innerHTML = '';
+                
+                window.salidaContactosSeleccionados.forEach((contacto, id) => {
+                    const chip = document.createElement('span');
+                    chip.className = 'badge bg-primary me-1 mb-1';
+                    chip.innerHTML = `${contacto.nombre} <button type="button" class="btn-close btn-close-white ms-1" data-tipo="contacto" data-id="${id}"></button>`;
+                    chipsContainer.appendChild(chip);
+                    
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'destinatarios_contacto';
+                    hidden.value = id;
+                    hiddenDest.appendChild(hidden);
+                });
+                
+                if (window.salidaEmailsSeleccionados) {
+                    window.salidaEmailsSeleccionados.forEach(email => {
+                        const chip = document.createElement('span');
+                        chip.className = 'badge bg-success me-1 mb-1';
+                        chip.innerHTML = `${email} <button type="button" class="btn-close btn-close-white ms-1" data-tipo="email" data-id="${email}"></button>`;
+                        chipsContainer.appendChild(chip);
+                        
+                        const hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'destinatarios_email';
+                        hidden.value = email;
+                        hiddenDest.appendChild(hidden);
+                    });
+                }
+                
+                const total = window.salidaContactosSeleccionados.size + (window.salidaEmailsSeleccionados ? window.salidaEmailsSeleccionados.size : 0);
+                contador.textContent = total;
+            }
+        }
+        
+        limpiarSeleccion();
+        modalInstance.hide();
+    });
+
+    modalEl.addEventListener('hidden.bs.modal', () => {
+        setAlert(null);
+    });
+
+    window.abrirAgendaContactosModal = function(context) {
+        state.context = context === 'respuesta' ? 'respuesta' : 'salida';
+        updateContextText();
+        modalInstance.show();
+        if (!state.entidadesLoaded) {
+            cargarEntidades();
+        }
+        loadContactos(1);
+    };
+})();
+</script>
+

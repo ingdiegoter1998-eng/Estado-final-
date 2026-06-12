@@ -1,0 +1,889 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static humanize %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .agenda-groups-page {
+            --groups-surface: #ffffff;
+            --groups-surface-muted: #f8fafc;
+            --groups-border: #e2e8f0;
+            --groups-muted: #64748b;
+            --groups-title: #0f172a;
+            --groups-primary: var(--bs-primary, #0d6efd);
+            --groups-shadow: 0 18px 42px -28px rgba(15, 23, 42, 0.28);
+            --groups-radius: 22px;
+        }
+
+        .agenda-groups-page .groups-shell {
+            width: 95%;
+            margin: 0 auto 2rem;
+        }
+
+        .agenda-groups-page .groups-hero {
+            background:
+                radial-gradient(circle at top right, rgba(13, 110, 253, 0.14), transparent 34%),
+                linear-gradient(135deg, #ffffff 0%, #f8fbff 50%, #f4f8ff 100%);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 28px;
+            padding: 2rem;
+            box-shadow: var(--groups-shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .agenda-groups-page .hero-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .agenda-groups-page .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.85rem;
+            border-radius: 999px;
+            background: rgba(13, 110, 253, 0.1);
+            color: var(--groups-primary);
+            font-weight: 700;
+            font-size: 0.82rem;
+            margin-bottom: 1rem;
+        }
+
+        .agenda-groups-page .groups-hero h1 {
+            font-size: clamp(2rem, 3vw, 2.6rem);
+            line-height: 1.08;
+            font-weight: 800;
+            color: var(--groups-title);
+            margin-bottom: 0.75rem;
+        }
+
+        .agenda-groups-page .groups-hero p {
+            margin: 0;
+            max-width: 72ch;
+            color: var(--groups-muted);
+            font-size: 1rem;
+        }
+
+        .agenda-groups-page .hero-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
+
+        .agenda-groups-page .hero-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 0.95rem;
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(255, 255, 255, 0.88);
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .agenda-groups-page .stats-card,
+        .agenda-groups-page .filters-card,
+        .agenda-groups-page .group-card,
+        .agenda-groups-page .empty-card {
+            border: 1px solid var(--groups-border);
+            border-radius: var(--groups-radius);
+            background: var(--groups-surface);
+            box-shadow: var(--groups-shadow);
+        }
+
+        .agenda-groups-page .stats-card {
+            height: 100%;
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .agenda-groups-page .stats-card::before {
+            content: '';
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 4px;
+            background: linear-gradient(180deg, rgba(var(--bs-primary-rgb, 13, 110, 253), 0.9), rgba(var(--bs-info-rgb, 13, 202, 240), 0.65));
+        }
+
+        .agenda-groups-page .stats-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--groups-primary);
+            background: rgba(13, 110, 253, 0.1);
+            margin-bottom: 1rem;
+        }
+
+        .agenda-groups-page .stats-value {
+            font-size: 1.85rem;
+            line-height: 1;
+            font-weight: 800;
+            color: var(--groups-title);
+            margin-bottom: 0.3rem;
+        }
+
+        .agenda-groups-page .stats-label {
+            color: var(--groups-muted);
+            font-weight: 600;
+        }
+
+        .agenda-groups-page .filters-card {
+            padding: 1.35rem;
+            margin: 1.5rem 0;
+        }
+
+        .agenda-groups-page .section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .agenda-groups-page .section-head h2,
+        .agenda-groups-page .section-head h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--groups-title);
+        }
+
+        .agenda-groups-page .section-head p {
+            margin: 0.25rem 0 0;
+            color: var(--groups-muted);
+        }
+
+        .agenda-groups-page .filtros-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .agenda-groups-page .toggle-icon {
+            transition: transform .2s ease;
+        }
+
+        .agenda-groups-page .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+
+        .agenda-groups-page .group-card {
+            --group-accent: rgba(13, 110, 253, 0.14);
+            --group-accent-strong: #0d6efd;
+            --group-soft: rgba(13, 110, 253, 0.08);
+            --group-soft-strong: #0b5ed7;
+            height: 100%;
+            overflow: hidden;
+            border-color: color-mix(in srgb, var(--group-accent-strong) 20%, #e2e8f0);
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .agenda-groups-page .group-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 22px 46px -30px rgba(15, 23, 42, 0.35);
+            border-color: color-mix(in srgb, var(--group-accent-strong) 28%, #dbe5f1);
+        }
+
+        .agenda-groups-page .group-card.theme-ocean {
+            --group-accent: rgba(13, 110, 253, 0.16);
+            --group-accent-strong: #0d6efd;
+            --group-soft: rgba(13, 110, 253, 0.08);
+            --group-soft-strong: #0b5ed7;
+        }
+
+        .agenda-groups-page .group-card.theme-emerald {
+            --group-accent: rgba(25, 135, 84, 0.16);
+            --group-accent-strong: #198754;
+            --group-soft: rgba(25, 135, 84, 0.08);
+            --group-soft-strong: #157347;
+        }
+
+        .agenda-groups-page .group-card.theme-violet {
+            --group-accent: rgba(111, 66, 193, 0.16);
+            --group-accent-strong: #6f42c1;
+            --group-soft: rgba(111, 66, 193, 0.08);
+            --group-soft-strong: #5f35ad;
+        }
+
+        .agenda-groups-page .group-card.theme-amber {
+            --group-accent: rgba(255, 193, 7, 0.2);
+            --group-accent-strong: #b58105;
+            --group-soft: rgba(255, 193, 7, 0.1);
+            --group-soft-strong: #8f6a00;
+        }
+
+        .agenda-groups-page .group-card.theme-rose {
+            --group-accent: rgba(220, 53, 69, 0.16);
+            --group-accent-strong: #dc3545;
+            --group-soft: rgba(220, 53, 69, 0.08);
+            --group-soft-strong: #bb2d3b;
+        }
+
+        .agenda-groups-page .group-card.theme-cyan {
+            --group-accent: rgba(13, 202, 240, 0.18);
+            --group-accent-strong: #0dcaf0;
+            --group-soft: rgba(13, 202, 240, 0.08);
+            --group-soft-strong: #0aa2c0;
+        }
+
+        .agenda-groups-page .group-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            width: 100%;
+            padding: 1.2rem 1.35rem;
+            background: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--group-accent) 40%, #ffffff) 100%);
+            border: 0;
+            text-align: left;
+        }
+
+        .agenda-groups-page .group-head:hover {
+            background: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--group-accent) 58%, #ffffff) 100%);
+        }
+
+        .agenda-groups-page .group-title {
+            display: flex;
+            gap: 0.85rem;
+            align-items: flex-start;
+            min-width: 0;
+        }
+
+        .agenda-groups-page .group-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--group-soft);
+            color: var(--group-soft-strong);
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .agenda-groups-page .group-title > div {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .agenda-groups-page .group-name {
+            margin: 0;
+            color: var(--groups-title);
+            font-size: 1.05rem;
+            font-weight: 800;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .agenda-groups-page .group-description {
+            color: var(--groups-muted);
+            font-size: 0.94rem;
+            margin-bottom: 1rem;
+            line-height: 1.55;
+            text-align: justify;
+            text-justify: inter-word;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .agenda-groups-page .group-badge {
+            border-radius: 999px;
+            padding: 0.45rem 0.75rem;
+            font-weight: 700;
+            font-size: 0.8rem;
+            display: inline-flex;
+            margin-top: 0.35rem;
+        }
+
+        .agenda-groups-page .group-badge.is-active {
+            color: #166534;
+            background: rgba(34, 197, 94, 0.15);
+        }
+
+        .agenda-groups-page .group-badge.is-inactive {
+            color: #475569;
+            background: rgba(148, 163, 184, 0.18);
+        }
+
+        .agenda-groups-page .group-chevron {
+            width: 2.4rem;
+            height: 2.4rem;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--group-soft);
+            color: var(--group-soft-strong);
+            transition: transform .2s ease, background-color .2s ease;
+            flex-shrink: 0;
+        }
+
+        .agenda-groups-page .group-head[aria-expanded="true"] .group-chevron {
+            transform: rotate(180deg);
+        }
+
+        .agenda-groups-page .group-body {
+            padding: 0 1.35rem 1.35rem;
+        }
+
+        .agenda-groups-page .group-metrics {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .agenda-groups-page .group-members-block {
+            margin-bottom: 1rem;
+        }
+
+        .agenda-groups-page .group-members-title {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.9rem;
+            color: var(--groups-title);
+            font-size: 0.96rem;
+            font-weight: 800;
+        }
+
+        .agenda-groups-page .group-members-title i {
+            color: var(--group-soft-strong);
+        }
+
+        .agenda-groups-page .metric-box {
+            padding: 0.9rem;
+            border-radius: 16px;
+            background: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--group-soft) 50%, #f8fafc) 100%);
+            border: 1px solid color-mix(in srgb, var(--group-accent-strong) 14%, #e2e8f0);
+        }
+
+        .agenda-groups-page .metric-box span {
+            display: block;
+            color: var(--groups-muted);
+            font-size: 0.82rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .agenda-groups-page .metric-box strong {
+            color: var(--groups-title);
+            font-size: 1rem;
+            line-height: 1.4;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .agenda-groups-page .member-list {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .agenda-groups-page .member-pill {
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            border-radius: 20px;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            padding: 1rem;
+            min-height: 100%;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+        }
+
+        .agenda-groups-page .member-pill i {
+            color: var(--group-soft-strong);
+        }
+
+        .agenda-groups-page .member-pill.is-empty,
+        .agenda-groups-page .member-pill.is-more {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            background: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--group-soft) 45%, #f8fafc) 100%);
+            color: var(--groups-muted);
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .agenda-groups-page .contact-head {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.85rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .agenda-groups-page .contact-head > div {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .agenda-groups-page .contact-avatar {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--group-accent), color-mix(in srgb, var(--group-accent-strong) 18%, #ffffff));
+            color: var(--group-soft-strong);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .agenda-groups-page .contact-name {
+            color: var(--groups-title);
+            font-size: 1rem;
+            font-weight: 800;
+            margin-bottom: 0.2rem;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .agenda-groups-page .contact-role {
+            color: var(--groups-muted);
+            font-size: 0.92rem;
+            line-height: 1.45;
+            text-align: justify;
+            text-justify: inter-word;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .agenda-groups-page .contact-meta {
+            display: grid;
+            gap: 0.65rem;
+        }
+
+        .agenda-groups-page .meta-row {
+            display: flex;
+            gap: 0.7rem;
+            align-items: flex-start;
+            color: #334155;
+            line-height: 1.45;
+        }
+
+        .agenda-groups-page .meta-row span,
+        .agenda-groups-page .meta-row a {
+            flex: 1 1 auto;
+            min-width: 0;
+            text-align: justify;
+            text-justify: inter-word;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .agenda-groups-page .meta-row a:hover {
+            color: var(--group-soft-strong);
+        }
+
+        .agenda-groups-page .group-actions {
+            display: flex;
+            gap: 0.65rem;
+            align-items: center;
+        }
+
+        .agenda-groups-page .group-actions .btn {
+            border-radius: 14px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            min-height: 42px;
+        }
+
+        .agenda-groups-page .group-actions .btn-icon-circle {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            padding: 0;
+            gap: 0;
+            font-size: 1.1rem;
+        }
+
+        .agenda-groups-page .empty-card {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        #sin-resultados-grupos.d-none {
+            display: none !important;
+        }
+
+        @media (max-width: 991.98px) {
+            .agenda-groups-page .hero-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .agenda-groups-page .groups-hero {
+                padding: 1.5rem;
+                border-radius: 24px;
+            }
+
+            .agenda-groups-page .member-list {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .agenda-groups-page .group-metrics {
+                grid-template-columns: 1fr;
+            }
+
+            .agenda-groups-page .section-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .agenda-groups-page .group-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .agenda-groups-page .group-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .agenda-groups-page .member-list {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        @media (min-width: 992px) and (max-width: 1399.98px) {
+            .agenda-groups-page .member-list {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="agenda-groups-page">
+        <div class="groups-shell">
+            <section class="groups-hero">
+                <div class="hero-top">
+                    <div>
+                        <span class="hero-eyebrow"><i class="bi bi-tags"></i> Agenda de grupos</span>
+                        <h1>Categorías de contactos</h1>
+                        <p>Organiza destinatarios frecuentes por categorías, mantén segmentada la agenda y administra grupos reutilizables para comunicaciones más ágiles.</p>
+                    </div>
+                    <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalCrearGrupoAgenda">
+                        <i class="bi bi-plus-lg me-2"></i>Nueva categoría
+                    </button>
+                </div>
+                <div class="hero-chips">
+                    <span class="hero-chip"><i class="bi bi-building"></i> {{ oficina_usuario.nombre }}</span>
+                    <span class="hero-chip"><i class="bi bi-collection"></i> {{ grupos_total|intcomma }} categoría{{ grupos_total|pluralize }}</span>
+                    <span class="hero-chip"><i class="bi bi-people"></i> {{ contactos_total|intcomma }} contacto{{ contactos_total|pluralize }}</span>
+                </div>
+            </section>
+
+            <div class="row g-4 mb-1">
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="stats-card">
+                        <div class="stats-icon"><i class="bi bi-tags-fill"></i></div>
+                        <div class="stats-value">{{ grupos_total|intcomma }}</div>
+                        <div class="stats-label">Categorías registradas</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="stats-card">
+                        <div class="stats-icon"><i class="bi bi-check-circle-fill"></i></div>
+                        <div class="stats-value">{{ grupos_activos_total|intcomma }}</div>
+                        <div class="stats-label">Categorías activas</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="stats-card">
+                        <div class="stats-icon"><i class="bi bi-people-fill"></i></div>
+                        <div class="stats-value">{{ contactos_total|intcomma }}</div>
+                        <div class="stats-label">Contactos agrupados</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="stats-card">
+                        <div class="stats-icon"><i class="bi bi-bar-chart-line-fill"></i></div>
+                        <div class="stats-value">{{ promedio_contactos|intcomma }}</div>
+                        <div class="stats-label">Promedio por categoría</div>
+                    </div>
+                </div>
+            </div>
+
+            <section class="filters-card" id="filtros-panel-grupos">
+                <div class="section-head filtros-toggle">
+                    <div>
+                        <h2><i class="bi bi-funnel-fill me-2"></i>Filtros de visualización</h2>
+                        <p>Encuentra categorías por nombre, estado o cantidad de miembros.</p>
+                    </div>
+                    <i class="bi bi-chevron-down toggle-icon"></i>
+                </div>
+                <div class="filtros-body">
+                    <form method="GET" class="row g-3" id="form-filtros">
+                        <div class="col-12 col-lg-5">
+                            <label for="search_term" class="form-label">Nombre de la categoría</label>
+                            <input type="text" class="form-control" id="search_term" name="search_term" placeholder="Buscar categoría...">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select id="estado" name="estado" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="activo">Activos</option>
+                                <option value="inactivo">Inactivos</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <label for="ordenar" class="form-label">Ordenar por</label>
+                            <select id="ordenar" name="ordenar" class="form-select">
+                                <option value="nombre">Nombre (A-Z)</option>
+                                <option value="nombre_desc">Nombre (Z-A)</option>
+                                <option value="contactos">Más contactos</option>
+                                <option value="contactos_asc">Menos contactos</option>
+                            </select>
+                        </div>
+                        <div class="col-12 d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search me-2"></i>Aplicar filtros
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" id="btn-limpiar">
+                                <i class="bi bi-arrow-counterclockwise me-2"></i>Limpiar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section>
+                {% if grupos %}
+                    <div class="row g-4" id="grupos-grid">
+                        {% for g in grupos %}
+                               <div class="col-12 grupo-card-wrap"
+                                 data-group-card
+                                 data-nombre="{{ g.nombre|lower }}"
+                                 data-estado="{% if g.activo %}activo{% else %}inactivo{% endif %}"
+                                 data-contactos="{{ g.total_contactos }}">
+                                <article class="group-card {% cycle 'theme-ocean' 'theme-emerald' 'theme-violet' 'theme-amber' 'theme-rose' 'theme-cyan' %}">
+                                    <button class="group-head" type="button" data-bs-toggle="collapse" data-bs-target="#groupDetails{{ forloop.counter }}" aria-expanded="false" aria-controls="groupDetails{{ forloop.counter }}">
+                                        <div class="group-title">
+                                            <span class="group-icon"><i class="bi bi-tag-fill"></i></span>
+                                            <div>
+                                                <h4 class="group-name">{{ g.nombre }}</h4>
+                                                <div class="text-muted small mt-1">Haz clic para ver la composición y acciones de esta categoría.</div>
+                                                <span class="group-badge {% if g.activo %}is-active{% else %}is-inactive{% endif %}">
+                                                    {% if g.activo %}Activa{% else %}Inactiva{% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 ms-auto">
+                                            <span class="group-badge">
+                                                {{ g.total_contactos|intcomma }} contacto{{ g.total_contactos|pluralize }}
+                                            </span>
+                                            <span class="group-chevron"><i class="bi bi-chevron-down"></i></span>
+                                        </div>
+                                    </button>
+
+                                    <div id="groupDetails{{ forloop.counter }}" class="collapse">
+                                        <div class="group-body">
+                                            <div class="group-metrics">
+                                                <div class="metric-box">
+                                                    <span>Miembros</span>
+                                                    <strong>{{ g.total_contactos|intcomma }}</strong>
+                                                </div>
+                                                <div class="metric-box">
+                                                    <span>Oficina propietaria</span>
+                                                    <strong>{{ oficina_usuario.nombre|truncatechars:28 }}</strong>
+                                                </div>
+                                            </div>
+
+                                            <div class="group-members-block">
+                                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.9rem;">
+                                                    <div class="group-members-title">
+                                                        <i class="bi bi-people-fill"></i>
+                                                        <span>Contactos de la categoría</span>
+                                                    </div>
+                                                    <div class="group-actions" style="margin-bottom: 0;">
+                                                        <a class="btn btn-outline-info btn-icon-circle" href="{% url 'correspondencia:categoria_detalle' g.id %}" title="Ver detalle">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        <button class="btn btn-outline-primary btn-icon-circle btn-editar-grupo" data-grupo-id="{{ g.id }}" type="button" title="Editar categoría">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                        <a class="btn btn-outline-danger btn-icon-circle" href="{% url 'correspondencia:grupo_agenda_eliminar' g.id %}" title="Eliminar categoría">
+                                                            <i class="bi bi-trash"></i>
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                                <div class="member-list">
+                                                    {% for contacto in g.contactos.all %}
+                                                        <div class="member-pill">
+                                                            <div class="contact-head">
+                                                                <div class="contact-avatar">{{ contacto.nombres|default:'C'|slice:':1' }}{{ contacto.apellidos|default:''|slice:':1' }}</div>
+                                                                <div>
+                                                                    <div class="contact-name">{{ contacto.nombre_completo|default:'Sin nombre registrado' }}</div>
+                                                                    <div class="contact-role">{{ contacto.cargo|default:'Cargo no registrado' }}</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="contact-meta">
+                                                                <div class="meta-row">
+                                                                    <i class="bi bi-buildings"></i>
+                                                                    <span>{{ contacto.entidad_externa.nombre|default:'Sin entidad registrada' }}</span>
+                                                                </div>
+                                                                <div class="meta-row">
+                                                                    <i class="bi bi-envelope"></i>
+                                                                    {% if contacto.correo_electronico %}
+                                                                        <a href="mailto:{{ contacto.correo_electronico }}">{{ contacto.correo_electronico }}</a>
+                                                                    {% else %}
+                                                                        <span class="text-muted">Sin correo registrado</span>
+                                                                    {% endif %}
+                                                                </div>
+                                                                <div class="meta-row">
+                                                                    <i class="bi bi-telephone"></i>
+                                                                    {% if contacto.telefono_contacto %}
+                                                                        <span>{{ contacto.telefono_contacto }}</span>
+                                                                    {% else %}
+                                                                        <span class="text-muted">Sin teléfono registrado</span>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    {% empty %}
+                                                        <div class="member-pill is-empty">
+                                                            <i class="bi bi-person-x"></i>
+                                                            <span>Sin miembros aún</span>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div id="sin-resultados-grupos" class="empty-card d-none mt-4">
+                        <h3 class="mb-2"><i class="bi bi-search me-2"></i>Sin coincidencias</h3>
+                        <p class="text-muted mb-0">No hay categorías que coincidan con los filtros aplicados.</p>
+                    </div>
+                {% else %}
+                    <div class="empty-card">
+                        <h3 class="mb-2"><i class="bi bi-tags me-2"></i>Aún no hay categorías</h3>
+                        <p class="text-muted mb-3">Comienza creando una nueva categoría para organizar los contactos de tu oficina.</p>
+                        <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#modalCrearGrupoAgenda">
+                            <i class="bi bi-plus-lg me-2"></i>Crear primera categoría
+                        </button>
+                    </div>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+
+    {% include 'correspondencia/partials/modals/modal_grupo_agenda.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const panel = document.getElementById('filtros-panel-grupos');
+    const header = panel?.querySelector('.filtros-toggle');
+    const body = panel?.querySelector('.filtros-body');
+    const icon = panel?.querySelector('.toggle-icon');
+    const storageKey = 'filtros_grupos_collapsed';
+
+    if (header && body && icon) {
+        try {
+            const isCollapsed = localStorage.getItem(storageKey) === '1';
+            if (isCollapsed) {
+                body.classList.add('d-none');
+                icon.classList.add('rotated');
+            }
+        } catch (e) {}
+
+        header.addEventListener('click', function(event) {
+            if (event.target.closest('button, a, input, select, label')) return;
+            body.classList.toggle('d-none');
+            icon.classList.toggle('rotated');
+            try { localStorage.setItem(storageKey, body.classList.contains('d-none') ? '1' : '0'); } catch (e) {}
+        });
+    }
+
+    const searchInput = document.getElementById('search_term');
+    const estadoSelect = document.getElementById('estado');
+    const ordenarSelect = document.getElementById('ordenar');
+    const gruposGrid = document.getElementById('grupos-grid');
+    const btnLimpiar = document.getElementById('btn-limpiar');
+    const emptyState = document.getElementById('sin-resultados-grupos');
+
+    function aplicarFiltros() {
+        if (!gruposGrid) return;
+
+        const searchTerm = (searchInput?.value || '').toLowerCase();
+        const estadoValue = estadoSelect?.value || '';
+        const ordenarValue = ordenarSelect?.value || 'nombre';
+        const cards = Array.from(gruposGrid.querySelectorAll('[data-group-card]'));
+
+        cards.forEach(card => {
+            const nombre = card.dataset.nombre || '';
+            const estado = card.dataset.estado || '';
+            let visible = true;
+
+            if (searchTerm && !nombre.includes(searchTerm)) visible = false;
+            if (estadoValue && estado !== estadoValue) visible = false;
+
+            card.style.display = visible ? '' : 'none';
+        });
+
+        const visibles = cards.filter(card => card.style.display !== 'none');
+        visibles.sort((a, b) => {
+            switch (ordenarValue) {
+                case 'nombre':
+                    return (a.dataset.nombre || '').localeCompare(b.dataset.nombre || '');
+                case 'nombre_desc':
+                    return (b.dataset.nombre || '').localeCompare(a.dataset.nombre || '');
+                case 'contactos':
+                    return parseInt(b.dataset.contactos || 0, 10) - parseInt(a.dataset.contactos || 0, 10);
+                case 'contactos_asc':
+                    return parseInt(a.dataset.contactos || 0, 10) - parseInt(b.dataset.contactos || 0, 10);
+                default:
+                    return 0;
+            }
+        });
+
+        visibles.forEach(card => gruposGrid.appendChild(card));
+        if (emptyState) emptyState.classList.toggle('d-none', visibles.length > 0);
+    }
+
+    document.getElementById('form-filtros')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        aplicarFiltros();
+    });
+
+    btnLimpiar?.addEventListener('click', function() {
+        if (searchInput) searchInput.value = '';
+        if (estadoSelect) estadoSelect.value = '';
+        if (ordenarSelect) ordenarSelect.value = 'nombre';
+        aplicarFiltros();
+    });
+
+    searchInput?.addEventListener('input', aplicarFiltros);
+    estadoSelect?.addEventListener('change', aplicarFiltros);
+    ordenarSelect?.addEventListener('change', aplicarFiltros);
+});
+</script>
+{% endblock %}

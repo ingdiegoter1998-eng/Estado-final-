@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correspondencia asignada - {{ numero_radicado }}</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .header {
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .badge-radicado {
+            display: inline-block;
+            background: #0d6efd;
+            color: #fff;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.95em;
+            font-weight: bold;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .info-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .info-table td:first-child {
+            font-weight: bold;
+            color: #555;
+            width: 200px;
+        }
+        .content-box {
+            background: #f8f9fa;
+            border-left: 4px solid #0d6efd;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .footer {
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            margin-top: 25px;
+            font-size: 0.85em;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <strong>Hospital del Sarare E.S.E.</strong> - Sistema de Correspondencia
+            <br>
+            <small>Notificación automática de asignación de correspondencia entrante</small>
+        </div>
+
+        <p>Estimado(a) <strong>{{ nombre_funcionario }}</strong>,</p>
+
+        <p>Se le ha asignado la siguiente correspondencia entrante para su trámite:</p>
+
+        <table class="info-table">
+            <tr>
+                <td>Radicado:</td>
+                <td><span class="badge-radicado">{{ numero_radicado }}</span></td>
+            </tr>
+            <tr>
+                <td>Fecha de radicación:</td>
+                <td>{{ fecha_radicacion }}</td>
+            </tr>
+            <tr>
+                <td>Remitente:</td>
+                <td>{{ remitente }}</td>
+            </tr>
+            {% if direccion_correo_remitente %}
+            <tr>
+                <td>Correo del remitente:</td>
+                <td>{{ direccion_correo_remitente }}</td>
+            </tr>
+            {% endif %}
+            <tr>
+                <td>Oficina destino:</td>
+                <td>{{ oficina_destino }}</td>
+            </tr>
+            {% if medio_recepcion %}
+            <tr>
+                <td>Medio de recepción:</td>
+                <td>{{ medio_recepcion }}</td>
+            </tr>
+            {% endif %}
+            {% if tipo_tramite %}
+            <tr>
+                <td>Tipo de trámite:</td>
+                <td>{{ tipo_tramite }}</td>
+            </tr>
+            {% endif %}
+            {% if fecha_limite %}
+            <tr>
+                <td>Fecha límite de respuesta:</td>
+                <td><strong style="color: #dc3545;">{{ fecha_limite }}</strong></td>
+            </tr>
+            {% endif %}
+        </table>
+
+        <p><strong>Asunto:</strong></p>
+        <div class="content-box">
+            {{ asunto }}
+        </div>
+
+        {% if cuerpo_correo %}
+        <p><strong>Contenido del correo original:</strong></p>
+        <div class="content-box">
+            {{ cuerpo_correo|safe }}
+        </div>
+        {% endif %}
+
+        <p>Radicado por: <strong>{{ usuario_radicador }}</strong></p>
+
+        <div class="footer">
+            <p>
+                <strong>Hospital del Sarare E.S.E.</strong><br>
+                Sistema de Gestión de Correspondencia<br>
+                <em>Este es un mensaje automático, por favor no responda directamente a este correo.</em>
+            </p>
+            <p style="font-size: 0.85em; color: #555; line-height: 1.6;">
+                <strong>AVISO DE CONFIDENCIALIDAD.</strong> Este mensaje y sus archivos adjuntos van dirigidos exclusivamente a su destinatario pudiendo contener información confidencial sometida a secreto profesional. No está permitida su reproducción o distribución sin la autorización expresa del Hospital del Sarare E.S.E. Si usted no es el destinatario final, por favor elimínelo e infórmenos por esta vía.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

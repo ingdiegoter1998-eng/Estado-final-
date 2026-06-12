@@ -1,0 +1,23 @@
+{% load crispy_forms_tags %}
+<div class="modal fade" id="{{ modal_id|default:'modalCrearEntidad' }}" tabindex="-1" aria-labelledby="modalCrearEntidadLabel" aria-hidden="true" data-open="{{ open_entidad_modal|default:False|yesno:'true,false' }}">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form method="post" action="" id="form-crear-entidad" novalidate>
+        {% csrf_token %}
+        <input type="hidden" name="form_prefix" value="entidad">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalCrearEntidadLabel">Crear Nueva Entidad</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          {% crispy form_entidad %}
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-warning">Crear Entidad</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+

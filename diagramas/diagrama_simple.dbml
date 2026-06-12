@@ -1,0 +1,23 @@
+// Diagrama Simple de Prueba
+// Solo 2 tablas con 1 relacion
+
+Table correspondencia_contacto {
+  id integer [primary key]
+  nombres varchar
+  apellidos varchar
+  correo_electronico varchar
+  telefono varchar
+}
+
+Table correspondencia_correspondencia {
+  id integer [primary key]
+  numero_radicado varchar [unique]
+  fecha_radicacion timestamp
+  asunto text
+  remitente integer
+  estado varchar
+}
+
+Ref: correspondencia_correspondencia.remitente > correspondencia_contacto.id
+
+

@@ -1,0 +1,118 @@
+{% load static %}
+{% load widget_tweaks %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmar entrega - Préstamo #{{ prestamo.id }}</title>
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'css/prestamos.css' %}">
+</head>
+<body class="prestamo-body">
+<div class="prestamo-content-wrapper">
+    {% include 'partials/sidebar_nav.html' %}
+    <div class="prestamo-main-content">
+<div class="prestamo-shell">
+    <header class="prestamo-hero prestamo-hero--secondary">
+        <div>
+            <p class="prestamo-eyebrow">Confirmar recepción</p>
+            <h1>¿El documento recibido es el correcto?</h1>
+            <p class="prestamo-hero-text">
+                Confirma para activar el préstamo o rechaza indicando el motivo para que el área responsable pueda corregirlo.
+            </p>
+        </div>
+        <div class="prestamo-hero-actions">
+            <span class="prestamo-chip">{{ prestamo.descripcion_documento|truncatechars:60 }}</span>
+            <span class="prestamo-chip {% if prestamo.tipo_prestamo == 'VIRTUAL' %}prestamo-chip--virtual{% else %}prestamo-chip--fisico{% endif %}">
+                {% if prestamo.tipo_prestamo == 'VIRTUAL' %}Digital{% else %}{{ prestamo.get_tipo_prestamo_display }}{% endif %}
+            </span>
+        </div>
+    </header>
+
+    <section class="prestamo-card prestamo-card--main">
+        <div class="prestamo-card-header prestamo-card-header--subtle">
+            <strong>Detalle rápido</strong>
+        </div>
+        <div class="prestamo-info-grid">
+            <div>
+                <span class="prestamo-mini-label">Serie / Subserie</span>
+                <strong>{{ prestamo.serie.nombre|default:"No definida" }}</strong>
+                <small>{{ prestamo.subserie.nombre|default:"-" }}</small>
+            </div>
+            <div>
+                <span class="prestamo-mini-label">Fecha de entrega</span>
+                <strong>{{ prestamo.fecha_entrega|date:"d/m/Y H:i" }}</strong>
+            </div>
+        </div>
+
+        <form method="post" class="prestamo-form-grid prestamo-mt-2">
+            {% csrf_token %}
+            <div class="prestamo-form-group">
+                <label>Selecciona una opción</label>
+                {% with seleccion=form.accion.value|default:'confirmar' %}
+                <div class="prestamo-radio-group" id="accionRadios">
+                    <label class="prestamo-radio-card">
+                        <input type="radio" name="accion" value="confirmar" {% if seleccion == 'confirmar' %}checked{% endif %}>
+                        <div>
+                            <strong><i class="bi bi-check-circle"></i> Sí, es el documento correcto</strong>
+                            <p>Activamos el préstamo y podrás usarlo hasta la fecha pactada.</p>
+                        </div>
+                    </label>
+                    <label class="prestamo-radio-card prestamo-radio-card--danger">
+                        <input type="radio" name="accion" value="rechazar" {% if seleccion == 'rechazar' %}checked{% endif %}>
+                        <div>
+                            <strong><i class="bi bi-x-circle"></i> No corresponde / falta información</strong>
+                            <p>Cuéntanos qué falta para que podamos corregirlo.</p>
+                        </div>
+                    </label>
+                </div>
+                {% endwith %}
+                {% if form.accion.errors %}
+                    <div class="prestamo-alert prestamo-alert-danger">{{ form.accion.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="prestamo-form-group prestamo-hidden" id="motivoWrapper">
+                <label for="{{ form.motivo_rechazo_usuario.id_for_label }}">Motivo del rechazo</label>
+                {{ form.motivo_rechazo_usuario|add_class:"prestamo-form-control" }}
+                <small class="prestamo-form-help">Sé lo más específico posible para acelerar la corrección.</small>
+                {% if form.motivo_rechazo_usuario.errors %}
+                    <div class="prestamo-alert prestamo-alert-danger">{{ form.motivo_rechazo_usuario.errors }}</div>
+                {% endif %}
+            </div>
+
+            <div class="prestamo-action-bar">
+                <button type="submit" class="prestamo-btn prestamo-btn-primary">
+                    <i class="bi bi-send-check"></i> Enviar respuesta
+                </button>
+                <a href="{% url 'mis_prestamos' %}" class="prestamo-btn prestamo-btn-secondary">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </section>
+        </div>
+    </div>
+</div>
+
+<script src="/static/correspondencia/vendor/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const radios = document.querySelectorAll('#accionRadios input[type="radio"]');
+    const motivoWrapper = document.getElementById('motivoWrapper');
+
+    function toggleMotivo() {
+        const selected = document.querySelector('#accionRadios input[type="radio"]:checked');
+        if (!selected) return;
+        motivoWrapper.classList.toggle('prestamo-hidden', selected.value !== 'rechazar');
+    }
+
+    radios.forEach(radio => radio.addEventListener('change', toggleMotivo));
+    toggleMotivo();
+});
+</script>
+</body>
+</html>
+

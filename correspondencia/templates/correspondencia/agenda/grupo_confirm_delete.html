@@ -1,0 +1,23 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-lg-8">
+    <div class="card shadow">
+      <div class="card-body">
+        <p>¿Confirma que desea eliminar el grupo <strong>{{ grupo.nombre }}</strong>?</p>
+        <form method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Eliminar</button>
+          <a class="btn btn-secondary" href="{% url 'correspondencia:grupos_agenda_index' %}">Cancelar</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

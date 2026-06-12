@@ -1,0 +1,183 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Préstamos Documentales</title>
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'css/prestamos.css' %}">
+</head>
+<body class="prestamo-body">
+<div class="prestamo-content-wrapper">
+    {% include 'partials/sidebar_nav.html' %}
+    <div class="prestamo-main-content">
+        <div class="prestamo-shell">
+    <header class="prestamo-hero prestamo-hero--secondary">
+        <div>
+            <p class="prestamo-eyebrow">Seguimiento</p>
+            <h1>Mis solicitudes de préstamo</h1>
+            <p class="prestamo-hero-text">
+                Visualiza el avance de cada solicitud, descarga documentos digitales y solicita
+                la devolución cuando ya no necesites el documento.
+            </p>
+        </div>
+        <div class="prestamo-hero-actions">
+            <a href="{% url 'solicitar_prestamo' %}" class="prestamo-btn prestamo-btn-success">
+                <i class="bi bi-plus-circle"></i> Nueva solicitud
+            </a>
+        </div>
+    </header>
+
+    <section class="prestamo-stat-grid">
+        <article class="prestamo-stat-card">
+            <span class="prestamo-stat-label">Solicitudes totales</span>
+            <span class="prestamo-stat-value">{{ stats_totales.total }}</span>
+        </article>
+        <article class="prestamo-stat-card">
+            <span class="prestamo-stat-label">Préstamos activos</span>
+            <span class="prestamo-stat-value">{{ stats_totales.activos }}</span>
+        </article>
+        <article class="prestamo-stat-card">
+            <span class="prestamo-stat-label">Préstamos físicos</span>
+            <span class="prestamo-stat-value">{{ stats_totales.fisicos }}</span>
+        </article>
+        <article class="prestamo-stat-card">
+            <span class="prestamo-stat-label">Préstamos digitales</span>
+            <span class="prestamo-stat-value">{{ stats_totales.virtuales }}</span>
+        </article>
+    </section>
+
+    <section class="prestamo-filters-modern">
+        <form method="get" class="prestamo-filter-grid">
+            <div class="prestamo-form-group">
+                <label for="estado">Estado</label>
+                <select name="estado" id="estado" class="prestamo-form-control">
+                    <option value="">Todos</option>
+                    {% for estado in estado_board %}
+                        <option value="{{ estado.codigo }}" {% if filtros.estado == estado.codigo %}selected{% endif %}>{{ estado.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="prestamo-form-group">
+                <label for="tipo">Tipo</label>
+                <select name="tipo" id="tipo" class="prestamo-form-control">
+                    <option value="">Todos</option>
+                    <option value="FISICO" {% if filtros.tipo == 'FISICO' %}selected{% endif %}>Físico</option>
+                    <option value="VIRTUAL" {% if filtros.tipo == 'VIRTUAL' %}selected{% endif %}>Digital</option>
+                </select>
+            </div>
+            <div class="prestamo-form-group prestamo-form-group--wide">
+                <label for="q">Buscar</label>
+                <div class="prestamo-input-icon">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="prestamo-form-control" name="q" id="q" value="{{ filtros.q }}" placeholder="Serie, código TRD, palabras clave...">
+                </div>
+            </div>
+            <div class="prestamo-filter-actions">
+                <button class="prestamo-btn prestamo-btn-primary" type="submit">
+                    <i class="bi bi-funnel"></i> Aplicar filtros
+                </button>
+                <a href="{% url 'mis_prestamos' %}" class="prestamo-btn prestamo-btn-secondary">Limpiar</a>
+            </div>
+        </form>
+    </section>
+
+    {% if prestamos %}
+    <section class="prestamo-ticket-grid">
+        {% for prestamo in prestamos %}
+        <article class="prestamo-ticket">
+            <div class="prestamo-ticket__main">
+                <div class="prestamo-ticket__left">
+                    <div class="prestamo-ticket__title-row">
+                        <span class="prestamo-chip prestamo-chip--id">#{{ prestamo.id }}</span>
+                        <h3>{{ prestamo.descripcion_documento|default:"Documento sin descripción" }}</h3>
+                    </div>
+                    <div class="prestamo-ticket__info-row">
+                        <span class="prestamo-ticket__meta">
+                            <i class="bi bi-diagram-3"></i> {{ prestamo.serie.nombre|default:"Serie sin definir" }}{% if prestamo.subserie %} · {{ prestamo.subserie.nombre }}{% endif %}
+                        </span>
+                    </div>
+                    <div class="prestamo-ticket__dates-compact">
+                        <span><i class="bi bi-calendar-plus"></i> {{ prestamo.fecha_solicitud|date:"d/m/Y H:i" }}</span>
+                        {% if prestamo.oficina_responsable %}
+                            <span class="prestamo-ticket__separator">·</span>
+                            <span><i class="bi bi-building"></i> {{ prestamo.oficina_responsable.nombre }}</span>
+                        {% endif %}
+                        {% if prestamo.tipo_prestamo == 'FISICO' and prestamo.fecha_vencimiento %}
+                            <span class="prestamo-ticket__separator">·</span>
+                            <span class="{% if prestamo.estado == 'VENCIDO' %}prestamo-ticket__vencido{% endif %}">
+                                <i class="bi bi-flag"></i> Vence {{ prestamo.fecha_vencimiento|date:"d/m/Y" }}
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="prestamo-ticket__right">
+                    <div class="prestamo-ticket__badges-compact">
+                        <span class="prestamo-chip {% if prestamo.tipo_prestamo == 'VIRTUAL' %}prestamo-chip--virtual{% else %}prestamo-chip--fisico{% endif %}">
+                            <i class="bi {% if prestamo.tipo_prestamo == 'VIRTUAL' %}bi-pc-display{% else %}bi-archive{% endif %}"></i>
+                            {% if prestamo.tipo_prestamo == 'VIRTUAL' %}Digital{% else %}{{ prestamo.get_tipo_prestamo_display }}{% endif %}
+                        </span>
+                        <span class="prestamo-chip prestamo-chip--status prestamo-chip--status-{{ prestamo.estado|lower }}">
+                            {{ prestamo.get_estado_display }}
+                        </span>
+                    </div>
+                    <div class="prestamo-ticket__actions-compact">
+                        <a href="{% url 'detalle_prestamo' prestamo.id %}" class="prestamo-btn prestamo-btn-sm prestamo-btn-outline">
+                            <i class="bi bi-eye"></i> Detalle
+                        </a>
+                        {% if prestamo.estado == 'ENTREGADO' %}
+                            <a href="{% url 'confirmar_recepcion' prestamo.id %}" class="prestamo-btn prestamo-btn-sm prestamo-btn-success">
+                                <i class="bi bi-check2-circle"></i> Confirmar
+                            </a>
+                        {% endif %}
+                        {% if prestamo.estado == 'PRESTAMO_ACTIVO' and prestamo.tipo_prestamo == 'FISICO' %}
+                            <form method="post" action="{% url 'solicitar_devolucion' prestamo.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="prestamo-btn prestamo-btn-sm prestamo-btn-warning">
+                                    <i class="bi bi-box-arrow-up"></i> Solicitar Devolución
+                                </button>
+                            </form>
+                        {% endif %}
+                        {% if prestamo.estado == 'DEVOLUCION_SOLICITADA' %}
+                            <span class="prestamo-btn prestamo-btn-sm prestamo-btn-secondary prestamo-btn-disabled">
+                                <i class="bi bi-hourglass-split"></i> Archivo fue notificado
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </section>
+
+    {% if prestamos.has_other_pages %}
+    <div class="prestamo-pagination">
+        {% if prestamos.has_previous %}
+            <a href="?page={{ prestamos.previous_page_number }}&estado={{ filtros.estado }}&tipo={{ filtros.tipo }}&q={{ filtros.q }}">Anterior</a>
+        {% endif %}
+        <span class="prestamo-active">Página {{ prestamos.number }} de {{ prestamos.paginator.num_pages }}</span>
+        {% if prestamos.has_next %}
+            <a href="?page={{ prestamos.next_page_number }}&estado={{ filtros.estado }}&tipo={{ filtros.tipo }}&q={{ filtros.q }}">Siguiente</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="prestamo-empty">
+        <div class="prestamo-empty-icon"><i class="bi bi-inbox"></i></div>
+        <div class="prestamo-empty-text">
+            Aún no has registrado solicitudes. El área responsable está lista para apoyarte.
+        </div>
+        <a href="{% url 'solicitar_prestamo' %}" class="prestamo-btn prestamo-btn-primary prestamo-mt-2">
+            <i class="bi bi-plus-circle"></i> Crear mi primera solicitud
+        </a>
+    </div>
+    {% endif %}
+        </div>
+    </div>
+</div>
+
+<script src="/static/correspondencia/vendor/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

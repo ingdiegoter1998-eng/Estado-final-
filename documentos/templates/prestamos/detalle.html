@@ -1,0 +1,482 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle del Préstamo #{{ prestamo.id }}</title>
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'css/prestamos.css' %}">
+</head>
+<body class="prestamo-body">
+<div class="prestamo-content-wrapper">
+    {% include 'partials/sidebar_nav.html' %}
+    <div class="prestamo-main-content">
+        <div class="prestamo-shell">
+    <header class="prestamo-hero">
+        <div>
+            <p class="prestamo-eyebrow">Préstamo #{{ prestamo.id }}</p>
+            <h1>{{ prestamo.descripcion_documento|default:"Documento sin descripción" }}</h1>
+            <p class="prestamo-hero-text">
+                Serie: {{ prestamo.serie.nombre|default:"No especificada" }} {% if prestamo.subserie %}· {{ prestamo.subserie.nombre }}{% endif %}
+            </p>
+        </div>
+        <div class="prestamo-hero-actions">
+            <span class="prestamo-chip {% if prestamo.tipo_prestamo == 'VIRTUAL' %}prestamo-chip--virtual{% else %}prestamo-chip--fisico{% endif %}">
+                <i class="bi {% if prestamo.tipo_prestamo == 'VIRTUAL' %}bi-pc-display{% else %}bi-archive{% endif %}"></i>
+                {% if prestamo.tipo_prestamo == 'VIRTUAL' %}Digital{% else %}{{ prestamo.get_tipo_prestamo_display }}{% endif %}
+            </span>
+            <span class="prestamo-chip prestamo-chip--status prestamo-chip--status-{{ prestamo.estado|lower }}">
+                {{ prestamo.get_estado_display }}
+            </span>
+        </div>
+    </header>
+
+    {% if estado_especial %}
+    <div class="prestamo-alert prestamo-alert-warning">
+        <i class="bi bi-exclamation-triangle"></i>
+        Este préstamo está marcado como {{ prestamo.get_estado_display }}. Revisa el historial para conocer el motivo.
+    </div>
+    {% endif %}
+
+    <section class="prestamo-stepper prestamo-stepper--timeline">
+        {% for paso in flujo_estados %}
+        <div class="prestamo-step {% if paso.completado %}prestamo-step--done{% elif paso.activo %}prestamo-step--active{% endif %}">
+            <span class="prestamo-step__icon"><i class="bi {{ paso.icono }}"></i></span>
+            <div>{{ paso.titulo }}</div>
+        </div>
+        {% endfor %}
+    </section>
+
+    <div class="prestamo-layout prestamo-layout--split">
+        <div class="prestamo-main-cards">
+
+            <!-- ─── CARD 1: Información General ─── -->
+            <div class="info-card">
+                <div class="info-card__header">
+                    <div class="info-card__header-left">
+                        <div class="info-card__icon">
+                            <i class="bi bi-info-circle-fill"></i>
+                        </div>
+                        Información General
+                    </div>
+                </div>
+                <div class="info-card__body">
+                    <div class="info-grid">
+                        <div class="info-grid__item">
+                            <div class="info-grid__label">Solicitante</div>
+                            <div class="info-grid__value">{{ prestamo.solicitante.get_full_name|default:prestamo.solicitante.username }}</div>
+                            <div class="info-grid__sub">{{ prestamo.oficina_solicitante.nombre|default:"Oficina no registrada" }}</div>
+                            {% if prestamo.subproceso_solicitante %}
+                            <div class="info-grid__sub">Subproceso: {{ prestamo.subproceso_solicitante }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="info-grid__item">
+                            <div class="info-grid__label">Fechas del proceso</div>
+                            <div class="info-grid__value">Solicitado: {{ prestamo.fecha_solicitud|date:"d/m/Y H:i" }}</div>
+                            {% if prestamo.fecha_aprobacion %}
+                            <div class="info-grid__sub">Aprobado: {{ prestamo.fecha_aprobacion|date:"d/m/Y H:i" }}</div>
+                            {% endif %}
+                            {% if prestamo.fecha_entrega %}
+                            <div class="info-grid__sub">Entregado: {{ prestamo.fecha_entrega|date:"d/m/Y H:i" }}</div>
+                            {% endif %}
+                            {% if prestamo.fecha_vencimiento %}
+                            <div class="info-grid__sub">Vence: {{ prestamo.fecha_vencimiento|date:"d/m/Y" }}</div>
+                            {% endif %}
+                            {% if prestamo.fecha_devolucion %}
+                            <div class="info-grid__sub"><strong>Devuelto: {{ prestamo.fecha_devolucion|date:"d/m/Y H:i" }}</strong></div>
+                            {% endif %}
+                            {% if prestamo.fecha_reintegracion %}
+                            <div class="info-grid__sub" style="color:var(--p-success)"><strong>Reintegrado: {{ prestamo.fecha_reintegracion|date:"d/m/Y H:i" }}</strong></div>
+                            {% endif %}
+                        </div>
+                        <div class="info-grid__item">
+                            <div class="info-grid__label">Serie documental</div>
+                            <div class="info-grid__value">{{ prestamo.serie.nombre|default:"No especificada" }}</div>
+                            <div class="info-grid__sub">{{ prestamo.subserie.nombre|default:"Subserie no especificada" }}</div>
+                        </div>
+                        <div class="info-grid__item">
+                            <div class="info-grid__label">Oficina responsable</div>
+                            <div class="info-grid__value">{{ area_responsable_label }}</div>
+                            {% if prestamo.oficina_responsable %}
+                            <div class="info-grid__sub">{{ prestamo.oficina_responsable.nombre }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="info-grid__item">
+                            <div class="info-grid__label">Detalle solicitado</div>
+                            <div class="info-grid__value info-grid__value--light">{{ prestamo.descripcion_documento|default:"Sin detalle registrado" }}</div>
+                        </div>
+                        <div class="info-grid__item">
+                            <div class="info-grid__label">Nota del solicitante</div>
+                            <div class="info-grid__value info-grid__value--light">{{ prestamo.notas|default:"Sin notas registradas" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if estado_especial %}
+            <div class="prestamo-alert prestamo-alert-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                Este préstamo está marcado como {{ prestamo.get_estado_display }}. Revisa el historial para conocer el motivo.
+            </div>
+            {% endif %}
+
+            {% if prestamo.estado == 'DEVOLUCION_SOLICITADA' %}
+            <div class="prestamo-alert prestamo-alert-info">
+                <i class="bi bi-bell"></i>
+                La devolución ya fue solicitada. {{ area_responsable_label }} debe recibir el documento y registrar su devolución física.
+            </div>
+            {% endif %}
+
+            <!-- ─── BARRA DE ACCIONES ─── -->
+            <div class="actions-bar">
+                <span class="actions-bar__label"><i class="bi bi-lightning-fill"></i> Acciones disponibles</span>
+                <div class="actions-bar__btns">
+                    {% if puede_confirmar %}
+                    <a href="{% url 'confirmar_recepcion' prestamo.id %}" class="prestamo-btn prestamo-btn-success">
+                        <i class="bi bi-check2-circle"></i> Aceptar / rechazar entrega
+                    </a>
+                    {% endif %}
+                    {% if puede_solicitar_devolucion %}
+                    <form method="post" action="{% url 'solicitar_devolucion' prestamo.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="prestamo-btn prestamo-btn-warning">
+                            <i class="bi bi-box-arrow-up"></i> Solicitar Devolución y Entrega a {{ area_responsable_label }}
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% if prestamo.estado == 'DEVOLUCION_SOLICITADA' and prestamo.solicitante_id == request.user.id %}
+                    <span class="prestamo-btn prestamo-btn-secondary prestamo-btn-disabled">
+                        <i class="bi bi-hourglass-split"></i> En espera de recepción por Archivo
+                    </span>
+                    {% endif %}
+                    {% if puede_gestionar %}
+                    <a href="{% url 'procesar_prestamo' prestamo.id %}" class="prestamo-btn prestamo-btn-primary">
+                        <i class="bi bi-gear"></i> Gestionar desde {{ area_responsable_label }}
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'mis_prestamos' %}" class="prestamo-btn prestamo-btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Regresar
+                    </a>
+                </div>
+            </div>
+
+            <!-- ─── CARD 2: Soportes Disponibles ─── -->
+            <div class="info-card">
+                <div class="info-card__header">
+                    <div class="info-card__header-left">
+                        <div class="info-card__icon">
+                            <i class="bi bi-paperclip"></i>
+                        </div>
+                        Soportes Disponibles
+                    </div>
+                </div>
+                <div class="info-card__body">
+                    {% if prestamo.documento_virtual %}
+                    <a href="{{ prestamo.documento_virtual.url }}" target="_blank" class="file-item">
+                        <div class="file-item__icon file-item__icon--pdf"><i class="bi bi-file-earmark-pdf-fill"></i></div>
+                        <div class="file-item__info">
+                            <div class="file-item__name">Documento digital</div>
+                            <div class="file-item__meta">PDF</div>
+                        </div>
+                        <div class="file-item__actions">
+                            <span class="file-item__action-btn"><i class="bi bi-download"></i></span>
+                        </div>
+                    </a>
+                    {% endif %}
+                    {% if prestamo.documento_escaneado %}
+                    <a href="{{ prestamo.documento_escaneado.url }}" target="_blank" class="file-item">
+                        <div class="file-item__icon file-item__icon--img"><i class="bi bi-image"></i></div>
+                        <div class="file-item__info">
+                            <div class="file-item__name">Evidencia escaneada (Antiguo)</div>
+                            <div class="file-item__meta">Imagen</div>
+                        </div>
+                        <div class="file-item__actions">
+                            <span class="file-item__action-btn"><i class="bi bi-eye"></i></span>
+                        </div>
+                    </a>
+                    {% endif %}
+                    {% for doc in prestamo.documentos_escaneados.all %}
+                    <a href="{{ doc.archivo.url }}" target="_blank" class="file-item">
+                        <div class="file-item__icon file-item__icon--pdf"><i class="bi bi-file-earmark-fill"></i></div>
+                        <div class="file-item__info">
+                            <div class="file-item__name">{{ doc.nombre_archivo_original|default:"Evidencia escaneada" }}</div>
+                            <div class="file-item__meta">Soporte adjunto</div>
+                        </div>
+                        <div class="file-item__actions">
+                            <span class="file-item__action-btn"><i class="bi bi-download"></i></span>
+                            <span class="file-item__action-btn"><i class="bi bi-eye"></i></span>
+                        </div>
+                    </a>
+                    {% empty %}
+                    {% if not prestamo.documento_virtual and not prestamo.documento_escaneado %}
+                    <div class="info-empty">
+                        <i class="bi bi-paperclip" style="font-size:1.6rem;opacity:0.3;"></i>
+                        <span>Sin soportes cargados</span>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if prestamo.motivo_rechazo or prestamo.motivo_rechazo_usuario %}
+            <div class="prestamo-alert prestamo-alert-danger">
+                {% if prestamo.motivo_rechazo %}
+                <p><strong>Rechazado por {{ area_responsable_label }}:</strong> {{ prestamo.motivo_rechazo }}</p>
+                {% if prestamo.documento_rechazo %}
+                <p class="mt-2">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    <strong>Documento adjunto:</strong>
+                    <a href="{{ prestamo.documento_rechazo.url }}" target="_blank" class="text-decoration-none">{{ prestamo.documento_rechazo.name }}</a>
+                </p>
+                {% endif %}
+                {% endif %}
+                {% if prestamo.motivo_rechazo_usuario %}
+                <p><strong>Observación del solicitante:</strong> {{ prestamo.motivo_rechazo_usuario }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- ─── CARD 3: Responsables del proceso ─── -->
+            {% if prestamo.aprobado_por or prestamo.procesado_por or prestamo.vobo_jefe_nombre %}
+            <div class="info-card">
+                <div class="info-card__header">
+                    <div class="info-card__header-left">
+                        <div class="info-card__icon">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        Responsables del proceso
+                    </div>
+                </div>
+                <div class="info-card__body">
+                    <div class="responsables-row">
+                        {% if prestamo.aprobado_por %}
+                        <div class="responsable-item">
+                            <div class="responsable-item__label">Aprobado por</div>
+                            <div class="responsable-item__avatar">{{ prestamo.aprobado_por.get_full_name|default:prestamo.aprobado_por.username|slice:":2"|upper }}</div>
+                            <div class="responsable-item__name">{{ prestamo.aprobado_por.get_full_name|default:prestamo.aprobado_por.username }}</div>
+                        </div>
+                        {% endif %}
+                        {% if prestamo.procesado_por %}
+                        <div class="responsable-item">
+                            <div class="responsable-item__label">Procesado por</div>
+                            <div class="responsable-item__avatar">{{ prestamo.procesado_por.get_full_name|default:prestamo.procesado_por.username|slice:":2"|upper }}</div>
+                            <div class="responsable-item__name">{{ prestamo.procesado_por.get_full_name|default:prestamo.procesado_por.username }}</div>
+                        </div>
+                        {% endif %}
+                        {% if prestamo.vobo_jefe_nombre %}
+                        <div class="responsable-item">
+                            <div class="responsable-item__label">Vo.Bo. Jefe</div>
+                            <div class="responsable-item__avatar">{{ prestamo.vobo_jefe_nombre|slice:":2"|upper }}</div>
+                            <div class="responsable-item__name">{{ prestamo.vobo_jefe_nombre }}</div>
+                            {% if prestamo.vobo_jefe_cargo %}<div class="responsable-item__sub">{{ prestamo.vobo_jefe_cargo }}</div>{% endif %}
+                            {% if prestamo.vobo_jefe_fecha %}<div class="responsable-item__sub">{{ prestamo.vobo_jefe_fecha|date:"d/m/Y" }}</div>{% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if prestamo.confirmado_por_usuario %}
+            <div class="prestamo-alert prestamo-alert-success">
+                <p>
+                    <i class="bi bi-check-circle"></i>
+                    <strong>Confirmado por el usuario</strong>
+                    {% if prestamo.fecha_confirmacion %}el {{ prestamo.fecha_confirmacion|date:"d/m/Y H:i" }}{% endif %}
+                </p>
+            </div>
+            {% endif %}
+
+            {% if prestamo.tipo_prestamo == 'FISICO' and prestamo.estado == 'DEVUELTO' %}
+            <div class="info-card">
+                <div class="info-card__header">
+                    <div class="info-card__header-left">
+                        <div class="info-card__icon">
+                            <i class="bi bi-archive"></i>
+                        </div>
+                        Estado de devolución física
+                    </div>
+                </div>
+                <div class="info-card__body">
+                    <div class="info-grid">
+                        <div class="info-grid__item">
+                            <div class="info-grid__label">Documento devuelto</div>
+                            {% if prestamo.documento_devuelto %}
+                            <div class="info-grid__value" style="color:var(--p-success)"><i class="bi bi-check-circle"></i> Sí</div>
+                            {% else %}
+                            <div class="info-grid__value" style="color:var(--p-muted)"><i class="bi bi-x-circle"></i> No</div>
+                            {% endif %}
+                        </div>
+                        <div class="info-grid__item">
+                            <div class="info-grid__label">Estado del documento</div>
+                            {% if prestamo.documento_danado %}
+                            <div class="info-grid__value" style="color:var(--p-danger)"><i class="bi bi-exclamation-triangle"></i> Presenta daños o faltantes</div>
+                            {% else %}
+                            <div class="info-grid__value" style="color:var(--p-success)"><i class="bi bi-check-circle"></i> En buen estado</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% if prestamo.observaciones_dano %}
+                    <div class="prestamo-mt-2">
+                        <div class="info-grid__label">Observaciones sobre daños o faltantes</div>
+                        <p style="margin-top:6px;color:var(--p-text-secondary)">{{ prestamo.observaciones_dano }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if prestamo.notas %}
+            <div class="info-card">
+                <div class="info-card__header">
+                    <div class="info-card__header-left">
+                        <div class="info-card__icon">
+                            <i class="bi bi-chat-text"></i>
+                        </div>
+                        Notas adicionales
+                    </div>
+                </div>
+                <div class="info-card__body">
+                    <p style="color:var(--p-text-secondary);margin:0">{{ prestamo.notas }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ─── CARD 4: Resumen de estado ─── -->
+            {% if dias_transcurridos is not None or dias_restantes is not None %}
+            <div class="info-card">
+                <div class="info-card__header">
+                    <div class="info-card__header-left">
+                        <div class="info-card__icon">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        Resumen de estado
+                    </div>
+                </div>
+                <div class="info-card__body">
+                    <div class="info-grid">
+                        {% if dias_transcurridos is not None %}
+                        <div class="info-grid__item">
+                            <div class="info-grid__label">Días transcurridos</div>
+                            <div class="info-grid__value">{{ dias_transcurridos }} día{{ dias_transcurridos|pluralize }}</div>
+                            <div class="info-grid__sub">desde la solicitud</div>
+                        </div>
+                        {% endif %}
+                        {% if prestamo.tipo_prestamo == 'FISICO' and dias_restantes is not None %}
+                        <div class="info-grid__item">
+                            <div class="info-grid__label">Días restantes</div>
+                            {% if dias_restantes > 0 %}
+                            <div class="info-grid__value" style="color:var(--p-success)">{{ dias_restantes }} día{{ dias_restantes|pluralize }}</div>
+                            <div class="info-grid__sub">hasta el vencimiento</div>
+                            {% elif dias_restantes == 0 %}
+                            <div class="info-grid__value" style="color:var(--p-warning)">Vence hoy</div>
+                            {% else %}
+                            <div class="info-grid__value" style="color:var(--p-danger)">Vencido</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        {% if duracion_prestamo is not None %}
+                        <div class="info-grid__item">
+                            <div class="info-grid__label">Duración del préstamo</div>
+                            <div class="info-grid__value">{{ duracion_prestamo }} día{{ duracion_prestamo|pluralize }}</div>
+                            <div class="info-grid__sub">desde entrega hasta devolución</div>
+                        </div>
+                        {% endif %}
+                        {% if tiempo_reintegracion is not None %}
+                        <div class="info-grid__item">
+                            <div class="info-grid__label">Tiempo de reintegración</div>
+                            {% if tiempo_reintegracion > 0 %}
+                            <div class="info-grid__value">{{ tiempo_reintegracion }} día{{ tiempo_reintegracion|pluralize }}</div>
+                            <div class="info-grid__sub">desde devolución hasta reintegración</div>
+                            {% else %}
+                            <div class="info-grid__value">Mismo día</div>
+                            <div class="info-grid__sub">reintegrado el mismo día de devolución</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <aside class="prestamo-aside">
+            {# Card de Notificaciones de Aviso #}
+            <div class="prestamo-card {% if notificaciones_aviso %}prestamo-card--alerta{% else %}prestamo-card--info{% endif %}">
+                <h4 class="prestamo-card-title">
+                    <i class="bi bi-bell{% if notificaciones_aviso %}-fill{% endif %}"></i>
+                    Notificaciones de aviso
+                </h4>
+                {% if notificaciones_aviso %}
+                    {% for notif in notificaciones_aviso %}
+                    <div class="prestamo-notificacion-item">
+                        <div class="prestamo-notificacion-header">
+                            <div>
+                                <span class="prestamo-notificacion-usuario">
+                                    {{ notif.notificado_por.get_full_name|default:notif.notificado_por.username }}
+                                </span>
+                                <br>
+                                <span class="prestamo-notificacion-oficina">
+                                    <i class="bi bi-building"></i> {{ notif.oficina_notificada.nombre|default:"Oficina no especificada" }}
+                                </span>
+                            </div>
+                            <span class="prestamo-notificacion-fecha">
+                                <i class="bi bi-calendar3"></i> {{ notif.fecha_notificacion|date:"d/m/Y H:i" }}
+                            </span>
+                        </div>
+                        {% if notif.observaciones %}
+                        <div class="prestamo-notificacion-observaciones">
+                            <strong>Observaciones:</strong> {{ notif.observaciones }}
+                        </div>
+                        {% endif %}
+                        <div class="prestamo-notificacion-documento">
+                            <a href="{{ notif.documento_oficio.url }}" target="_blank" class="prestamo-btn prestamo-btn-sm prestamo-btn-outline">
+                                <i class="bi bi-file-earmark-pdf"></i> Ver documento oficio
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="prestamo-notificacion-empty">
+                        <i class="bi bi-bell-slash" style="font-size: 2rem; opacity: 0.5;"></i>
+                        <p>No hay notificaciones de aviso para este préstamo.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            {# Card de Historial #}
+            <div class="prestamo-card prestamo-card--info">
+                <h4 class="prestamo-card-title">Historial completo</h4>
+                <ul class="prestamo-timeline">
+                    {% for evento in historial %}
+                    <li class="prestamo-timeline-item">
+                        <div class="prestamo-timeline-dot"></div>
+                        <div class="prestamo-timeline-content">
+                            <strong>{{ evento.evento }}</strong>
+                            <p>{{ evento.descripcion|default:"Sin descripción" }}</p>
+                            <small>{{ evento.fecha|date:"d/m/Y H:i" }} · {{ evento.usuario.get_full_name|default:evento.usuario.username|default:"Sistema" }}</small>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="prestamo-timeline-item">
+                        <div class="prestamo-timeline-content">
+                            <p>Aún no hay historial registrado.</p>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </aside>
+    </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/correspondencia/vendor/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+

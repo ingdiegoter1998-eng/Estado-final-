@@ -1,0 +1,833 @@
+// ============================================================================
+// DIAGRAMA COMPLETO - SISTEMA DE GESTION DE CORRESPONDENCIA
+// Hospital del Sarare E.S.E.
+// Generado: Enero 2026
+// ============================================================================
+// Para usar en https://dbdiagram.io
+// ============================================================================
+
+// ============================================================================
+// DJANGO AUTH (Usuarios del Sistema)
+// ============================================================================
+
+Table auth_user {
+  id integer [primary key]
+  username varchar [unique, not null]
+  first_name varchar
+  last_name varchar
+  email varchar
+  password varchar [not null]
+  is_staff boolean
+  is_active boolean
+  is_superuser boolean
+  date_joined timestamp
+  last_login timestamp
+}
+
+Table auth_group {
+  id integer [primary key]
+  name varchar [unique, not null, note: 'Ej: Ventanilla, Lider de Oficina, Usuario']
+}
+
+Table auth_user_groups {
+  id integer [primary key]
+  user_id integer [not null]
+  group_id integer [not null]
+}
+
+Ref: auth_user_groups.user_id > auth_user.id
+Ref: auth_user_groups.group_id > auth_group.id
+
+// ============================================================================
+// MODULO DOCUMENTOS - Estructura Organizacional
+// ============================================================================
+
+Table documentos_entidadproductora {
+  id integer [primary key]
+  nombre varchar [unique, not null, note: 'Ej: Hospital del Sarare E.S.E.']
+}
+
+Table documentos_macroproceso {
+  id integer [primary key]
+  numero integer [unique, not null]
+  nombre varchar [not null, note: 'Ej: ESTRATEGICOS, MISIONALES, DE APOYO']
+}
+
+Table documentos_proceso {
+  id integer [primary key]
+  numero integer [not null]
+  nombre varchar [not null]
+  sigla varchar [not null, note: 'Ej: DIR, THS, SIG']
+  macroproceso_id integer [not null]
+}
+
+Ref: documentos_proceso.macroproceso_id > documentos_macroproceso.id
+
+Table documentos_unidadadministrativa {
+  id integer [primary key]
+  nombre varchar [not null]
+  entidad_productora_id integer [not null]
+}
+
+Ref: documentos_unidadadministrativa.entidad_productora_id > documentos_entidadproductora.id
+
+Table documentos_oficinaproductora {
+  id integer [primary key]
+  nombre varchar [not null]
+  codigo varchar
+  codigo_trd varchar [unique]
+  unidad_administrativa_id integer [not null]
+  proceso_id integer [not null]
+}
+
+Ref: documentos_oficinaproductora.unidad_administrativa_id > documentos_unidadadministrativa.id
+Ref: documentos_oficinaproductora.proceso_id > documentos_proceso.id
+
+// ============================================================================
+// MODULO DOCUMENTOS - Series y Subseries Documentales (TRD)
+// ============================================================================
+
+Table documentos_seriedocumental {
+  id integer [primary key]
+  codigo varchar [not null]
+  nombre varchar [not null]
+  codigo_trd varchar [unique]
+}
+
+Table documentos_subseriedocumental {
+  id integer [primary key]
+  codigo varchar [not null]
+  nombre varchar [not null]
+  codigo_trd varchar [unique]
+  serie_id integer [not null]
+}
+
+Ref: documentos_subseriedocumental.serie_id > documentos_seriedocumental.id
+
+// ============================================================================
+// MODULO DOCUMENTOS - FUID y Registros de Archivo
+// ============================================================================
+
+Table documentos_objeto {
+  id integer [primary key]
+  nombre varchar [unique, not null]
+}
+
+Table documentos_fuid {
+  id integer [primary key]
+  entidad_productora_id integer
+  unidad_administrativa_id integer
+  oficina_productora_id integer
+  objeto_id integer
+  fecha_creacion timestamp [not null]
+  creado_por_id integer
+  notas varchar
+  elaborado_por_nombre varchar
+  elaborado_por_cargo varchar
+  elaborado_por_lugar varchar
+  elaborado_por_fecha date
+  entregado_por_nombre varchar
+  entregado_por_cargo varchar
+  entregado_por_lugar varchar
+  entregado_por_fecha date
+  recibido_por_nombre varchar
+  recibido_por_cargo varchar
+  recibido_por_lugar varchar
+  recibido_por_fecha date
+}
+
+Ref: documentos_fuid.entidad_productora_id > documentos_entidadproductora.id
+Ref: documentos_fuid.unidad_administrativa_id > documentos_unidadadministrativa.id
+Ref: documentos_fuid.oficina_productora_id > documentos_oficinaproductora.id
+Ref: documentos_fuid.objeto_id > documentos_objeto.id
+Ref: documentos_fuid.creado_por_id > auth_user.id
+
+Table documentos_registrodearchivo {
+  id integer [primary key]
+  Estado_archivo boolean [default: true]
+  numero_orden integer [not null]
+  codigo varchar
+  codigo_serie_id integer [not null]
+  codigo_subserie_id integer
+  unidad_documental varchar [not null]
+  fecha_archivo date
+  fecha_inicial date
+  fecha_final date
+  soporte_fisico boolean [default: false]
+  soporte_electronico boolean [default: false]
+  caja integer
+  carpeta integer
+  tomo_legajo_libro varchar
+  numero_folios integer
+  tipo varchar
+  cantidad integer
+  ubicacion varchar
+  cantidad_documentos_electronicos integer
+  tamano_documentos_electronicos varchar
+  identificador_documento varchar
+  notas text
+  creado_por_id integer
+  fecha_creacion timestamp [not null]
+}
+
+Ref: documentos_registrodearchivo.codigo_serie_id > documentos_seriedocumental.id
+Ref: documentos_registrodearchivo.codigo_subserie_id > documentos_subseriedocumental.id
+Ref: documentos_registrodearchivo.creado_por_id > auth_user.id
+
+Table documentos_fuid_registros {
+  id integer [primary key]
+  fuid_id integer [not null]
+  registrodearchivo_id integer [not null]
+}
+
+Ref: documentos_fuid_registros.fuid_id > documentos_fuid.id
+Ref: documentos_fuid_registros.registrodearchivo_id > documentos_registrodearchivo.id
+
+Table documentos_documento {
+  id integer [primary key]
+  registro_id integer [not null]
+  archivo varchar [not null, note: 'Max 3 archivos por registro']
+  uploaded_at timestamp [not null]
+}
+
+Ref: documentos_documento.registro_id > documentos_registrodearchivo.id
+
+// ============================================================================
+// MODULO DOCUMENTOS - Perfiles de Usuario
+// ============================================================================
+
+Table documentos_perfilusuario {
+  id integer [primary key]
+  user_id integer [unique, not null]
+  oficina_id integer [not null]
+  cargo varchar
+  tipo_documento varchar [note: 'CC, CE, TI, PA, etc.']
+  numero_documento varchar [unique]
+  fecha_nacimiento date
+  direccion varchar
+  telefono varchar
+  firma_digital varchar [note: 'Imagen de firma manuscrita']
+  fecha_firma_creada timestamp
+  fecha_registro timestamp
+  solicita_lider boolean [default: false]
+}
+
+Ref: documentos_perfilusuario.user_id - auth_user.id
+Ref: documentos_perfilusuario.oficina_id > documentos_oficinaproductora.id
+
+// ============================================================================
+// MODULO DOCUMENTOS - Permisos por Serie
+// ============================================================================
+
+Table documentos_permisousuarioserie {
+  id integer [primary key]
+  usuario_id integer [not null]
+  serie_id integer [not null]
+  permiso_crear boolean [default: false]
+  permiso_editar boolean [default: false]
+  permiso_consultar boolean [default: true]
+  permiso_eliminar boolean [default: false]
+}
+
+Ref: documentos_permisousuarioserie.usuario_id > auth_user.id
+Ref: documentos_permisousuarioserie.serie_id > documentos_seriedocumental.id
+
+// ============================================================================
+// MODULO DOCUMENTOS - Pacientes (Historias Clinicas)
+// ============================================================================
+
+Table documentos_tipodocumento {
+  id integer [primary key]
+  nombre varchar [unique, not null]
+}
+
+Table documentos_nacionalidad {
+  id integer [primary key]
+  nombre varchar [unique, not null]
+}
+
+Table documentos_fichapaciente {
+  consecutivo integer [primary key, note: 'AutoField']
+  primer_nombre varchar [not null]
+  segundo_nombre varchar
+  primer_apellido varchar [not null]
+  segundo_apellido varchar
+  num_identificacion varchar
+  tipo_identificacion_id integer
+  num_identificacion_secundario varchar
+  tipo_identificacion_secundario_id integer
+  fecha_nacimiento date
+  primer_nombre_padre varchar
+  segundo_nombre_padre varchar
+  primer_apellido_padre varchar
+  segundo_apellido_padre varchar
+  Numero_historia_clinica bigint [unique, not null]
+  caja varchar
+  carpeta varchar
+  gabeta integer
+  sexo varchar [default: 'Masculino']
+  activo boolean [default: true]
+  estado_de_migracion boolean [default: false]
+  Fecha_de_visita_de_la_tarjeta date
+  ultimo_registro_de_visita_en_la_base_de_datos date
+  año_de_registro integer
+  nacionalidad_id integer
+}
+
+Ref: documentos_fichapaciente.tipo_identificacion_id > documentos_tipodocumento.id
+Ref: documentos_fichapaciente.tipo_identificacion_secundario_id > documentos_tipodocumento.id
+Ref: documentos_fichapaciente.nacionalidad_id > documentos_nacionalidad.id
+
+// ============================================================================
+// MODULO DOCUMENTOS - Prestamos Documentales
+// ============================================================================
+
+Table documentos_prestamodocumental {
+  id integer [primary key]
+  registro_id integer
+  fuid_id integer
+  solicitante_id integer [not null]
+  oficina_solicitante_id integer
+  subproceso_solicitante varchar
+  codigo_trd varchar
+  serie_id integer
+  subserie_id integer
+  descripcion_documento text
+  tipo_prestamo varchar [not null, note: 'FISICO o VIRTUAL']
+  estado varchar [not null, note: 'SOLICITADO, EN_PROCESO, ENTREGADO, PRESTAMO_ACTIVO, DEVUELTO, REINTEGRADO, RECHAZADO, VENCIDO']
+  fecha_solicitud timestamp [not null]
+  fecha_aprobacion timestamp
+  fecha_entrega timestamp
+  fecha_vencimiento date [note: '10 dias habiles HC, 20 dias otros']
+  fecha_devolucion timestamp
+  fecha_reintegracion timestamp
+  aprobado_por_id integer
+  procesado_por_id integer
+  vobo_jefe_nombre varchar
+  vobo_jefe_cargo varchar
+  vobo_jefe_fecha date
+  documento_escaneado varchar
+  documento_virtual varchar
+  motivo_rechazo text
+  motivo_rechazo_usuario text
+  documento_rechazo varchar
+  documento_devuelto boolean [default: false]
+  documento_danado boolean [default: false]
+  observaciones_dano text
+  confirmado_por_usuario boolean [default: false]
+  fecha_confirmacion timestamp
+  notas text
+}
+
+Ref: documentos_prestamodocumental.registro_id > documentos_registrodearchivo.id
+Ref: documentos_prestamodocumental.fuid_id > documentos_fuid.id
+Ref: documentos_prestamodocumental.solicitante_id > auth_user.id
+Ref: documentos_prestamodocumental.oficina_solicitante_id > documentos_oficinaproductora.id
+Ref: documentos_prestamodocumental.serie_id > documentos_seriedocumental.id
+Ref: documentos_prestamodocumental.subserie_id > documentos_subseriedocumental.id
+Ref: documentos_prestamodocumental.aprobado_por_id > auth_user.id
+Ref: documentos_prestamodocumental.procesado_por_id > auth_user.id
+
+Table documentos_documentoescaneadoprestamo {
+  id integer [primary key]
+  prestamo_id integer [not null]
+  archivo varchar [not null]
+  uploaded_at timestamp [not null]
+  nombre_archivo_original varchar
+  confirmado boolean [default: false]
+  fecha_confirmacion timestamp
+  uploaded_by_id integer
+}
+
+Ref: documentos_documentoescaneadoprestamo.prestamo_id > documentos_prestamodocumental.id
+Ref: documentos_documentoescaneadoprestamo.uploaded_by_id > auth_user.id
+
+Table documentos_notificacionavisoprestamo {
+  id integer [primary key]
+  prestamo_id integer [not null]
+  documento_oficio varchar [not null]
+  observaciones text
+  fecha_notificacion timestamp [not null]
+  notificado_por_id integer
+  oficina_notificada_id integer
+}
+
+Ref: documentos_notificacionavisoprestamo.prestamo_id > documentos_prestamodocumental.id
+Ref: documentos_notificacionavisoprestamo.notificado_por_id > auth_user.id
+Ref: documentos_notificacionavisoprestamo.oficina_notificada_id > documentos_oficinaproductora.id
+
+Table documentos_historialprestamo {
+  id integer [primary key]
+  prestamo_id integer [not null]
+  usuario_id integer
+  evento varchar [not null]
+  descripcion text
+  fecha timestamp [not null]
+}
+
+Ref: documentos_historialprestamo.prestamo_id > documentos_prestamodocumental.id
+Ref: documentos_historialprestamo.usuario_id > auth_user.id
+
+// ============================================================================
+// MODULO CORRESPONDENCIA - Entidades y Contactos Externos
+// ============================================================================
+
+Table correspondencia_entidadexterna {
+  id integer [primary key]
+  nombre varchar [unique, not null]
+  nit varchar
+  direccion varchar
+  telefono varchar
+  dominio varchar [unique, note: 'Dominio de correo asociado']
+}
+
+Table correspondencia_contacto {
+  id integer [primary key]
+  entidad_externa_id integer [not null]
+  nombres varchar [not null]
+  apellidos varchar
+  cargo varchar
+  correo_electronico varchar [unique, not null]
+  telefono_contacto varchar
+  numero_documento varchar
+}
+
+Ref: correspondencia_contacto.entidad_externa_id > correspondencia_entidadexterna.id
+
+// ============================================================================
+// MODULO CORRESPONDENCIA - Correspondencia Entrante
+// ============================================================================
+
+Table correspondencia_correspondencia {
+  id integer [primary key]
+  numero_radicado varchar [unique, not null, note: 'Formato: ENTRANTE-2026-00001']
+  tipo_radicado varchar [not null, note: 'ENTRANTE']
+  fecha_radicacion timestamp [not null]
+  usuario_radicador_id integer
+  remitente_id integer
+  asunto text [not null]
+  serie_id integer
+  subserie_id integer
+  medio_recepcion varchar [not null, note: 'FISICO o ELECTRONICO']
+  requiere_respuesta boolean [default: false]
+  tiempo_respuesta varchar [note: 'NORMAL, URGENTE, MUY_URGENTE']
+  plazo_respuesta_dias integer
+  fecha_limite_respuesta_persist timestamp
+  plazo_origen varchar [note: 'TRD, FALLBACK, NONE']
+  tramite_aplicado_id integer
+  estado varchar [not null, note: 'RADICADA, ASIGNADA_USUARIO, LEIDA, RESPONDIDA']
+  leido_por_oficina boolean [default: false]
+  resumen_ia text
+  sellado boolean [default: false]
+  fecha_sellado timestamp
+  en_planilla boolean [default: false]
+  oficina_destino_id integer [not null]
+  usuario_destino_inicial_id integer
+}
+
+Ref: correspondencia_correspondencia.usuario_radicador_id > auth_user.id
+Ref: correspondencia_correspondencia.remitente_id > correspondencia_contacto.id
+Ref: correspondencia_correspondencia.serie_id > documentos_seriedocumental.id
+Ref: correspondencia_correspondencia.subserie_id > documentos_subseriedocumental.id
+Ref: correspondencia_correspondencia.oficina_destino_id > documentos_oficinaproductora.id
+Ref: correspondencia_correspondencia.usuario_destino_inicial_id > auth_user.id
+
+Table correspondencia_historialcorrespondencia {
+  id integer [primary key]
+  correspondencia_id integer [not null]
+  fecha_hora timestamp [not null]
+  evento varchar [not null, note: 'RADICADA, ASIGNADA_USUARIO, LEIDA, RESPONDIDA, SELLO_IMPRESO, etc.']
+  usuario_id integer
+  descripcion text
+}
+
+Ref: correspondencia_historialcorrespondencia.correspondencia_id > correspondencia_correspondencia.id
+Ref: correspondencia_historialcorrespondencia.usuario_id > auth_user.id
+
+Table correspondencia_adjuntocorreo {
+  id integer [primary key]
+  correspondencia_id integer [not null]
+  archivo varchar [not null]
+  nombre_original varchar
+  tipo_mime varchar
+  fecha_carga timestamp [not null]
+}
+
+Ref: correspondencia_adjuntocorreo.correspondencia_id > correspondencia_correspondencia.id
+
+// ============================================================================
+// MODULO CORRESPONDENCIA - Correos Entrantes (IMAP)
+// ============================================================================
+
+Table correspondencia_correoentrante {
+  id integer [primary key]
+  message_id varchar [unique, not null]
+  remitente varchar [not null]
+  asunto varchar
+  cuerpo_texto text
+  cuerpo_html text
+  fecha_recepcion_original timestamp
+  fecha_lectura_imap timestamp [not null]
+  procesado boolean [default: false]
+  radicado_asociado_id integer
+  requiere_revision_manual boolean [default: false]
+  oficina_clasificada_id integer
+  serie_clasificada_id integer
+  subserie_clasificada_id integer
+  fecha_clasificacion timestamp
+}
+
+Ref: correspondencia_correoentrante.radicado_asociado_id > correspondencia_correspondencia.id
+Ref: correspondencia_correoentrante.oficina_clasificada_id > documentos_oficinaproductora.id
+Ref: correspondencia_correoentrante.serie_clasificada_id > documentos_seriedocumental.id
+Ref: correspondencia_correoentrante.subserie_clasificada_id > documentos_subseriedocumental.id
+
+Table correspondencia_adjuntocorreoentrante {
+  id integer [primary key]
+  correo_entrante_id integer [not null]
+  archivo varchar [not null]
+  nombre_original varchar
+  tipo_mime varchar
+  fecha_carga timestamp [not null]
+}
+
+Ref: correspondencia_adjuntocorreoentrante.correo_entrante_id > correspondencia_correoentrante.id
+
+// ============================================================================
+// MODULO CORRESPONDENCIA - Distribucion y Accesos
+// ============================================================================
+
+Table correspondencia_distribucioninternausuario {
+  id integer [primary key]
+  correspondencia_id integer [not null]
+  usuario_asignado_id integer [not null]
+  fecha_asignacion timestamp [not null]
+  asignado_por_id integer
+  leido boolean [default: false]
+  fecha_lectura timestamp
+  observaciones text
+}
+
+Ref: correspondencia_distribucioninternausuario.correspondencia_id > correspondencia_correspondencia.id
+Ref: correspondencia_distribucioninternausuario.usuario_asignado_id > auth_user.id
+Ref: correspondencia_distribucioninternausuario.asignado_por_id > auth_user.id
+
+Table correspondencia_accesocorrespondenciaoficina {
+  id integer [primary key]
+  correspondencia_id integer [not null]
+  oficina_id integer [not null]
+  compartido_por_id integer
+  fecha_compartido timestamp [not null]
+  observaciones text
+  leido boolean [default: false]
+  fecha_lectura timestamp
+  solo_lider boolean [default: true]
+  puede_responder boolean [default: false]
+}
+
+Ref: correspondencia_accesocorrespondenciaoficina.correspondencia_id > correspondencia_correspondencia.id
+Ref: correspondencia_accesocorrespondenciaoficina.oficina_id > documentos_oficinaproductora.id
+Ref: correspondencia_accesocorrespondenciaoficina.compartido_por_id > auth_user.id
+
+// ============================================================================
+// MODULO CORRESPONDENCIA - Notificaciones
+// ============================================================================
+
+Table correspondencia_notificacion {
+  id integer [primary key]
+  usuario_id integer [not null]
+  tipo varchar [not null, note: 'asignacion, compartido, respuesta, vencimiento, etc.']
+  titulo varchar [not null]
+  mensaje text [not null]
+  correspondencia_id integer
+  comunicacion_interna_id integer
+  leida boolean [default: false]
+  fecha_creacion timestamp [not null]
+  fecha_lectura timestamp
+  url varchar
+}
+
+Ref: correspondencia_notificacion.usuario_id > auth_user.id
+Ref: correspondencia_notificacion.correspondencia_id > correspondencia_correspondencia.id
+
+// ============================================================================
+// MODULO CORRESPONDENCIA - Correspondencia Saliente
+// ============================================================================
+
+Table correspondencia_correspondenciasalida {
+  id integer [primary key]
+  respuesta_a_id integer
+  numero_radicado_salida varchar [unique, not null, note: 'Formato: SALIENTE-2026-00001']
+  fecha_creacion timestamp [not null]
+  usuario_redactor_id integer
+  fecha_ultima_modificacion timestamp [not null]
+  oficina_emisora_id integer
+  oficina_emisora_nombre varchar [note: 'Snapshot']
+  redactor_nombre varchar [note: 'Snapshot']
+  redactor_cargo varchar [note: 'Snapshot']
+  destinatario_contacto_id integer [not null]
+  destinatario_email varchar [not null, note: 'Snapshot al aprobar']
+  asunto varchar [not null]
+  cuerpo text [not null]
+  estado varchar [not null, note: 'BORRADOR, PENDIENTE_APROBACION, APROBADA, RECHAZADA, ENVIADA, ERROR_ENVIO']
+  usuario_aprobador_id integer
+  fecha_aprobacion timestamp
+  motivo_rechazo text
+  fecha_envio timestamp
+  id_mensaje_enviado varchar
+  envio_tipo varchar [note: 'INDIVIDUAL, GRUPO, MULTIPLE_SELECTIVO']
+  envio_grupo_id integer
+  envio_total_destinatarios integer
+  envio_detalle_snapshot varchar
+}
+
+Ref: correspondencia_correspondenciasalida.respuesta_a_id > correspondencia_correspondencia.id
+Ref: correspondencia_correspondenciasalida.usuario_redactor_id > auth_user.id
+Ref: correspondencia_correspondenciasalida.oficina_emisora_id > documentos_oficinaproductora.id
+Ref: correspondencia_correspondenciasalida.destinatario_contacto_id > correspondencia_contacto.id
+Ref: correspondencia_correspondenciasalida.usuario_aprobador_id > auth_user.id
+
+Table correspondencia_adjuntosalida {
+  id integer [primary key]
+  correspondencia_salida_id integer [not null]
+  archivo varchar [not null]
+  nombre_original varchar
+  tipo_mime varchar
+  fecha_carga timestamp [not null]
+}
+
+Ref: correspondencia_adjuntosalida.correspondencia_salida_id > correspondencia_correspondenciasalida.id
+
+Table correspondencia_historialsalida {
+  id integer [primary key]
+  correspondencia_salida_id integer [not null]
+  fecha_hora timestamp [not null]
+  tipo_evento varchar [not null, note: 'CREACION, MODIFICACION, APROBACION, RECHAZO, ENVIO_EXITOSO, etc.']
+  usuario_id integer
+  descripcion text
+}
+
+Ref: correspondencia_historialsalida.correspondencia_salida_id > correspondencia_correspondenciasalida.id
+Ref: correspondencia_historialsalida.usuario_id > auth_user.id
+
+Table correspondencia_salidadestinatario {
+  id integer [primary key]
+  correspondencia_salida_id integer [not null]
+  contacto_id integer [not null]
+  email_snapshot varchar [not null]
+  nombre_snapshot varchar
+  estado varchar [not null, note: 'PENDIENTE, ENVIADO, FALLO, REBOTE']
+  fecha_envio timestamp
+  id_mensaje_enviado varchar
+  detalle_error text
+  smtp_code varchar
+  dsn_status varchar
+  ultimo_evento_at timestamp
+}
+
+Ref: correspondencia_salidadestinatario.correspondencia_salida_id > correspondencia_correspondenciasalida.id
+Ref: correspondencia_salidadestinatario.contacto_id > correspondencia_contacto.id
+
+// ============================================================================
+// MODULO CORRESPONDENCIA - Grupos de Agenda y Comunicacion Masiva
+// ============================================================================
+
+Table correspondencia_grupoagenda {
+  id integer [primary key]
+  oficina_propietaria_id integer [not null]
+  nombre varchar [not null]
+  descripcion text
+  creado_por_id integer
+  activo boolean [default: true]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
+}
+
+Ref: correspondencia_grupoagenda.oficina_propietaria_id > documentos_oficinaproductora.id
+Ref: correspondencia_grupoagenda.creado_por_id > auth_user.id
+
+Table correspondencia_grupoagenda_contactos {
+  id integer [primary key]
+  grupoagenda_id integer [not null]
+  contacto_id integer [not null]
+}
+
+Ref: correspondencia_grupoagenda_contactos.grupoagenda_id > correspondencia_grupoagenda.id
+Ref: correspondencia_grupoagenda_contactos.contacto_id > correspondencia_contacto.id
+
+Table correspondencia_comunicacionmasiva {
+  id integer [primary key]
+  oficina_emisora_id integer [not null]
+  usuario_creador_id integer
+  asunto varchar [not null]
+  cuerpo text [not null]
+  estado varchar [not null, note: 'BORRADOR, ENVIADA, PARCIAL, ERROR']
+  fecha_creacion timestamp [not null]
+  fecha_envio timestamp
+}
+
+Ref: correspondencia_comunicacionmasiva.oficina_emisora_id > documentos_oficinaproductora.id
+Ref: correspondencia_comunicacionmasiva.usuario_creador_id > auth_user.id
+
+Table correspondencia_comunicaciondestinatario {
+  id integer [primary key]
+  comunicacion_id integer [not null]
+  contacto_id integer [not null]
+  email_snapshot varchar [not null]
+  nombre_snapshot varchar
+  estado varchar [not null, note: 'PENDIENTE, ENVIADO, FALLO, REBOTE']
+  fecha_envio timestamp
+  id_mensaje_enviado varchar
+  detalle_error text
+}
+
+Ref: correspondencia_comunicaciondestinatario.comunicacion_id > correspondencia_comunicacionmasiva.id
+Ref: correspondencia_comunicaciondestinatario.contacto_id > correspondencia_contacto.id
+
+// ============================================================================
+// MODULO CORRESPONDENCIA - Informes Diarios
+// ============================================================================
+
+Table correspondencia_informediariocorrespondencia {
+  id integer [primary key]
+  fecha date [unique, not null]
+  archivo_firmado varchar
+  estado varchar [not null, note: 'PENDIENTE, FIRMADO']
+  total_correspondencias integer [default: 0]
+  fecha_creacion timestamp [not null]
+  fecha_subida_firma timestamp
+  subido_por_id integer
+}
+
+Ref: correspondencia_informediariocorrespondencia.subido_por_id > auth_user.id
+
+Table correspondencia_historialdescargainforme {
+  id integer [primary key]
+  informe_id integer [not null]
+  usuario_id integer
+  fecha_descarga timestamp [not null]
+  ip_address varchar
+}
+
+Ref: correspondencia_historialdescargainforme.informe_id > correspondencia_informediariocorrespondencia.id
+Ref: correspondencia_historialdescargainforme.usuario_id > auth_user.id
+
+// ============================================================================
+// MODULO CORRESPONDENCIA - Firmas de Correspondencia
+// ============================================================================
+
+Table correspondencia_firmacorrespondencia {
+  id integer [primary key]
+  correspondencia_id integer [unique, not null]
+  firma_imagen varchar [not null]
+  fecha_firma timestamp [not null]
+  firmado_por_id integer
+  nombre_firmante varchar [not null]
+  cargo_firmante varchar
+  oficina_firmante_id integer
+  recolector_id integer
+  ip_address varchar
+  observaciones text
+}
+
+Ref: correspondencia_firmacorrespondencia.correspondencia_id - correspondencia_correspondencia.id
+Ref: correspondencia_firmacorrespondencia.firmado_por_id > auth_user.id
+Ref: correspondencia_firmacorrespondencia.oficina_firmante_id > documentos_oficinaproductora.id
+Ref: correspondencia_firmacorrespondencia.recolector_id > auth_user.id
+
+// ============================================================================
+// MODULO CORRESPONDENCIA - Comunicaciones Internas (Oficios)
+// ============================================================================
+
+Table correspondencia_comunicacioninterna {
+  id integer [primary key]
+  radicado varchar [unique, note: 'Formato: SIGLA-XX-XXX']
+  trd varchar
+  fecha_creacion timestamp [not null]
+  ciudad varchar [default: 'Saravena']
+  fecha_documento date [not null]
+  tipo_distribucion varchar [note: 'USUARIO, OFICINA, PROCESO, ENTIDAD']
+  es_a_toda_entidad boolean [default: false]
+  remitente_usuario_id integer [not null]
+  remitente_nombre varchar [not null]
+  remitente_cargo varchar
+  remitente_oficina_id integer [not null]
+  destinatario_oficina_id integer
+  destinatario_usuario_id integer
+  destinatario_proceso_id integer
+  asunto varchar [not null]
+  cuerpo text [not null]
+  archivo_generado varchar
+  archivo_firmado varchar
+  fecha_firma timestamp
+  revisado_por_id integer
+  revisado_nombre varchar
+  revisado_cargo varchar
+  fecha_revision timestamp
+  motivo_rechazo text
+  comunicacion_origen_id integer [unique]
+  fecha_distribucion timestamp
+  estado varchar [not null, note: 'BORRADOR, PENDIENTE_APROBACION, RECHAZADA, APROBADA, DISTRIBUIDA, RESPONDIDA, ANULADA']
+}
+
+Ref: correspondencia_comunicacioninterna.remitente_usuario_id > auth_user.id
+Ref: correspondencia_comunicacioninterna.remitente_oficina_id > documentos_oficinaproductora.id
+Ref: correspondencia_comunicacioninterna.destinatario_oficina_id > documentos_oficinaproductora.id
+Ref: correspondencia_comunicacioninterna.destinatario_usuario_id > auth_user.id
+Ref: correspondencia_comunicacioninterna.destinatario_proceso_id > documentos_proceso.id
+Ref: correspondencia_comunicacioninterna.revisado_por_id > auth_user.id
+Ref: correspondencia_comunicacioninterna.comunicacion_origen_id - correspondencia_comunicacioninterna.id
+
+Table correspondencia_comunicacioninternadestinatario {
+  id integer [primary key]
+  comunicacion_id integer [not null]
+  tipo varchar [not null, note: 'USUARIO u OFICINA']
+  usuario_id integer
+  oficina_id integer
+}
+
+Ref: correspondencia_comunicacioninternadestinatario.comunicacion_id > correspondencia_comunicacioninterna.id
+Ref: correspondencia_comunicacioninternadestinatario.usuario_id > auth_user.id
+Ref: correspondencia_comunicacioninternadestinatario.oficina_id > documentos_oficinaproductora.id
+
+Table correspondencia_comunicacioninternadistribucion {
+  id integer [primary key]
+  comunicacion_id integer [not null]
+  usuario_id integer [not null]
+  fecha_distribucion timestamp [not null]
+  leido boolean [default: false]
+  fecha_lectura timestamp
+}
+
+Ref: correspondencia_comunicacioninternadistribucion.comunicacion_id > correspondencia_comunicacioninterna.id
+Ref: correspondencia_comunicacioninternadistribucion.usuario_id > auth_user.id
+
+Table correspondencia_historialcomunicacioninterna {
+  id integer [primary key]
+  comunicacion_id integer [not null]
+  evento varchar [not null, note: 'CREADA, EDITADA, APROBADA, RECHAZADA, DISTRIBUIDA, LEIDA, etc.']
+  fecha timestamp [not null]
+  usuario_id integer
+  descripcion text
+}
+
+Ref: correspondencia_historialcomunicacioninterna.comunicacion_id > correspondencia_comunicacioninterna.id
+Ref: correspondencia_historialcomunicacioninterna.usuario_id > auth_user.id
+
+Table correspondencia_anexocomunicacioninterna {
+  id integer [primary key]
+  comunicacion_id integer [not null]
+  archivo varchar [not null, note: 'PDF, Word o Excel, max 2MB']
+  nombre_original varchar
+  fecha_carga timestamp [not null]
+  subido_por_id integer
+}
+
+Ref: correspondencia_anexocomunicacioninterna.comunicacion_id > correspondencia_comunicacioninterna.id
+Ref: correspondencia_anexocomunicacioninterna.subido_por_id > auth_user.id
+
+// Referencia de Notificacion a ComunicacionInterna
+Ref: correspondencia_notificacion.comunicacion_interna_id > correspondencia_comunicacioninterna.id
+
+// Referencia de CorrespondenciaSalida a GrupoAgenda
+Ref: correspondencia_correspondenciasalida.envio_grupo_id > correspondencia_grupoagenda.id

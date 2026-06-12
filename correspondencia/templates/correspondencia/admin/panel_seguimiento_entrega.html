@@ -1,0 +1,225 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'correspondencia/css/seguimiento_entrega.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3 mb-5">
+
+  <div class="se-panel-hero">
+    <h1><i class="bi bi-shield-check me-2"></i>{{ titulo_pagina }}</h1>
+    <p>
+      Trazabilidad de envíos por correo institucional vía Postmark: entregas confirmadas y rebotes.
+    </p>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+      <div class="card se-kpi se-kpi--info shadow-sm h-100">
+        <div class="card-body">
+          <div class="se-kpi-label">Envíos en periodo</div>
+          <div class="se-kpi-value">{{ kpis.total }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card se-kpi se-kpi--ok shadow-sm h-100">
+        <div class="card-body">
+          <div class="se-kpi-label">Entrega confirmada</div>
+          <div class="se-kpi-value">{{ kpis.confirmadas }} <small class="fs-6 text-muted">({{ kpis.pct_confirmadas }}%)</small></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card se-kpi se-kpi--warn shadow-sm h-100">
+        <div class="card-body">
+          <div class="se-kpi-label">Rebotes</div>
+          <div class="se-kpi-value">{{ kpis.rebotes }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3 col-6">
+      <div class="card se-kpi se-kpi--danger shadow-sm h-100">
+        <div class="card-body">
+          <div class="se-kpi-label">Fallos / sin confirmar</div>
+          <div class="se-kpi-value">{{ kpis.fallos }} <span class="fs-6 text-muted">+ {{ kpis.sin_confirmar }} env.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="se-legal-box mb-4">
+    <h6><i class="bi bi-journal-text me-1"></i> Respaldo ante reclamos (marco operativo)</h6>
+    <ul class="mb-0 ps-3">
+      <li>Cada envío queda con <strong>radicado de salida</strong>, usuario aprobador, fecha/hora y <strong>MessageID Postmark</strong> (tercero independiente).</li>
+      <li>Las <strong>entregas confirmadas</strong> registran respuesta SMTP del servidor destino vía webhook Delivery.</li>
+      <li>Los <strong>rebotes</strong> quedan en bitácora con tipo (Soft/Hard) y detalle técnico; no imputan al hospital causas ajenas (buzón lleno, dominio inválido, filtros del destinatario).</li>
+      <li>Conserve historial y detalle por radicado según política de archivo (mín. 5 años recomendado).</li>
+      <li>El correo incluye aviso legal y canal alternativo (correspondencia física / ventanilla) según plantilla institucional.</li>
+    </ul>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-header bg-white">
+      <h5 class="mb-0">Filtros</h5>
+    </div>
+    <div class="card-body">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label">Oficina</label>
+          <select name="oficina" class="form-select form-select-sm">
+            <option value="">Todas</option>
+            {% for o in oficinas %}
+            <option value="{{ o.id }}" {% if request.GET.oficina == o.id|stringformat:"s" %}selected{% endif %}>{{ o.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Desde</label>
+          <input type="date" name="fecha_desde" class="form-control form-control-sm" value="{{ request.GET.fecha_desde }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Hasta</label>
+          <input type="date" name="fecha_hasta" class="form-control form-control-sm" value="{{ request.GET.fecha_hasta }}">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Estado técnico</label>
+          <select name="estado" class="form-select form-select-sm">
+            <option value="">Todos</option>
+            <option value="ENVIADO" {% if request.GET.estado == "ENVIADO" %}selected{% endif %}>Enviado</option>
+            <option value="REBOTE" {% if request.GET.estado == "REBOTE" %}selected{% endif %}>Rebote</option>
+            <option value="FALLO" {% if request.GET.estado == "FALLO" %}selected{% endif %}>Fallo</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Nivel evidencia</label>
+          <select name="evidencia" class="form-select form-select-sm">
+            <option value="">Todos</option>
+            {% for code, label in niveles_evidencia %}
+            <option value="{{ code }}" {% if request.GET.evidencia == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Buscar</label>
+          <input type="text" name="q" class="form-control form-control-sm" placeholder="Radicado, email…" value="{{ request.GET.q }}">
+        </div>
+        <div class="col-md-12">
+          <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+          <a href="{% url 'correspondencia:panel_seguimiento_entrega' %}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
+          <span class="text-muted small ms-2">Webhooks Postmark (24h): {{ kpis.eventos_24h }}</span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if rebotes_recientes %}
+  <div class="card shadow-sm mb-4 border-warning">
+    <div class="card-header bg-warning bg-opacity-10">
+      <h5 class="mb-0 text-warning-emphasis"><i class="bi bi-exclamation-triangle me-1"></i> Rebotes recientes</h5>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-sm mb-0">
+          <thead>
+            <tr>
+              <th>Radicado</th>
+              <th>Destinatario</th>
+              <th>Detalle</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in rebotes_recientes %}
+            <tr>
+              <td><code>{{ f.numero_radicado }}</code></td>
+              <td>{{ f.email }}</td>
+              <td class="small text-muted">{{ f.detalle_resumen|truncatechars:80 }}</td>
+              <td>
+                <a href="{% url 'correspondencia:detalle_evidencia_envio' f.salida_id %}?destinatario={{ f.destinatario_id }}" class="btn btn-sm btn-outline-warning">Ver</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Detalle por destinatario</h5>
+      <span class="badge bg-secondary">{{ filas|length }} registros (máx. 500)</span>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0" id="tablaSeguimiento">
+          <thead class="table-light">
+            <tr>
+              <th>Radicado salida</th>
+              <th>Destinatario</th>
+              <th>Oficina</th>
+              <th>Estado</th>
+              <th>Evidencia</th>
+              <th>Envío</th>
+              <th>Postmark ID</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in filas %}
+            <tr>
+              <td>
+                <a href="{% url 'correspondencia:detalle_evidencia_envio' f.salida_id %}">{{ f.numero_radicado }}</a>
+                <div class="small text-muted text-truncate" style="max-width:12rem" title="{{ f.asunto }}">{{ f.asunto|truncatechars:40 }}</div>
+              </td>
+              <td>
+                <div>{{ f.nombre|default:"—" }}</div>
+                <small class="text-muted">{{ f.email }}</small>
+              </td>
+              <td class="small">{{ f.oficina|default:"—" }}</td>
+              <td>
+                {% if f.estado == "ENVIADO" %}<span class="badge bg-success">Enviado</span>
+                {% elif f.estado == "REBOTE" %}<span class="badge bg-warning text-dark">Rebote</span>
+                {% elif f.estado == "FALLO" %}<span class="badge bg-danger">Fallo</span>
+                {% else %}<span class="badge bg-secondary">{{ f.estado }}</span>{% endif %}
+              </td>
+              <td>
+                <span class="badge badge-evidencia-{{ f.nivel_evidencia }}">{{ f.nivel_label }}</span>
+              </td>
+              <td class="small">{% if f.fecha_envio %}{{ f.fecha_envio|date:"Y-m-d H:i" }}{% else %}—{% endif %}</td>
+              <td class="small"><code class="user-select-all">{% if f.postmark_message_id %}{{ f.postmark_message_id|truncatechars:12 }}{% else %}—{% endif %}</code></td>
+              <td class="text-nowrap">
+                <a href="{% url 'correspondencia:detalle_evidencia_envio' f.salida_id %}?destinatario={{ f.destinatario_id }}" class="btn btn-sm btn-outline-primary" title="Trazabilidad"><i class="bi bi-diagram-3"></i></a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="text-center text-muted py-4">No hay envíos con los filtros actuales.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+$(function() {
+  if ($('#tablaSeguimiento tbody tr').length > 1 && $.fn.DataTable) {
+    $('#tablaSeguimiento').DataTable({
+      pageLength: 25,
+      order: [[5, 'desc']],
+      language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
+    });
+  }
+});
+</script>
+{% endblock %}

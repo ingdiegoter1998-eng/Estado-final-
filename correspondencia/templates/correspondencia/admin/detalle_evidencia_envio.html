@@ -1,0 +1,105 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'correspondencia/css/seguimiento_entrega.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-3 mb-5 no-print">
+  <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+      <h1 class="h4 mb-1">{{ salida.numero_radicado_salida }}</h1>
+      <p class="text-muted mb-0">{{ salida.asunto }}</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'correspondencia:panel_seguimiento_entrega' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left"></i> Panel</a>
+      <a href="{% url 'correspondencia:revisar_respuesta' salida.id %}" class="btn btn-outline-primary btn-sm">Ver respuesta</a>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h6 class="text-muted text-uppercase small">Datos del envío</h6>
+          <dl class="mb-0 small">
+            <dt>Estado salida</dt><dd>{{ salida.get_estado_display }}</dd>
+            <dt>Fecha envío</dt><dd>{% if salida.fecha_envio %}{{ salida.fecha_envio|date:"Y-m-d H:i:s" }}{% else %}—{% endif %}</dd>
+            <dt>Aprobador</dt><dd>{% if salida.usuario_aprobador %}{{ salida.usuario_aprobador.get_full_name|default:salida.usuario_aprobador.username }}{% else %}—{% endif %}</dd>
+            <dt>Oficina</dt><dd>{{ salida.oficina_emisora.nombre|default:"—" }}</dd>
+            <dt>MessageID (salida)</dt><dd><code class="user-select-all">{{ salida.postmark_message_id|default:"—" }}</code></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-8">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white"><h6 class="mb-0">Destinatarios</h6></div>
+        <div class="card-body p-0">
+          <table class="table table-sm mb-0">
+            <thead><tr><th>Email</th><th>Estado</th><th>Evidencia</th><th>Último evento</th></tr></thead>
+            <tbody>
+              {% for f in filas %}
+              <tr {% if destinatario_focus and destinatario_focus.id == f.destinatario_id %}class="table-warning"{% endif %}>
+                <td>{{ f.email }}</td>
+                <td>{{ f.estado }}</td>
+                <td><span class="badge badge-evidencia-{{ f.nivel_evidencia }}">{{ f.nivel_label }}</span></td>
+                <td class="small">{% if f.ultimo_evento_at %}{{ f.ultimo_evento_at|date:"Y-m-d H:i" }}{% else %}—{% endif %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white"><h6 class="mb-0">Línea de tiempo (sistema + Postmark)</h6></div>
+        <div class="card-body se-timeline">
+          {% for ev in timeline %}
+          <div class="se-timeline-item {% if ev.codigo == 'Bounce' %}se-timeline-item--bounce{% elif ev.codigo == 'ENVIO_FALLIDO' %}se-timeline-item--fail{% endif %}">
+            <div class="small text-muted">{{ ev.fecha|date:"Y-m-d H:i:s" }} · {{ ev.origen }}</div>
+            <strong>{{ ev.tipo }}</strong>
+            {% if ev.usuario %}<span class="text-muted small"> — {{ ev.usuario }}</span>{% endif %}
+            {% if ev.detalle %}<div class="small mt-1">{{ ev.detalle|linebreaksbr }}</div>{% endif %}
+          </div>
+          {% empty %}
+          <p class="text-muted mb-0">Sin eventos registrados.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-header bg-white"><h6 class="mb-0">Webhooks Postmark</h6></div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm mb-0">
+              <thead><tr><th>Fecha</th><th>Tipo</th><th>Destinatario</th><th>Resultado</th></tr></thead>
+              <tbody>
+                {% for wh in webhooks_destino %}
+                <tr>
+                  <td class="small">{{ wh.recibido_at|date:"Y-m-d H:i" }}</td>
+                  <td>{{ wh.record_type }}</td>
+                  <td class="small">{{ wh.recipient }}</td>
+                  <td><span class="badge {% if wh.resultado == 'processed' %}bg-success{% else %}bg-secondary{% endif %}">{{ wh.resultado|default:"—" }}</span></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-muted text-center py-3">Sin webhooks para este envío.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

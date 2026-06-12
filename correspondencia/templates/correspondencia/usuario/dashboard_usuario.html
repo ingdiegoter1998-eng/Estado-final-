@@ -1,0 +1,1238 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static humanize crispy_forms_tags %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-user-page">
+    <div class="dashboard-shell">
+        <section class="dashboard-hero section-card">
+            <div class="dashboard-hero-copy">
+                <h2 class="hero-title">Panel de correspondencia{% if user.first_name %} de {{ user.first_name }}{% endif %}</h2>
+                <p class="hero-subtitle">
+                    Revisa pendientes, controla tiempos de respuesta y ejecuta tus acciones clave desde un tablero mas claro y utilitario.
+                </p>
+            </div>
+            <div class="dashboard-hero-aside">
+                <span class="dashboard-kicker">
+                    <i class="bi bi-grid-1x2-fill"></i>
+                    Centro operativo
+                </span>
+                <div class="hero-orb">
+                    <i class="bi bi-envelope-check-fill"></i>
+                </div>
+            </div>
+            <div class="hero-actions">
+                    <a href="{% url 'correspondencia:bandeja_personal' %}" class="btn btn-primary hero-btn hero-btn-color-primary">
+                        <i class="bi bi-inbox me-2"></i>Ir a mi bandeja
+                    </a>
+                    <button type="button" class="btn btn-primary hero-btn hero-btn-color-success" data-bs-toggle="modal" data-bs-target="#modalCorrespondenciaSalida">
+                        <i class="bi bi-send me-2"></i>Nueva salida
+                    </button>
+                    <a href="{% url 'correspondencia:grupos_agenda_index' %}" class="btn btn-primary hero-btn hero-btn-color-info">
+                        <i class="bi bi-people-fill me-2"></i>Grupos de contactos
+                    </a>
+                    <button type="button" class="btn hero-btn hero-btn-soft" data-bs-toggle="modal" data-bs-target="#modalAsistenteChatbot">
+                        <i class="bi bi-stars me-2"></i>Asistente IA
+                    </button>
+                    {% if oficina_usuario %}
+                    <button type="button" class="btn btn-primary hero-btn hero-btn-color-warning" data-bs-toggle="modal" data-bs-target="#modalCrearContactoDashboard">
+                        <i class="bi bi-person-plus me-2"></i>Crear contacto
+                    </button>
+                    {% else %}
+                    <span class="btn btn-primary hero-btn hero-btn-color-warning hero-btn-disabled" aria-disabled="true">
+                        <i class="bi bi-lock me-2"></i>Crear contacto
+                    </span>
+                    {% endif %}
+                    <a href="{% url 'correspondencia:mis_rebotes' %}" class="btn hero-btn hero-btn-color-danger position-relative">
+                        <i class="bi bi-envelope-x me-2"></i>Mis rebotes
+                        {% if kpi_rebotes > 0 %}
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:.68rem;z-index:2;">
+                            {{ kpi_rebotes }}
+                        </span>
+                        {% endif %}
+                    </a>
+            </div>
+        </section>
+
+        <section class="dashboard-band section-card section-card-muted">
+            <div class="dashboard-band-item">
+                <span class="dashboard-band-label">Usuario activo</span>
+                <strong>{{ user.get_full_name|default:user.username }}</strong>
+            </div>
+            <div class="dashboard-band-item">
+                <span class="dashboard-band-label">Oficina actual</span>
+                <strong>{% if oficina_usuario %}{{ oficina_usuario.nombre }}{% else %}No asignada{% endif %}</strong>
+            </div>
+            <div class="dashboard-band-item">
+                <span class="dashboard-band-label">SLA por vencer</span>
+                <strong>{{ kpi_sla_por_vencer_personal|intcomma }}</strong>
+            </div>
+            <div class="dashboard-band-item">
+                <span class="dashboard-band-label">Fecha</span>
+                <strong>{{ hoy|date:'d M Y' }}</strong>
+            </div>
+        </section>
+
+        <section class="dashboard-section section-card">
+            <div class="section-card-header dashboard-section-header">
+                <div>
+                    <span class="section-eyebrow">Indicadores</span>
+                    <h6 class="section-title"><i class="bi bi-bar-chart-line me-2"></i>Estadísticas de correspondencia</h6>
+                </div>
+            </div>
+            <div class="dashboard-kpi-grid">
+                <a class="dashboard-kpi-card is-primary" href="{% url 'correspondencia:bandeja_personal' %}?estado_lectura=no_leidos">
+                    <div class="dashboard-kpi-icon"><i class="bi bi-envelope"></i></div>
+                    <div class="dashboard-kpi-body">
+                        <span class="dashboard-kpi-label">Pendientes de lectura</span>
+                        <strong class="dashboard-kpi-value">{{ kpi_recibidos_pendientes|intcomma }}</strong>
+                        <small class="dashboard-kpi-meta">Abre tu bandeja para leer los documentos sin revisar</small>
+                    </div>
+                </a>
+                <a class="dashboard-kpi-card is-success" href="{% url 'correspondencia:bandeja_personal' %}?fecha_radicacion_desde={{ hoy|date:'Y-m-d' }}&fecha_radicacion_hasta={{ hoy|date:'Y-m-d' }}">
+                    <div class="dashboard-kpi-icon"><i class="bi bi-inbox"></i></div>
+                    <div class="dashboard-kpi-body">
+                        <span class="dashboard-kpi-label">Recibidos hoy</span>
+                        <strong class="dashboard-kpi-value">{{ kpi_recibidos_hoy|intcomma }}</strong>
+                        <small class="dashboard-kpi-meta">Muestra todos los documentos que llegaron hoy</small>
+                    </div>
+                </a>
+                <a class="dashboard-kpi-card is-danger" href="{% url 'correspondencia:bandeja_personal' %}?estado_plazo=vencido">
+                    <div class="dashboard-kpi-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div class="dashboard-kpi-body">
+                        <span class="dashboard-kpi-label">Respuesta vencida</span>
+                        <strong class="dashboard-kpi-value">{{ kpi_sla_vencido_personal|intcomma }}</strong>
+                        <small class="dashboard-kpi-meta">Muestra documentos cuyo plazo ya se venció</small>
+                    </div>
+                </a>
+                {% if oficina_usuario %}
+                <a class="dashboard-kpi-card is-info" href="{% url 'correspondencia:bandeja_oficina' %}?estado_lectura=no_leidos">
+                    <div class="dashboard-kpi-icon"><i class="bi bi-buildings"></i></div>
+                    <div class="dashboard-kpi-body">
+                        <span class="dashboard-kpi-label">Pendientes de oficina</span>
+                        <strong class="dashboard-kpi-value">{{ kpi_oficina_pendientes|intcomma }}</strong>
+                        <small class="dashboard-kpi-meta">Ver documentos sin leer de tu oficina</small>
+                    </div>
+                </a>
+                <a class="dashboard-kpi-card is-slate" href="{% url 'correspondencia:bandeja_oficina' %}?fecha_radicacion_desde={{ hoy|date:'Y-m-d' }}&fecha_radicacion_hasta={{ hoy|date:'Y-m-d' }}">
+                    <div class="dashboard-kpi-icon"><i class="bi bi-calendar-day"></i></div>
+                    <div class="dashboard-kpi-body">
+                        <span class="dashboard-kpi-label">Recibidos hoy oficina</span>
+                        <strong class="dashboard-kpi-value">{{ kpi_oficina_hoy|intcomma }}</strong>
+                        <small class="dashboard-kpi-meta">Ver documentos que llegaron hoy en tu oficina</small>
+                    </div>
+                </a>
+                {% else %}
+                <div class="dashboard-kpi-card is-muted dashboard-kpi-card-empty">
+                    <div class="dashboard-kpi-icon"><i class="bi bi-lock"></i></div>
+                    <div class="dashboard-kpi-body">
+                        <span class="dashboard-kpi-label">Oficina no disponible</span>
+                        <strong class="dashboard-kpi-value">-</strong>
+                        <small class="dashboard-kpi-meta">Asigna una oficina para ver métricas grupales</small>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="dashboard-section section-card dashboard-development-card">
+            <div class="dashboard-development-head">
+                <div>
+                    <span class="section-eyebrow">Módulos complementarios</span>
+                    <h6 class="section-title"><i class="bi bi-diagram-3 me-2"></i>Panel operativo extendido</h6>
+                </div>
+                <button type="button" class="btn dashboard-development-toggle" data-bs-toggle="collapse" data-bs-target="#dashboardExtendedContent" aria-expanded="false" aria-controls="dashboardExtendedContent" id="dashboardExtendedToggle">
+                    <span>Mostrar sección</span>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
+            <div class="dashboard-development-body" id="dashboardDevelopmentSummary">
+                <div class="dashboard-development-copy">
+                    <strong>Estado actual</strong>
+                    <p>Este bloque se encuentra en evolución funcional. Puede consultarse cuando sea necesario, sin afectar la operación principal del tablero.</p>
+                </div>
+                <div class="dashboard-development-pills">
+                    <button type="button" class="dashboard-dev-pill dashboard-dev-pill-action" data-bs-toggle="modal" data-bs-target="#modalAsistenteChatbot">
+                        <i class="bi bi-stars me-2"></i>Abrir asistente
+                    </button>
+                    <span class="dashboard-dev-pill">Accesos directos en encabezado</span>
+                    <span class="dashboard-dev-pill">Actividad reciente</span>
+                    <span class="dashboard-dev-pill">Entradas operativas</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="collapse" id="dashboardExtendedContent">
+        <div class="dashboard-main-grid dashboard-main-grid-single">
+            <aside class="dashboard-section section-card dashboard-timeline-panel">
+                <div class="section-card-header dashboard-section-header">
+                    <div>
+                        <span class="section-eyebrow">Actividad</span>
+                        <h6 class="section-title"><i class="bi bi-clock-history me-2"></i>Timeline reciente</h6>
+                    </div>
+                </div>
+                <div class="dashboard-timeline">
+                    {% for actividad in timeline_actividades %}
+                    <a href="{{ actividad.url }}" class="timeline-item timeline-{{ actividad.color }}">
+                        <span class="timeline-dot"><i class="bi {{ actividad.icono }}"></i></span>
+                        <div class="timeline-body">
+                            <div class="timeline-topline">
+                                <strong>{{ actividad.titulo }}</strong>
+                                <small>{{ actividad.fecha|date:'d M, h:i A' }}</small>
+                            </div>
+                            <div class="timeline-radicado">{{ actividad.descripcion }}</div>
+                            <p>{{ actividad.detalle }}</p>
+                        </div>
+                    </a>
+                    {% empty %}
+                    <div class="dashboard-empty-state compact-empty">
+                        <i class="bi bi-clock"></i>
+                        <p>No hay actividad reciente para mostrar.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </aside>
+        </div>
+
+        <div class="dashboard-content-grid">
+            <section class="dashboard-section section-card">
+                <div class="section-card-header dashboard-section-header">
+                    <div>
+                        <span class="section-eyebrow">Recientes</span>
+                        <h6 class="section-title"><i class="bi bi-envelope-paper me-2"></i>Asignaciones personales</h6>
+                    </div>
+                    <a class="section-link" href="{% url 'correspondencia:bandeja_personal' %}">Abrir bandeja</a>
+                </div>
+                {% if distribuciones_recientes %}
+                <div class="dashboard-list">
+                    {% for distribucion in distribuciones_recientes %}
+                    <a href="{% url 'correspondencia:detalle_correspondencia' distribucion.correspondencia.id %}" class="dashboard-list-item">
+                        <div class="dashboard-list-main">
+                            <strong>{{ distribucion.correspondencia.numero_radicado }}</strong>
+                            <span>{{ distribucion.correspondencia.asunto|default:'Sin asunto'|truncatechars:95 }}</span>
+                        </div>
+                        <div class="dashboard-list-meta">
+                            <span class="list-pill">{{ distribucion.fecha_asignacion|date:'d M, h:i A' }}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="dashboard-empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <p>No hay asignaciones recientes en tu bandeja personal.</p>
+                </div>
+                {% endif %}
+            </section>
+
+            <section class="dashboard-section section-card">
+                <div class="section-card-header dashboard-section-header">
+                    <div>
+                        <span class="section-eyebrow">Oficina</span>
+                        <h6 class="section-title"><i class="bi bi-buildings me-2"></i>Entradas de oficina</h6>
+                    </div>
+                    {% if oficina_usuario %}
+                    <a class="section-link" href="{% url 'correspondencia:bandeja_oficina' %}">Ver oficina</a>
+                    {% endif %}
+                </div>
+                {% if oficina_usuario and correspondencia_reciente_oficina %}
+                <div class="dashboard-table-wrap">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Radicado</th>
+                                <th>Remitente</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for correspondencia in correspondencia_reciente_oficina %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'correspondencia:detalle_correspondencia' correspondencia.id %}" class="table-link">
+                                        {{ correspondencia.numero_radicado }}
+                                    </a>
+                                </td>
+                                <td>{{ correspondencia.remitente|default:'Sin remitente'|truncatechars:40 }}</td>
+                                <td>{{ correspondencia.fecha_radicacion|date:'d M, h:i A' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% elif oficina_usuario %}
+                <div class="dashboard-empty-state">
+                    <i class="bi bi-buildings"></i>
+                    <p>No hay correspondencia reciente registrada para tu oficina.</p>
+                </div>
+                {% else %}
+                <div class="dashboard-empty-state">
+                    <i class="bi bi-door-closed"></i>
+                    <p>Tu perfil no tiene una oficina asignada, por eso este bloque no muestra resultados.</p>
+                </div>
+                {% endif %}
+            </section>
+        </div>
+        </div>
+    </div>
+</div>
+
+{% include 'correspondencia/partials/modals/modal_correspondencia_salida.html' %}
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-user-page {
+    --dash-bg: #f4f7f8;
+    --dash-surface: rgba(255, 255, 255, 0.92);
+    --dash-surface-strong: #ffffff;
+    --dash-surface-muted: #eef5f6;
+    --dash-border: rgba(21, 53, 70, 0.12);
+    --dash-muted: #5f7281;
+    --dash-title: #143040;
+    --dash-primary: #0f6c7a;
+    --dash-primary-deep: #0b4b56;
+    --dash-success: #237f63;
+    --dash-warning: #cb8b2d;
+    --dash-danger: #c2534d;
+    --dash-info: #2d6f9f;
+    --dash-slate: #627488;
+    --dash-shadow: 0 28px 70px -38px rgba(18, 43, 56, 0.36);
+    --dash-radius: 28px;
+    padding-bottom: 2rem;
+    background:
+        radial-gradient(circle at top left, rgba(15, 108, 122, 0.07), transparent 28%),
+        radial-gradient(circle at top right, rgba(203, 139, 45, 0.08), transparent 24%),
+        linear-gradient(180deg, #f7fbfb 0%, var(--dash-bg) 100%);
+}
+
+.dashboard-user-page .dashboard-shell {
+    width: 95%;
+    margin: 0 auto 2rem;
+    display: grid;
+    gap: 1.4rem;
+}
+
+.dashboard-user-page .section-card {
+    border: 1px solid var(--dash-border);
+    border-radius: var(--dash-radius);
+    background: var(--dash-surface);
+    box-shadow: var(--dash-shadow);
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+}
+
+.dashboard-user-page .section-card-muted {
+    background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(238,245,246,0.95));
+}
+
+.dashboard-user-page .section-card-header,
+.dashboard-user-page .dashboard-section-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.15rem 1.35rem;
+    background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,251,252,0.88) 100%) !important;
+    border-bottom: 1px solid rgba(21, 53, 70, 0.08);
+}
+
+.dashboard-user-page .section-title {
+    margin: 0;
+    color: var(--dash-title);
+    font-size: 1rem;
+    font-weight: 800;
+}
+
+.dashboard-user-page .section-eyebrow {
+    display: inline-block;
+    margin-bottom: 0.2rem;
+    color: var(--dash-primary);
+    font-size: 0.73rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.dashboard-user-page .section-copy {
+    margin: 0;
+    max-width: 34ch;
+    color: var(--dash-muted);
+    font-size: 0.84rem;
+    line-height: 1.55;
+    text-align: right;
+}
+
+.dashboard-user-page .section-link {
+    color: var(--dash-primary);
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    text-transform: uppercase;
+}
+
+.dashboard-user-page .dashboard-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    column-gap: 1.5rem;
+    row-gap: 1.2rem;
+    padding: 1.7rem;
+    background:
+        radial-gradient(circle at top left, rgba(203, 139, 45, 0.16), transparent 25%),
+        linear-gradient(135deg, rgba(15, 108, 122, 0.08), rgba(255,255,255,0.84));
+}
+
+.dashboard-user-page .dashboard-hero-copy {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+}
+
+.dashboard-user-page .dashboard-hero-aside {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.dashboard-user-page .dashboard-kicker {
+    display: inline-flex;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.42rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(15, 108, 122, 0.1);
+    color: var(--dash-primary-deep);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.dashboard-user-page .hero-title {
+    margin: 1rem 0 0.45rem;
+    font-size: clamp(1.95rem, 1.45rem + 1vw, 2.7rem);
+    font-weight: 800;
+    color: var(--dash-title);
+    letter-spacing: -0.04em;
+    line-height: 1.02;
+}
+
+.dashboard-user-page .hero-subtitle {
+    max-width: 58ch;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
+    color: var(--dash-muted);
+}
+
+.dashboard-user-page .hero-actions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    align-items: stretch;
+    min-width: 0;
+}
+
+@media (min-width: 768px) {
+    .dashboard-user-page .hero-actions {
+        flex-wrap: nowrap;
+    }
+
+    .dashboard-user-page .hero-btn {
+        flex: 0 1 auto;
+        min-height: 46px;
+        padding: 0.62rem 0.88rem;
+        font-size: 0.88rem;
+        white-space: nowrap;
+    }
+}
+
+.dashboard-user-page .hero-btn {
+    min-height: 50px;
+    padding: 0.78rem 1.2rem;
+    border-radius: 16px;
+    font-weight: 700;
+}
+
+.dashboard-user-page .hero-btn-soft {
+    border-color: rgba(21, 53, 70, 0.14);
+    color: var(--dash-title);
+    background: rgba(255,255,255,0.8);
+}
+
+.dashboard-user-page .hero-btn-color-primary {
+    background: linear-gradient(135deg, var(--dash-primary), var(--dash-primary-deep)) !important;
+    color: #fff !important;
+    border: 0 !important;
+    box-shadow: 0 12px 30px -12px rgba(15, 108, 122, 0.4);
+    transition: all 0.3s ease;
+}
+
+.dashboard-user-page .hero-btn-color-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px -12px rgba(15, 108, 122, 0.5);
+    color: #fff !important;
+    text-decoration: none;
+}
+
+.dashboard-user-page .hero-btn-color-success {
+    background: linear-gradient(135deg, var(--dash-success), #1a6650) !important;
+    color: #fff !important;
+    border: 0 !important;
+    box-shadow: 0 12px 30px -12px rgba(35, 127, 99, 0.4);
+    transition: all 0.3s ease;
+}
+
+.dashboard-user-page .hero-btn-color-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px -12px rgba(35, 127, 99, 0.5);
+    color: #fff !important;
+    text-decoration: none;
+}
+
+.dashboard-user-page .hero-btn-color-info {
+    background: linear-gradient(135deg, var(--dash-info), #1e5080) !important;
+    color: #fff !important;
+    border: 0 !important;
+    box-shadow: 0 12px 30px -12px rgba(45, 111, 159, 0.4);
+    transition: all 0.3s ease;
+}
+
+.dashboard-user-page .hero-btn-color-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px -12px rgba(45, 111, 159, 0.5);
+    color: #fff !important;
+    text-decoration: none;
+}
+
+.dashboard-user-page .hero-btn-color-warning {
+    background: linear-gradient(135deg, var(--dash-warning), #a86a1d) !important;
+    color: #fff !important;
+    border: 0 !important;
+    box-shadow: 0 12px 30px -12px rgba(203, 139, 45, 0.4);
+    transition: all 0.3s ease;
+}
+
+.dashboard-user-page .hero-btn-color-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px -12px rgba(203, 139, 45, 0.5);
+    color: #fff !important;
+    text-decoration: none;
+}
+
+.dashboard-user-page .hero-btn-disabled {
+    opacity: 0.62;
+    pointer-events: none;
+}
+
+.dashboard-user-page .hero-btn-color-danger {
+    background: linear-gradient(135deg, #dc2626, #991b1b) !important;
+    color: #fff !important;
+    border: 0 !important;
+    box-shadow: 0 12px 30px -12px rgba(220, 38, 38, 0.4);
+    transition: all 0.3s ease;
+}
+
+.dashboard-user-page .hero-btn-color-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px -12px rgba(220, 38, 38, 0.5);
+    color: #fff !important;
+    text-decoration: none;
+}
+
+.dashboard-user-page .dashboard-hero-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.dashboard-user-page .hero-orb {
+    width: 112px;
+    height: 112px;
+    border-radius: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--dash-primary), var(--dash-primary-deep));
+    color: #fff;
+    font-size: 2.6rem;
+    box-shadow: 0 24px 45px -26px rgba(15, 108, 122, 0.65);
+}
+
+.dashboard-user-page .dashboard-band {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    padding: 0.45rem;
+}
+
+.dashboard-user-page .dashboard-band-item {
+    padding: 0.9rem 1rem;
+    border-radius: 20px;
+}
+
+.dashboard-user-page .dashboard-band-label {
+    display: block;
+    color: var(--dash-muted);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.dashboard-user-page .dashboard-band-item strong {
+    display: block;
+    margin-top: 0.28rem;
+    color: var(--dash-title);
+    font-size: 0.98rem;
+}
+
+.dashboard-user-page .dashboard-section {
+    display: grid;
+}
+
+.dashboard-user-page .dashboard-development-card {
+    padding: 1.2rem 1.35rem;
+    background: linear-gradient(135deg, rgba(15,108,122,0.06), rgba(255,255,255,0.94));
+}
+
+.dashboard-user-page .dashboard-development-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.dashboard-user-page .dashboard-development-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.dashboard-user-page .dashboard-development-copy strong {
+    display: block;
+    color: var(--dash-title);
+    font-size: 0.98rem;
+}
+
+.dashboard-user-page .dashboard-development-copy p {
+    margin: 0.3rem 0 0;
+    max-width: 62ch;
+    color: var(--dash-muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+}
+
+.dashboard-user-page .dashboard-development-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 46px;
+    padding: 0.72rem 1rem;
+    border: 1px solid rgba(15, 108, 122, 0.16);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.9);
+    color: var(--dash-primary-deep);
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.dashboard-user-page .dashboard-development-toggle i {
+    transition: transform 0.22s ease;
+}
+
+.dashboard-user-page .dashboard-development-toggle[aria-expanded="true"] i {
+    transform: rotate(180deg);
+}
+
+.dashboard-user-page .dashboard-development-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+}
+
+.dashboard-user-page .dashboard-dev-pill {
+    display: inline-flex;
+    align-items: center;
+    border: 0;
+    padding: 0.42rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(15, 108, 122, 0.08);
+    color: var(--dash-primary-deep);
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.dashboard-user-page .dashboard-dev-pill-action {
+    cursor: pointer;
+}
+
+.dashboard-user-page .dashboard-dev-pill-action:hover {
+    background: rgba(15, 108, 122, 0.16);
+}
+
+.dashboard-user-page .dashboard-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.9rem;
+    padding: 1rem 1.2rem 1.2rem;
+}
+
+.dashboard-user-page .dashboard-kpi-card {
+    min-height: 138px;
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+    padding: 0.95rem;
+    border: 1px solid rgba(21, 53, 70, 0.1);
+    border-radius: 22px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdfd 100%);
+    box-shadow: 0 20px 38px -34px rgba(18, 43, 56, 0.32);
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.dashboard-user-page .dashboard-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 44px -34px rgba(18, 43, 56, 0.42);
+}
+
+.dashboard-user-page .dashboard-kpi-card-trigger {
+    padding: 0;
+}
+
+.dashboard-user-page .dashboard-kpi-trigger {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    padding: 0.95rem;
+    border-radius: 22px;
+    background: transparent;
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+    cursor: pointer;
+    text-align: left;
+}
+
+.dashboard-user-page .dashboard-kpi-chevron {
+    margin-left: auto;
+    color: var(--dash-warning);
+    font-size: 1rem;
+    transition: transform 0.25s ease;
+}
+
+.dashboard-user-page .spider-menu-trigger.active .dashboard-kpi-chevron {
+    transform: rotate(90deg);
+}
+
+.dashboard-user-page .dashboard-kpi-icon {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.08rem;
+}
+
+.dashboard-user-page .dashboard-kpi-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.16rem;
+    min-width: 0;
+}
+
+.dashboard-user-page .dashboard-kpi-label {
+    color: var(--dash-title);
+    font-size: 0.8rem;
+    font-weight: 800;
+    line-height: 1.22;
+}
+
+.dashboard-user-page .dashboard-kpi-value {
+    color: var(--dash-title);
+    margin: 0.04rem 0;
+    font-size: clamp(1.45rem, 1.2rem + 0.6vw, 1.9rem);
+    font-weight: 800;
+    line-height: 1;
+}
+
+.dashboard-user-page .dashboard-kpi-meta {
+    color: var(--dash-muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.dashboard-user-page .is-primary .dashboard-kpi-icon { background: rgba(15, 108, 122, 0.12); color: var(--dash-primary); }
+.dashboard-user-page .is-success .dashboard-kpi-icon { background: rgba(35, 127, 99, 0.12); color: var(--dash-success); }
+.dashboard-user-page .is-danger .dashboard-kpi-icon { background: rgba(194, 83, 77, 0.12); color: var(--dash-danger); }
+.dashboard-user-page .is-warning .dashboard-kpi-icon { background: rgba(203, 139, 45, 0.12); color: var(--dash-warning); }
+.dashboard-user-page .is-info .dashboard-kpi-icon { background: rgba(45, 111, 159, 0.12); color: var(--dash-info); }
+.dashboard-user-page .is-slate .dashboard-kpi-icon { background: rgba(98, 116, 136, 0.12); color: var(--dash-slate); }
+.dashboard-user-page .is-muted .dashboard-kpi-icon { background: rgba(120, 132, 146, 0.12); color: #7c8b98; }
+
+.dashboard-user-page .dashboard-main-grid,
+.dashboard-user-page .dashboard-content-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(320px, 0.95fr);
+    gap: 1.4rem;
+}
+
+.dashboard-user-page .dashboard-main-grid-single {
+    grid-template-columns: 1fr;
+}
+
+.dashboard-user-page .dashboard-timeline-panel {
+    align-self: start;
+}
+
+.dashboard-user-page .dashboard-timeline {
+    position: relative;
+    display: grid;
+    gap: 1rem;
+    padding: 1.2rem 1.35rem 1.35rem 2.2rem;
+}
+
+.dashboard-user-page .dashboard-timeline::before {
+    content: "";
+    position: absolute;
+    left: 1.08rem;
+    top: 1.6rem;
+    bottom: 1.6rem;
+    width: 1px;
+    background: rgba(21, 53, 70, 0.12);
+}
+
+.dashboard-user-page .timeline-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.85rem;
+    text-decoration: none;
+}
+
+.dashboard-user-page .timeline-dot {
+    position: absolute;
+    left: -1.64rem;
+    top: 0.15rem;
+    width: 30px;
+    height: 30px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.94);
+}
+
+.dashboard-user-page .timeline-success .timeline-dot { background: rgba(35, 127, 99, 0.14); color: var(--dash-success); }
+.dashboard-user-page .timeline-info .timeline-dot { background: rgba(45, 111, 159, 0.14); color: var(--dash-info); }
+
+.dashboard-user-page .timeline-body {
+    padding: 0.1rem 0 0.85rem;
+}
+
+.dashboard-user-page .timeline-topline {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.8rem;
+    align-items: baseline;
+}
+
+.dashboard-user-page .timeline-topline strong {
+    color: var(--dash-title);
+    font-size: 0.92rem;
+}
+
+.dashboard-user-page .timeline-topline small,
+.dashboard-user-page .timeline-radicado,
+.dashboard-user-page .timeline-body p {
+    color: var(--dash-muted);
+}
+
+.dashboard-user-page .timeline-radicado {
+    margin-top: 0.2rem;
+    font-weight: 700;
+}
+
+.dashboard-user-page .timeline-body p {
+    margin: 0.26rem 0 0;
+    font-size: 0.82rem;
+    line-height: 1.55;
+}
+
+.dashboard-user-page .dashboard-list {
+    display: grid;
+    gap: 0.8rem;
+    padding: 1.2rem 1.35rem 1.35rem;
+}
+
+.dashboard-user-page .dashboard-list-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.95rem 1rem;
+    border: 1px solid rgba(21, 53, 70, 0.08);
+    border-radius: 20px;
+    background: rgba(255,255,255,0.86);
+    text-decoration: none;
+}
+
+.dashboard-user-page .dashboard-list-main {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.dashboard-user-page .dashboard-list-main strong {
+    color: var(--dash-title);
+}
+
+.dashboard-user-page .dashboard-list-main span {
+    color: var(--dash-muted);
+    font-size: 0.84rem;
+    line-height: 1.45;
+}
+
+.dashboard-user-page .list-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.42rem 0.72rem;
+    border-radius: 999px;
+    background: rgba(15, 108, 122, 0.08);
+    color: var(--dash-primary-deep);
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.dashboard-user-page .dashboard-table-wrap {
+    padding: 0 1.35rem 1.35rem;
+}
+
+.dashboard-user-page .dashboard-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.dashboard-user-page .dashboard-table thead th {
+    padding: 0.95rem 1rem;
+    border-bottom: 1px solid rgba(21, 53, 70, 0.1);
+    color: var(--dash-muted);
+    font-size: 0.74rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.dashboard-user-page .dashboard-table tbody td {
+    padding: 0.95rem 1rem;
+    border-bottom: 1px solid rgba(21, 53, 70, 0.06);
+    color: var(--dash-title);
+    font-size: 0.9rem;
+}
+
+.dashboard-user-page .table-link {
+    color: var(--dash-primary);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.dashboard-user-page .dashboard-empty-state {
+    display: grid;
+    justify-items: center;
+    gap: 0.7rem;
+    padding: 2rem 1.35rem;
+    text-align: center;
+    color: var(--dash-muted);
+}
+
+.dashboard-user-page .dashboard-empty-state i {
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(98, 116, 136, 0.1);
+    color: var(--dash-slate);
+    font-size: 1.4rem;
+}
+
+.dashboard-user-page .compact-empty {
+    padding-top: 1.35rem;
+}
+
+/* Menú Araña */
+.spider-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.1);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.spider-menu-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.spider-menu-trigger {
+    position: relative;
+    z-index: 10;
+}
+
+.spider-menu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 0;
+    height: 0;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.spider-menu.active {
+    pointer-events: all;
+}
+
+.spider-menu-item {
+    position: absolute;
+    width: 92px;
+    height: 92px;
+    border-radius: 28px;
+    border: 2px solid;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.18rem;
+    box-shadow: 0 12px 24px -18px rgba(15, 23, 42, 0.35);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+    z-index: 1001;
+    text-decoration: none;
+    color: inherit;
+}
+
+.spider-menu-proximo {
+    border-color: #ffc107;
+    color: #ffc107;
+}
+
+.spider-menu.active .spider-menu-proximo:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    background: #ffc107;
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(255, 193, 7, 0.4);
+}
+
+.spider-menu-critico {
+    border-color: #fd7e14;
+    color: #fd7e14;
+}
+
+.spider-menu.active .spider-menu-critico:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    background: #fd7e14;
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(253, 126, 20, 0.4);
+}
+
+.spider-menu-vencido {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.spider-menu.active .spider-menu-vencido:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+    background: #dc3545;
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
+}
+
+.spider-menu.active .spider-menu-item {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.spider-menu-item i {
+    font-size: 1.18rem;
+    margin-bottom: 0;
+}
+
+.spider-menu-item span {
+    max-width: 7ch;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.15;
+    text-align: center;
+}
+
+.spider-menu-item-1 {
+    top: -108px;
+    left: 0;
+}
+
+.spider-menu-item-2 {
+    top: 56px;
+    left: -94px;
+}
+
+.spider-menu-item-3 {
+    top: 56px;
+    left: 94px;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+    .dashboard-user-page .dashboard-shell {
+        width: 100%;
+    }
+
+    .dashboard-user-page .dashboard-hero,
+    .dashboard-user-page .dashboard-main-grid,
+    .dashboard-user-page .dashboard-content-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-user-page .dashboard-hero-copy,
+    .dashboard-user-page .dashboard-hero-aside,
+    .dashboard-user-page .hero-actions {
+        grid-column: 1;
+    }
+
+    .dashboard-user-page .dashboard-hero-aside {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .dashboard-user-page .dashboard-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-user-page .dashboard-kpi-card {
+        min-height: 126px;
+    }
+
+    .dashboard-user-page .dashboard-band {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .dashboard-user-page .section-copy {
+        text-align: left;
+    }
+
+    .dashboard-user-page .dashboard-development-head,
+    .dashboard-user-page .dashboard-development-body {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 576px) {
+    .dashboard-user-page .dashboard-shell {
+        width: 100%;
+    }
+
+    .dashboard-user-page .dashboard-hero,
+    .dashboard-user-page .dashboard-kpi-grid,
+    .dashboard-user-page .dashboard-actions-grid,
+    .dashboard-user-page .dashboard-timeline,
+    .dashboard-user-page .dashboard-list,
+    .dashboard-user-page .dashboard-table-wrap {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .dashboard-user-page .dashboard-hero {
+        padding: 1.15rem;
+    }
+
+    .dashboard-user-page .dashboard-kpi-grid,
+    .dashboard-user-page .dashboard-band {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-user-page .dashboard-kpi-card,
+    .dashboard-user-page .dashboard-kpi-trigger {
+        min-height: auto;
+        padding: 0.9rem;
+    }
+
+    .dashboard-user-page .dashboard-kpi-label {
+        font-size: 0.79rem;
+    }
+
+    .dashboard-user-page .dashboard-kpi-meta {
+        font-size: 0.71rem;
+    }
+
+    .dashboard-user-page .section-card-header,
+    .dashboard-user-page .dashboard-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'correspondencia/js/sla-calculator.js' %}?v=20260310b"></script>
+<script src="{% static 'correspondencia/js/modals/blocked-recipients.js' %}"></script>
+<script src="{% static 'correspondencia/js/modals/correspondencia-salida.js' %}?v=20260310b"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const extendedContent = document.getElementById('dashboardExtendedContent');
+    const extendedToggle = document.getElementById('dashboardExtendedToggle');
+
+    function updateExtendedToggle(expanded) {
+        if (!extendedToggle) return;
+        const label = extendedToggle.querySelector('span');
+        extendedToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        if (label) {
+            label.textContent = expanded ? 'Ocultar sección' : 'Mostrar sección';
+        }
+    }
+
+    if (extendedContent) {
+        extendedContent.addEventListener('show.bs.collapse', function() {
+            updateExtendedToggle(true);
+        });
+        extendedContent.addEventListener('hide.bs.collapse', function() {
+            updateExtendedToggle(false);
+        });
+        updateExtendedToggle(extendedContent.classList.contains('show'));
+    }
+});
+</script>
+{% endblock %} 

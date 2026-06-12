@@ -1,0 +1,578 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load static humanize crispy_forms_tags %}
+
+{% block title %}Dashboard Moderno - Correspondencia{% endblock %}
+{% block page_title %}Dashboard de Correspondencia{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ================== Variables CSS del prototipo ================== */
+  .dashboard-modern {
+    --bg: #f6f8fb;
+    --surface-1: #ffffff;
+    --surface-2: #eef2f7;
+    --text: #111827;
+    --muted: #5b6474;
+    --ring: #d7dde8;
+    --shadow: 0 8px 20px rgba(15,18,33,.08);
+    --accent: #2563eb;
+    --on-accent: #ffffff;
+    --ok: #16a34a;
+    --warn: #b45309;
+    --danger: #b91c1c;
+    --input-bg: #ffffff;
+    --input-text: var(--text);
+    --input-placeholder: #6b7280;
+    --row-hover: #f3f6fb;
+    --donut-track: #e5e7eb;
+    --radius: 16px;
+    --gap: 16px;
+  }
+
+  /* Modo oscuro */
+  @media (prefers-color-scheme: dark) {
+    .dashboard-modern {
+      --bg: #0f1221;
+      --surface-1: #161a2f;
+      --surface-2: #1b2040;
+      --text: #e8eef6;
+      --muted: #a3adc0;
+      --ring: #2a2f4a;
+      --shadow: 0 10px 25px rgba(0,0,0,.35);
+      --accent: #3ea8e0;
+      --on-accent: #ffffff;
+      --ok: #7ddc93;
+      --warn: #ffd166;
+      --danger: #ff6b6b;
+      --input-bg: #10142b;
+      --input-text: var(--text);
+      --input-placeholder: #a3adc0;
+      --row-hover: #0b0f25;
+      --donut-track: #313653;
+    }
+  }
+
+  /* ================== Estilos del dashboard moderno ================== */
+  .dashboard-modern {
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* Re-skin del layout base para que coincida con el prototipo */
+  .content-wrapper { background: var(--bg); }
+  .sidebar {
+    width: 260px;
+    background: linear-gradient(180deg, var(--surface-1), var(--surface-2));
+    border-right: 1px solid var(--ring);
+  }
+  .sidebar .nav-link {
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; color:var(--text);
+    border:1px solid transparent; transition: background .15s ease, border-color .15s ease;
+  }
+  .sidebar .nav-link:hover { background: var(--row-hover); border-color: var(--ring); }
+  .sidebar .nav-link.active { background: color-mix(in oklab, var(--accent), transparent 88%); border-color: color-mix(in oklab, var(--accent), var(--ring) 70%); font-weight:650; }
+  .main-content { background: transparent; }
+  .content-header h1.h3 { font-weight:800; letter-spacing:.2px; font-size: clamp(22px, 3.5vw, 28px); margin:0; }
+
+  .dashboard-modern .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .dashboard-modern h1 {
+    margin: 0 0 10px;
+    letter-spacing: .2px;
+    font-size: clamp(22px, 3.5vw, 28px);
+    font-weight: 800;
+  }
+
+  .dashboard-modern .topbar {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .dashboard-modern .quick {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .dashboard-modern .btn {
+    appearance: none;
+    border: 1px solid var(--ring);
+    background: linear-gradient(#ffffff08,#00000008), var(--surface-1);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    text-decoration: none;
+    font-weight: 600;
+    transition: .12s transform ease, .12s box-shadow ease, .2s background;
+    transform: translateY(0);
+  }
+
+  .dashboard-modern .btn:hover {
+    transform: translateY(-1px);
+    background: var(--surface-2);
+  }
+
+  .dashboard-modern .btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+
+  .dashboard-modern .btn.primary {
+    background: var(--accent);
+    color: var(--on-accent);
+    border: 1px solid transparent;
+  }
+
+  .dashboard-modern .btn.primary:hover {
+    filter: brightness(0.95);
+  }
+
+  .dashboard-modern .card {
+    background: var(--surface-1);
+    border: 1px solid var(--ring);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  .dashboard-modern .card .body {
+    padding: 20px;
+  }
+
+  .dashboard-modern .card header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ring);
+    font-weight: 800;
+    letter-spacing: .3px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .dashboard-modern .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  @media(min-width:720px) {
+    .dashboard-modern .grid-2 {
+      grid-template-columns: 2fr 1fr 1fr;
+    }
+  }
+
+  .dashboard-modern .input,
+  .dashboard-modern .select {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--ring);
+    background: var(--input-bg);
+    color: var(--input-text);
+    outline: none;
+  }
+
+  .dashboard-modern .input::placeholder {
+    color: var(--input-placeholder);
+  }
+
+  .dashboard-modern .kpis {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(2,1fr);
+    margin: 16px 0 20px;
+  }
+
+  @media(min-width:900px) {
+    .dashboard-modern .kpis {
+      grid-template-columns: repeat(4,1fr);
+    }
+  }
+
+  .dashboard-modern .kpi {
+    padding: 16px;
+    border-radius: var(--radius);
+    background: var(--surface-1);
+    border: 1px solid var(--ring);
+    box-shadow: var(--shadow);
+  }
+
+  .dashboard-modern .kpi .label {
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: .2px;
+  }
+
+  .dashboard-modern .kpi .value {
+    font-size: clamp(24px, 4.2vw, 32px);
+    font-weight: 900;
+    margin: 6px 0 4px;
+  }
+
+  .dashboard-modern .tag {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    display: inline-block;
+  }
+
+  .dashboard-modern .tag.ok {
+    color: var(--ok);
+  }
+
+  .dashboard-modern .tag.warn {
+    color: var(--warn);
+  }
+
+  .dashboard-modern .tag.danger {
+    color: var(--danger);
+  }
+
+  .dashboard-modern .tag.filled {
+    color: var(--on-accent);
+    background: color-mix(in oklab, var(--accent), transparent 10%);
+    border-color: transparent;
+  }
+
+  .dashboard-modern .mid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+    margin-bottom: 20px;
+  }
+
+  @media(min-width:980px) {
+    .dashboard-modern .mid {
+      grid-template-columns: 1fr 1.4fr;
+    }
+  }
+
+  /* Donut SLA accesible */
+  .dashboard-modern .sla-wrap {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .dashboard-modern .donut {
+    --p: 78;
+    --clr: var(--ok);
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: conic-gradient(var(--clr) calc(var(--p)*1%), var(--donut-track) 0);
+    position: relative;
+    box-shadow: inset 0 0 0 14px var(--surface-1), var(--shadow);
+  }
+
+  .dashboard-modern .donut::after {
+    content: attr(data-p) "%";
+    position: absolute;
+    inset: 18px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--text);
+    background: var(--surface-1);
+    border: 1px solid var(--ring);
+  }
+
+  /* Barra compacta para SLA */
+  .dashboard-modern .progress {
+    height: 10px;
+    border-radius: 999px;
+    background: var(--donut-track);
+    overflow: hidden;
+  }
+
+  .dashboard-modern .progress > i {
+    display: block;
+    height: 100%;
+    background: var(--ok);
+    width: 78%;
+  }
+
+  .dashboard-modern .legend {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .dashboard-modern .legend ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    gap: 8px;
+  }
+
+  .dashboard-modern .bullet {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .dashboard-modern .b-ok {
+    background: var(--ok);
+  }
+
+  .dashboard-modern .b-warn {
+    background: var(--warn);
+  }
+
+  .dashboard-modern .b-late {
+    background: var(--danger);
+  }
+
+  /* Tablas */
+  .dashboard-modern .table-wrap {
+    max-height: 340px;
+    overflow: auto;
+  }
+
+  .dashboard-modern table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .dashboard-modern thead th {
+    position: sticky;
+    top: 0;
+    background: color-mix(in oklab, var(--surface-1), var(--text) 3%);
+    border-bottom: 1px solid var(--ring);
+    text-align: left;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 10px;
+    backdrop-filter: blur(4px);
+  }
+
+  .dashboard-modern td {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--ring);
+  }
+
+  .dashboard-modern tr:hover td {
+    background: var(--row-hover);
+  }
+
+  .dashboard-modern table.compact td,
+  .dashboard-modern table.compact th {
+    padding: 8px 8px;
+    font-size: 13px;
+  }
+
+  .dashboard-modern .bottom {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr;
+  }
+
+  @media(min-width:980px) {
+    .dashboard-modern .bottom {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  .dashboard-modern .foot {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 22px;
+  }
+
+  /* Override Bootstrap para mantener funcionalidad */
+  .dashboard-modern .modal {
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .dashboard-modern .modal-content {
+    background: var(--surface-1);
+    border: 1px solid var(--ring);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  .dashboard-modern .modal-header {
+    border-bottom: 1px solid var(--ring);
+    background: var(--surface-2);
+  }
+
+  .dashboard-modern .modal-body {
+    background: var(--surface-1);
+  }
+
+  .dashboard-modern .form-control,
+  .dashboard-modern .form-select {
+    background: var(--input-bg);
+    border: 1px solid var(--ring);
+    color: var(--input-text);
+  }
+
+  .dashboard-modern .form-control:focus,
+  .dashboard-modern .form-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 0.2rem color-mix(in oklab, var(--accent), transparent 70%);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-modern">
+  <div class="container">
+
+    <!-- Buscador -->
+    <div class="card">
+      <div class="body">
+        <form method="get" class="grid-2">
+          <div>
+            <input class="input" type="search" name="q" value="{{ request.GET.q }}" placeholder="Buscar por radicado, remitente, asunto, metadatos..." />
+          </div>
+          <div>
+            <input class="input" type="date" name="desde" value="{{ request.GET.desde }}" />
+          </div>
+          <div>
+            <input class="input" type="date" name="hasta" value="{{ request.GET.hasta }}" />
+          </div>
+          <div>
+            <select class="select" name="estado">
+              <option value="">Todos los estados</option>
+              <option value="pendiente" {% if request.GET.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+              <option value="radicado" {% if request.GET.estado == 'radicado' %}selected{% endif %}>Radicado</option>
+            </select>
+          </div>
+          <div>
+            <button type="submit" class="btn primary">Buscar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <section class="kpis">
+      <div class="kpi">
+        <div class="label">Pendientes de radicar</div>
+        <div class="value">{{ kpi_pendientes_radicacion|intcomma }}</div>
+        <span class="tag warn">requiere atención</span>
+      </div>
+      <div class="kpi">
+        <div class="label">Radicados hoy</div>
+        <div class="value">{{ kpi_radicados_hoy|intcomma }}</div>
+        <span class="tag ok">flujo activo</span>
+      </div>
+      <div class="kpi">
+        <div class="label">SLA vencido</div>
+        <div class="value">{{ kpi_sla_vencido|intcomma }}</div>
+        <span class="tag danger">riesgo</span>
+      </div>
+      <div class="kpi">
+        <div class="label">SLA por vencer (48h)</div>
+        <div class="value">{{ kpi_sla_por_vencer|intcomma }}</div>
+        <span class="tag warn">priorizar</span>
+      </div>
+    </section>
+
+    <!-- SLA + Vencimientos -->
+    <section class="mid">
+      <div class="card">
+        <header>
+          Cumplimiento de SLA
+          <div class="actions">
+            <!-- Acciones futuras -->
+          </div>
+        </header>
+        <div class="sla-wrap">
+          <div class="donut" style="--p:78; --clr:var(--ok)" data-p="78"></div>
+          <div class="legend">
+            <ul>
+              <li><span class="bullet b-ok"></span> Resueltas en plazo: <b>{{ kpi_radicados_hoy|add:50 }}</b></li>
+              <li><span class="bullet b-warn"></span> En trámite próximos a vencer: <b>{{ kpi_sla_por_vencer }}</b></li>
+              <li><span class="bullet b-late"></span> Fuera de plazo: <b>{{ kpi_sla_vencido }}</b></li>
+            </ul>
+          </div>
+        </div>
+        <div class="body" style="padding-top:0">
+          <div class="progress" aria-label="SLA actual">
+            <i style="width:78%"></i>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Estado IMAP -->
+    <section class="bottom">
+      <div class="card">
+        <header>Estado IMAP</header>
+        <div class="body">
+          <p class="mb-1"><strong>Última lectura:</strong> {{ ultimo_fetch|default:'-'|date:'Y-m-d H:i' }}</p>
+          <p class="mb-0"><strong>Total correos:</strong> {{ total_correos|intcomma }}</p>
+          <a href="{% url 'correspondencia:procesar_emails_manual' %}" class="btn mt-2">
+            <i class="bi bi-arrow-repeat me-1"></i> Reintentar lectura
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <p class="foot">Cumplimiento: ISO 15489 · NTC 4095 · AGN. Sistema de gestión documental del Hospital del Sarare.</p>
+  </div>
+</div>
+
+<!-- Flags para reabrir modales (evita lógica de plantillas en JS) -->
+<div id="modal-flags"
+     data-open-contacto="{% if open_contacto_modal %}1{% else %}0{% endif %}"
+     data-open-rad="{% if open_radicacion_modal %}1{% else %}0{% endif %}"
+     data-open-ent="{% if open_entidad_modal %}1{% else %}0{% endif %}">
+</div>
+
+<!-- ===================== MODALES (partials reutilizables) ===================== -->
+{% include 'correspondencia/partials/modals/modal_contacto.html' with modal_id='modalCrearContacto' %}
+{% include 'correspondencia/partials/modals/modal_entidad.html' with modal_id='modalCrearEntidad' %}
+{% include 'correspondencia/partials/modals/modal_radicacion.html' with modal_id='modalRadicarCorreoDashboard' %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'correspondencia/js/modals/core-modals.js' %}?v=20260310b"></script>
+<script src="{% static 'correspondencia/js/sla-calculator.js' %}?v=20260310b"></script>
+<script src="{% static 'correspondencia/js/modals/radicacion.js' %}?v=20260310b"></script>
+<script>
+/* eslint-disable */
+document.addEventListener('DOMContentLoaded', function(){
+    // Reabrir modales tras POST inválido (flags desde data-attrs)
+    var flagEl = document.getElementById('modal-flags');
+    var openContacto = flagEl && flagEl.dataset.openContacto === '1';
+    var openRad = flagEl && flagEl.dataset.openRad === '1';
+    var openEnt = flagEl && flagEl.dataset.openEnt === '1';
+
+    if (openContacto && window.bootstrap) {
+        var m = document.getElementById('modalCrearContacto'); 
+        if(m) new bootstrap.Modal(m).show();
+    }
+    if (openRad && window.bootstrap) {
+        var m = document.getElementById('modalRadicarCorreoDashboard'); 
+        if(m) new bootstrap.Modal(m).show();
+    }
+    if (openEnt && window.bootstrap) {
+        var m = document.getElementById('modalCrearEntidad'); 
+        if(m) new bootstrap.Modal(m).show();
+    }
+
+    // JS específico de modales ya está centralizado en core-modals.js y radicacion.js
+});
+</script>
+{% endblock %}

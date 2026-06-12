@@ -1,0 +1,806 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .interoffice-page {
+            --inter-surface: #ffffff;
+            --inter-surface-muted: #f8fafc;
+            --inter-border: #e2e8f0;
+            --inter-muted: #64748b;
+            --inter-title: #0f172a;
+            --inter-primary: var(--bs-primary, #0d6efd);
+            --inter-shadow: 0 18px 42px -28px rgba(15, 23, 42, 0.28);
+            --inter-radius: 24px;
+        }
+
+        .interoffice-page .interoffice-shell {
+            width: 95%;
+            margin: 0 auto 2rem;
+        }
+
+        .interoffice-page .filters-card,
+        .interoffice-page .table-card,
+        .interoffice-page .alert-card {
+            border: 1px solid var(--inter-border);
+            border-radius: var(--inter-radius);
+            background: var(--inter-surface);
+            box-shadow: var(--inter-shadow);
+        }
+
+        .interoffice-page .filters-card {
+            padding: 1.35rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .interoffice-page .section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .interoffice-page .section-head h2,
+        .interoffice-page .table-card-head h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--inter-title);
+        }
+
+        .interoffice-page .section-head p,
+        .interoffice-page .table-card-head p {
+            margin: 0.25rem 0 0;
+            color: var(--inter-muted);
+        }
+
+        .interoffice-page .filtros-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .interoffice-page .toggle-icon {
+            transition: transform .2s ease;
+        }
+
+        .interoffice-page .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+
+        .interoffice-page .view-switch {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            justify-content: flex-end;
+        }
+
+        .interoffice-page .view-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.72rem 0.95rem;
+            border-radius: 16px;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            color: #475569;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all .2s ease;
+        }
+
+        .interoffice-page .view-link:hover,
+        .interoffice-page .view-link.is-active {
+            color: var(--inter-primary);
+            border-color: rgba(13, 110, 253, 0.24);
+            background: rgba(13, 110, 253, 0.08);
+        }
+
+        .interoffice-page .alert-card {
+            padding: 1rem 1.2rem;
+            margin-bottom: 1rem;
+            color: #991b1b;
+            background: linear-gradient(180deg, #fff7f7 0%, #fff1f2 100%);
+            border-color: rgba(248, 113, 113, 0.35);
+        }
+
+        .interoffice-page .table-card {
+            overflow: hidden;
+        }
+
+        .interoffice-page .table-card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.35rem 1.4rem 1rem;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        }
+
+        .interoffice-page .table-wrap {
+            padding: 0 1rem 1rem;
+        }
+
+        .interoffice-page .page-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 0.95rem;
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(255, 255, 255, 0.9);
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .interoffice-page .table-modern {
+            margin-bottom: 0;
+            --bs-table-bg: transparent;
+        }
+
+        .interoffice-page .table-modern thead th {
+            border-bottom-width: 1px;
+            border-color: rgba(226, 232, 240, 0.9);
+            color: var(--inter-muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 800;
+            padding: 1rem 0.9rem;
+            background: var(--inter-surface-muted);
+        }
+
+        .interoffice-page .table-modern tbody td {
+            padding: 1rem 0.9rem;
+            border-color: rgba(226, 232, 240, 0.8);
+            vertical-align: middle;
+        }
+
+        .interoffice-page .table-modern tbody tr:hover {
+            background: rgba(248, 250, 252, 0.7);
+        }
+
+        .interoffice-page .table-modern tbody tr.row-unread {
+            background: rgba(13, 110, 253, 0.05);
+        }
+
+        .interoffice-page .col-radicado {
+            min-width: 190px;
+            width: 220px;
+            white-space: nowrap;
+        }
+
+        .interoffice-page .col-asunto {
+            min-width: 260px;
+        }
+
+        .interoffice-page .radicado-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 0.9rem;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.12), rgba(13, 110, 253, 0.18));
+            color: var(--inter-primary);
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        .interoffice-page .radicado-link:hover {
+            color: #0b5ed7;
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.16), rgba(13, 110, 253, 0.24));
+        }
+
+        .interoffice-page .muted-text {
+            color: var(--inter-muted);
+        }
+
+        .interoffice-page .subject-title,
+        .interoffice-page .person-text {
+            color: var(--inter-title);
+            font-weight: 700;
+            overflow-wrap: anywhere;
+        }
+
+        .interoffice-page .origin-badge,
+        .interoffice-page .visibility-badge,
+        .interoffice-page .status-pill,
+        .interoffice-page .days-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            border-radius: 999px;
+            padding: 0.5rem 0.8rem;
+            font-weight: 700;
+            font-size: 0.78rem;
+        }
+
+        .interoffice-page .origin-badge {
+            background: rgba(148, 163, 184, 0.18);
+            color: #334155;
+        }
+
+        .interoffice-page .visibility-badge.is-leaders {
+            background: rgba(245, 158, 11, 0.18);
+            color: #92400e;
+        }
+
+        .interoffice-page .visibility-badge.is-office {
+            background: rgba(14, 165, 233, 0.14);
+            color: #075985;
+        }
+
+        .interoffice-page .btn-lectura-detalle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            min-width: 94px;
+            border-radius: 999px;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            padding: 0.45rem 0.75rem;
+            font-weight: 700;
+        }
+
+        .interoffice-page .btn-lectura-detalle:hover {
+            border-color: rgba(13, 110, 253, 0.25);
+            background: rgba(13, 110, 253, 0.05);
+        }
+
+        .interoffice-page .estado-vencido {
+            background: rgba(239, 68, 68, 0.16);
+            color: #991b1b;
+        }
+
+        .interoffice-page .estado-por-vencer {
+            background: rgba(245, 158, 11, 0.18);
+            color: #92400e;
+        }
+
+        .interoffice-page .estado-en-tramite {
+            background: rgba(34, 197, 94, 0.12);
+            color: #166534;
+        }
+
+        .interoffice-page .estado-informativo {
+            background: rgba(59, 130, 246, 0.14);
+            color: #1d4ed8;
+        }
+
+        .interoffice-page .days-pill.is-danger {
+            background: rgba(239, 68, 68, 0.16);
+            color: #991b1b;
+        }
+
+        .interoffice-page .days-pill.is-warning {
+            background: rgba(245, 158, 11, 0.18);
+            color: #92400e;
+        }
+
+        .interoffice-page .days-pill.is-success {
+            background: rgba(34, 197, 94, 0.12);
+            color: #166534;
+        }
+
+        .interoffice-page .empty-state {
+            padding: 2rem 1rem;
+        }
+
+        .interoffice-page .pagination {
+            padding: 0 1rem 1.25rem;
+            margin: 0;
+        }
+
+        .interoffice-page .page-link {
+            border-radius: 12px;
+            margin: 0 0.15rem;
+            border-color: rgba(226, 232, 240, 0.9);
+            color: #334155;
+            font-weight: 700;
+        }
+
+        .interoffice-page .page-item.active .page-link {
+            background: var(--inter-primary);
+            border-color: var(--inter-primary);
+        }
+
+        #modalLecturaDetalle .modal-content {
+            border: 1px solid var(--inter-border, #e2e8f0);
+            border-radius: 24px;
+            box-shadow: var(--inter-shadow, 0 18px 42px -28px rgba(15, 23, 42, 0.28));
+        }
+
+        #modalLecturaDetalle .modal-header,
+        #modalLecturaDetalle .modal-footer {
+            border-color: rgba(226, 232, 240, 0.85);
+        }
+
+        #modalLecturaDetalle .office-reading-block {
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            border-radius: 18px;
+            padding: 1rem;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            margin-bottom: 1rem;
+        }
+
+        #modalLecturaDetalle .office-reading-title {
+            color: var(--inter-title, #0f172a);
+            font-weight: 800;
+            margin-bottom: 0.85rem;
+        }
+
+        #modalLecturaDetalle .reading-column-title {
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+        }
+
+        #modalLecturaDetalle .reading-column-title.is-read {
+            color: #166534;
+        }
+
+        #modalLecturaDetalle .reading-column-title.is-pending {
+            color: #92400e;
+        }
+
+        #modalLecturaDetalle .list-group-item {
+            border-radius: 16px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            margin-bottom: 0.65rem;
+            padding: 0.9rem 1rem;
+        }
+
+        @media (max-width: 991.98px) {
+            .interoffice-page .section-head,
+            .interoffice-page .table-card-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .interoffice-page .view-switch {
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .interoffice-page .interoffice-shell {
+                width: 100%;
+            }
+
+            .interoffice-page .table-wrap {
+                padding: 0 0.5rem 0.75rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="interoffice-page">
+    <div class="interoffice-shell">
+        {% if not load_success %}
+            <div class="alert-card" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                Hubo un problema al cargar la bandeja interoficina. Contacte al administrador.
+            </div>
+        {% endif %}
+
+        <section class="filters-card" id="filtros-panel-interoficina">
+            <div class="section-head filtros-toggle">
+                <div>
+                    <h2><i class="bi bi-funnel-fill me-2"></i>Filtros de búsqueda</h2>
+                    <p>Refina los accesos interoficina por radicado, remitente, entidad, fechas de compartido, lectura y plazo.</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="view-switch" onclick="event.stopPropagation()">
+                        <a href="{% url 'correspondencia:bandeja_personal' %}" class="view-link" title="Tu bandeja personal"><i class="bi bi-person-fill"></i>Mi Bandeja</a>
+                        <a href="{% url 'correspondencia:bandeja_oficina' %}" class="view-link" title="Correspondencia de tu oficina"><i class="bi bi-building"></i>Bandeja Oficina</a>
+                        <span class="view-link is-active" title="Correspondencia compartida entre oficinas"><i class="bi bi-diagram-3"></i>Bandeja Interoficina</span>
+                    </div>
+                    <i class="bi bi-chevron-down toggle-icon"></i>
+                </div>
+            </div>
+            <div class="filtros-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-12 col-lg-5">
+                        <label for="search_term" class="form-label">Búsqueda</label>
+                        <input type="text" class="form-control" id="search_term" name="search_term"
+                               value="{{ filtro_search_term }}"
+                               placeholder="Radicado, asunto, remitente, entidad...">
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="remitente" class="form-label">Remitente</label>
+                        <input type="text" class="form-control" id="remitente" name="remitente"
+                               value="{{ filtro_remitente }}" placeholder="Nombre, apellido o email">
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <label for="entidad" class="form-label">Entidad</label>
+                        <input type="text" class="form-control" id="entidad" name="entidad"
+                               value="{{ filtro_entidad }}" placeholder="Nombre de la entidad">
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="estado_plazo" class="form-label">Estado de plazo</label>
+                        <select id="estado_plazo" name="estado_plazo" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="proximo" {% if filtro_estado_plazo == 'proximo' %}selected{% endif %}>Próximo</option>
+                            <option value="ok" {% if filtro_estado_plazo == 'ok' %}selected{% endif %}>En trámite</option>
+                            <option value="urgente" {% if filtro_estado_plazo == 'urgente' %}selected{% endif %}>Urgente</option>
+                            <option value="critico" {% if filtro_estado_plazo == 'critico' %}selected{% endif %}>Crítico</option>
+                            <option value="vencido" {% if filtro_estado_plazo == 'vencido' %}selected{% endif %}>Vencido</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="estado_lectura" class="form-label">Estado de lectura</label>
+                        <select id="estado_lectura" name="estado_lectura" class="form-select">
+                            <option value="">Todos</option>
+                            <option value="leidos" {% if filtro_estado_lectura == 'leidos' %}selected{% endif %}>Leídos</option>
+                            <option value="no_leidos" {% if filtro_estado_lectura == 'no_leidos' %}selected{% endif %}>No leídos</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="fecha_compartido_desde" class="form-label">Compartido Desde</label>
+                        <input type="date" class="form-control" id="fecha_compartido_desde" name="fecha_compartido_desde"
+                               value="{{ filtro_fecha_compartido_desde }}">
+                    </div>
+
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="fecha_compartido_hasta" class="form-label">Compartido Hasta</label>
+                        <input type="date" class="form-control" id="fecha_compartido_hasta" name="fecha_compartido_hasta"
+                               value="{{ filtro_fecha_compartido_hasta }}">
+                    </div>
+
+                    <div class="col-12 d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search me-2"></i>Aplicar filtros
+                        </button>
+                        <a href="{% url 'correspondencia:bandeja_interoficina' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-counterclockwise me-2"></i>Limpiar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="table-card">
+            <div class="table-card-head">
+                <div>
+                    <h2><i class="bi bi-diagram-3 me-2"></i>Accesos interoficina</h2>
+                    <p>Consulta las correspondencias compartidas entre oficinas y valida visibilidad, observaciones, lectura y vencimiento.</p>
+                </div>
+                <span class="page-chip"><i class="bi bi-list-ul"></i> Página {{ accesos_page.number|default:1 }}{% if accesos_page %} de {{ accesos_page.paginator.num_pages }}{% endif %}</span>
+            </div>
+            <div class="table-wrap">
+                {% if load_success %}
+                    <div class="table-responsive">
+                        <table class="table table-modern table-hover align-middle" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th class="col-fecha">Compartido</th>
+                                    <th class="col-radicado">No. Radicado</th>
+                                    <th class="col-remitente">Oficina Origen</th>
+                                    <th class="col-remitente">Compartido por</th>
+                                    <th class="col-asunto">Asunto</th>
+                                    <th class="col-remitente">Visibilidad</th>
+                                    <th class="col-remitente">Observaciones</th>
+                                    <th class="col-estado">Estado Lectura</th>
+                                    <th class="col-estado">Estado Plazo</th>
+                                    <th class="col-estado">Respuesta</th>
+                                    <th class="col-dias">Días Restantes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for acceso in accesos %}
+                                <tr class="{% if not acceso.leido %}row-unread{% endif %}">
+                                    <td class="col-fecha">
+                                        <div class="muted-text small text-uppercase fw-semibold">Compartido</div>
+                                        <div class="fw-semibold">{{ acceso.fecha_compartido|date:"Y-m-d" }}</div>
+                                        <small class="muted-text">{{ acceso.fecha_compartido|date:"H:i" }}</small>
+                                    </td>
+                                    <td class="col-radicado">
+                                        <a href="{% url 'correspondencia:detalle_correspondencia' acceso.correspondencia.pk %}"
+                                           class="radicado-link"
+                                           title="Ver Detalles"
+                                           data-bs-toggle="tooltip">
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                            {{ acceso.correspondencia.numero_radicado }}
+                                        </a>
+                                    </td>
+                                    <td class="col-remitente">
+                                        {% with origen=acceso.compartido_por.perfil.oficina.nombre|default:acceso.correspondencia.oficina_destino.nombre %}
+                                            <span class="origin-badge">{{ origen }}</span>
+                                        {% endwith %}
+                                    </td>
+                                    <td class="col-remitente">
+                                        {% if acceso.compartido_por %}
+                                            <div class="person-text">{{ acceso.compartido_por.get_full_name|default:acceso.compartido_por.username }}</div>
+                                        {% else %}
+                                            <span class="muted-text">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-asunto">
+                                        <div class="subject-title" title="{{ acceso.correspondencia.asunto }}">{{ acceso.correspondencia.asunto|truncatechars:90 }}</div>
+                                    </td>
+                                    <td class="col-remitente">
+                                        {% if acceso.solo_lider %}
+                                            <span class="visibility-badge is-leaders" title="Solo visible para usuarios Líderes de esta oficina">
+                                                <i class="bi bi-shield-lock-fill"></i>Solo Líderes
+                                            </span>
+                                        {% else %}
+                                            <span class="visibility-badge is-office" title="Visible para todos los usuarios de esta oficina">
+                                                <i class="bi bi-people-fill"></i>Toda la Oficina
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-remitente">
+                                        {% if acceso.observaciones %}
+                                            <div class="muted-text" title="{{ acceso.observaciones }}">{{ acceso.observaciones|truncatechars:70 }}</div>
+                                        {% else %}
+                                            <span class="muted-text">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-estado text-center">
+                                        <button type="button"
+                                                class="btn btn-lectura-detalle"
+                                                data-correspondencia-id="{{ acceso.correspondencia.id }}"
+                                                title="Ver detalle de lectura">
+                                            {% if acceso.leido %}
+                                                <i class="bi bi-envelope-open-fill text-success"></i>
+                                                <small class="text-success">1/1</small>
+                                            {% else %}
+                                                <i class="bi bi-envelope-fill text-secondary"></i>
+                                                <small class="text-secondary">0/1</small>
+                                            {% endif %}
+                                        </button>
+                                    </td>
+                                    <td class="col-estado text-center">
+                                        {% if acceso.correspondencia.requiere_respuesta %}
+                                            {% if acceso.correspondencia.fue_respondida %}
+                                                {% if acceso.correspondencia.respondida_a_tiempo %}
+                                                    <span class="status-pill estado-en-tramite"><i class="bi bi-check-circle-fill"></i> A tiempo</span>
+                                                {% elif acceso.correspondencia.estado_respuesta_bandeja == 'sin_plazo' %}
+                                                    <span class="status-pill estado-informativo"><i class="bi bi-check-circle-fill"></i> Respondida</span>
+                                                {% else %}
+                                                    <span class="status-pill estado-vencido"><i class="bi bi-exclamation-circle-fill"></i> Fuera de plazo</span>
+                                                {% endif %}
+                                            {% else %}
+                                                {% with estado_plazo=acceso.correspondencia.estado_plazo %}
+                                                    {% if estado_plazo == 'vencido' %}
+                                                        <span class="status-pill estado-vencido">Vencido</span>
+                                                    {% elif estado_plazo == 'critico' %}
+                                                        <span class="status-pill estado-vencido">Crítico</span>
+                                                    {% elif estado_plazo == 'urgente' %}
+                                                        <span class="status-pill estado-por-vencer">Urgente</span>
+                                                    {% elif estado_plazo == 'proximo' %}
+                                                        <span class="status-pill estado-por-vencer">Próximo</span>
+                                                    {% elif estado_plazo == 'ok' %}
+                                                        <span class="status-pill estado-en-tramite">En trámite</span>
+                                                    {% else %}
+                                                        <span class="status-pill muted-text">Sin determinar</span>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="muted-text small">No requiere</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-estado text-center">
+                                        {% if acceso.correspondencia.estado_respuesta_bandeja == 'no_requiere' %}
+                                            <span class="muted-text small">No requiere</span>
+                                        {% elif acceso.correspondencia.estado_respuesta_bandeja == 'pendiente' %}
+                                            <span class="status-pill estado-por-vencer">Pendiente</span>
+                                        {% elif acceso.correspondencia.estado_respuesta_bandeja == 'a_tiempo' %}
+                                                <span class="status-pill estado-en-tramite">Respondida a tiempo</span>
+                                            <div class="muted-text small mt-1">{{ acceso.correspondencia.respuesta_registrada_en|date:"Y-m-d H:i" }}</div>
+                                        {% elif acceso.correspondencia.estado_respuesta_bandeja == 'fuera_tiempo' %}
+                                            <span class="status-pill estado-vencido">Fuera de tiempo</span>
+                                            <div class="muted-text small mt-1">{{ acceso.correspondencia.respuesta_registrada_en|date:"Y-m-d H:i" }}</div>
+                                        {% elif acceso.correspondencia.estado_respuesta_bandeja == 'sin_plazo' %}
+                                            <span class="status-pill estado-informativo">Respondida</span>
+                                            <div class="muted-text small mt-1">Sin plazo</div>
+                                        {% else %}
+                                            <span class="muted-text small">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="col-dias text-center">
+                                        {% if acceso.correspondencia.requiere_respuesta %}
+                                            {% with dias=acceso.correspondencia.dias_restantes %}
+                                                {% if dias is not None %}
+                                                    <span class="days-pill {% if dias < 0 %}is-danger{% elif dias <= 3 %}is-warning{% else %}is-success{% endif %}">
+                                                        {{ dias }} día{% if dias != 1 %}s{% endif %}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="muted-text">N/A</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% else %}
+                                            <span class="muted-text">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="11" class="text-center py-4">
+                                        <div class="empty-state">
+                                            <i class="bi bi-envelope-open text-muted" style="font-size: 2rem;"></i>
+                                            <p class="mt-2 text-muted">No hay accesos interoficina registrados para tu oficina.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        {% if accesos_page and accesos_page.has_other_pages %}
+                            <nav aria-label="Paginación de accesos" class="mt-3">
+                                <ul class="pagination justify-content-center">
+                                    {% if accesos_page.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% if filtro_search_term %}search_term={{ filtro_search_term }}&{% endif %}{% if filtro_remitente %}remitente={{ filtro_remitente }}&{% endif %}{% if filtro_entidad %}entidad={{ filtro_entidad }}&{% endif %}{% if filtro_fecha_compartido_desde %}fecha_compartido_desde={{ filtro_fecha_compartido_desde }}&{% endif %}{% if filtro_fecha_compartido_hasta %}fecha_compartido_hasta={{ filtro_fecha_compartido_hasta }}&{% endif %}{% if filtro_estado_lectura %}estado_lectura={{ filtro_estado_lectura }}&{% endif %}{% if filtro_estado_plazo %}estado_plazo={{ filtro_estado_plazo }}&{% endif %}page={{ accesos_page.previous_page_number }}">Anterior</a>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for num in accesos_page.paginator.page_range %}
+                                        {% if num == accesos_page.number %}
+                                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                        {% elif num > accesos_page.number|add:'-3' and num < accesos_page.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?{% if filtro_search_term %}search_term={{ filtro_search_term }}&{% endif %}{% if filtro_remitente %}remitente={{ filtro_remitente }}&{% endif %}{% if filtro_entidad %}entidad={{ filtro_entidad }}&{% endif %}{% if filtro_fecha_compartido_desde %}fecha_compartido_desde={{ filtro_fecha_compartido_desde }}&{% endif %}{% if filtro_fecha_compartido_hasta %}fecha_compartido_hasta={{ filtro_fecha_compartido_hasta }}&{% endif %}{% if filtro_estado_lectura %}estado_lectura={{ filtro_estado_lectura }}&{% endif %}{% if filtro_estado_plazo %}estado_plazo={{ filtro_estado_plazo }}&{% endif %}page={{ num }}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if accesos_page.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% if filtro_search_term %}search_term={{ filtro_search_term }}&{% endif %}{% if filtro_remitente %}remitente={{ filtro_remitente }}&{% endif %}{% if filtro_entidad %}entidad={{ filtro_entidad }}&{% endif %}{% if filtro_fecha_compartido_desde %}fecha_compartido_desde={{ filtro_fecha_compartido_desde }}&{% endif %}{% if filtro_fecha_compartido_hasta %}fecha_compartido_hasta={{ filtro_fecha_compartido_hasta }}&{% endif %}{% if filtro_estado_lectura %}estado_lectura={{ filtro_estado_lectura }}&{% endif %}{% if filtro_estado_plazo %}estado_plazo={{ filtro_estado_plazo }}&{% endif %}page={{ accesos_page.next_page_number }}">Siguiente</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning m-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        No se pudo cargar la información de accesos interoficina.
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const panel = document.getElementById('filtros-panel-interoficina');
+    if (!panel) return;
+    const header = panel.querySelector('.filtros-toggle');
+    const body = panel.querySelector('.filtros-body');
+    const icon = panel.querySelector('.toggle-icon');
+    const storageKey = 'bandeja_interoficina_filtros_collapsed';
+
+    try {
+        const collapsed = localStorage.getItem(storageKey) === '1';
+        if (collapsed) {
+            body.classList.add('d-none');
+            icon.classList.add('rotated');
+        }
+    } catch (e) {}
+
+    header.addEventListener('click', function(event) {
+        if (event.target.closest('button, a, input, select, label')) return;
+        body.classList.toggle('d-none');
+        icon.classList.toggle('rotated');
+        try { localStorage.setItem(storageKey, body.classList.contains('d-none') ? '1' : '0'); } catch (e) {}
+    });
+
+    const modalHtml = `
+<div class="modal fade" id="modalLecturaDetalle" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-people me-2"></i>
+          Historial de lectura por oficina
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">
+        <div id="lecturaDetalleContenido">
+          <div class="text-center text-muted">Cargando...</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>`;
+
+    if (!document.getElementById('modalLecturaDetalle')) {
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+
+    const modalEl = document.getElementById('modalLecturaDetalle');
+    const modal = modalEl ? new bootstrap.Modal(modalEl) : null;
+    const contenido = () => document.getElementById('lecturaDetalleContenido');
+
+    function renderDetalle(data) {
+        if (!data.ok) {
+            return `<div class="alert alert-danger">${data.error || 'No fue posible cargar la información.'}</div>`;
+        }
+
+        const renderGrupo = (usuarios) => {
+            if (!usuarios.length) return '<p class="text-muted">Ninguno</p>';
+            const items = usuarios.map(u => {
+                const fecha = u.fecha_lectura ? new Date(u.fecha_lectura).toLocaleString('es-CO', {
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit'
+                }) : 'Sin lectura';
+                const rol = u.rol ? `<small class="text-muted">${u.rol}</small>` : '';
+                return `
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="fw-semibold">${u.nombre}</div>
+                        ${rol}
+                        <div><small class="text-muted">Última lectura: ${fecha}</small></div>
+                    </div>
+                    <span class="badge ${u.leido ? 'bg-success' : 'bg-secondary'}">${u.leido ? 'Leído' : 'Pendiente'}</span>
+                </li>`;
+            }).join('');
+            return `<ul class="list-group mb-0">${items}</ul>`;
+        };
+
+        const oficinas = data.oficinas || [];
+        if (!oficinas.length) {
+            return '<p class="text-muted">No hay información de lectura disponible.</p>';
+        }
+
+        return oficinas.map(oficina => {
+            const leidos = oficina.usuarios.filter(u => u.leido);
+            const noLeidos = oficina.usuarios.filter(u => !u.leido);
+            return `
+            <div class="office-reading-block">
+                <h5 class="office-reading-title">${oficina.nombre_oficina}</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="reading-column-title is-read">Leídos (${leidos.length})</div>
+                        ${renderGrupo(leidos)}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="reading-column-title is-pending">Pendientes (${noLeidos.length})</div>
+                        ${renderGrupo(noLeidos)}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    document.querySelectorAll('.btn-lectura-detalle').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            if (!modal) return;
+            contenido().innerHTML = '<div class="text-center text-muted">Cargando...</div>';
+            modal.show();
+            const id = this.getAttribute('data-correspondencia-id');
+            try {
+                const resp = await fetch(`{% url 'correspondencia:lectura_detalle_interoficina_ajax' 0 %}`.replace('/0/', `/${id}/`));
+                const data = await resp.json();
+                contenido().innerHTML = renderDetalle(data);
+            } catch (e) {
+                contenido().innerHTML = `<div class='alert alert-danger'>Error de red al cargar el detalle.</div>`;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+

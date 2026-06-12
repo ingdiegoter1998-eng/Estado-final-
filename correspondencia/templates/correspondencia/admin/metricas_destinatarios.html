@@ -1,0 +1,196 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    
+    <!-- Filtros -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filtros</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="oficina" class="form-label">Oficina</label>
+                    <select name="oficina" id="oficina" class="form-select">
+                        <option value="">Todas las oficinas</option>
+                        {% for oficina in oficinas %}
+                            <option value="{{ oficina.id }}" {% if request.GET.oficina == oficina.id|stringformat:"s" %}selected{% endif %}>
+                                {{ oficina.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="fecha_desde" class="form-label">Desde</label>
+                    <input type="date" name="fecha_desde" id="fecha_desde" class="form-control" 
+                           value="{{ request.GET.fecha_desde }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="fecha_hasta" class="form-label">Hasta</label>
+                    <input type="date" name="fecha_hasta" id="fecha_hasta" class="form-control" 
+                           value="{{ request.GET.fecha_hasta }}">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">Filtrar</button>
+                    <a href="{% url 'correspondencia:metricas_destinatarios' %}" class="btn btn-secondary">Limpiar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Métricas por Oficina -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Métricas por Oficina</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Oficina</th>
+                                    <th>Total Envíos</th>
+                                    <th>Exitosos</th>
+                                    <th>Fallidos</th>
+                                    <th>Pendientes</th>
+                                    <th>% Éxito</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for metrica in metricas_oficina %}
+                                <tr>
+                                    <td>{{ metrica.correspondencia_salida__oficina_emisora__nombre }}</td>
+                                    <td>{{ metrica.total_envios }}</td>
+                                    <td><span class="badge bg-success">{{ metrica.exitosos }}</span></td>
+                                    <td><span class="badge bg-danger">{{ metrica.fallidos }}</span></td>
+                                    <td><span class="badge bg-warning">{{ metrica.pendientes }}</span></td>
+                                    <td>
+                                        {% if metrica.total_envios > 0 %}
+                                            {% widthratio metrica.exitosos metrica.total_envios 100 %}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">No hay datos para mostrar</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Métricas por Destinatario -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Métricas por Destinatario</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Destinatario</th>
+                                    <th>Entidad</th>
+                                    <th>Email</th>
+                                    <th>Total Envíos</th>
+                                    <th>Exitosos</th>
+                                    <th>Fallidos</th>
+                                    <th>Pendientes</th>
+                                    <th>% Éxito</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for metrica in metricas_destinatario %}
+                                <tr>
+                                    <td>{{ metrica.contacto__nombres }} {{ metrica.contacto__apellidos }}</td>
+                                    <td>{{ metrica.contacto__entidad_externa__nombre }}</td>
+                                    <td>{{ metrica.email_snapshot }}</td>
+                                    <td>{{ metrica.total_envios }}</td>
+                                    <td><span class="badge bg-success">{{ metrica.exitosos }}</span></td>
+                                    <td><span class="badge bg-danger">{{ metrica.fallidos }}</span></td>
+                                    <td><span class="badge bg-warning">{{ metrica.pendientes }}</span></td>
+                                    <td>
+                                        {% if metrica.total_envios > 0 %}
+                                            {% widthratio metrica.exitosos metrica.total_envios 100 %}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted">No hay datos para mostrar</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fallos Recientes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Fallos Recientes (Últimos 30 días)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Destinatario</th>
+                                    <th>Email</th>
+                                    <th>Respuesta</th>
+                                    <th>Error</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for fallo in fallos_recientes %}
+                                <tr>
+                                    <td>{{ fallo.correspondencia_salida.fecha_creacion|date:"Y-m-d H:i" }}</td>
+                                    <td>{{ fallo.nombre_snapshot }}</td>
+                                    <td>{{ fallo.email_snapshot }}</td>
+                                    <td>
+                                        <a href="{% url 'correspondencia:revisar_respuesta' fallo.correspondencia_salida.id %}" 
+                                           target="_blank">
+                                            {{ fallo.correspondencia_salida.numero_radicado_salida }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <small class="text-danger">{{ fallo.detalle_error|truncatechars:50 }}</small>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">No hay fallos recientes</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

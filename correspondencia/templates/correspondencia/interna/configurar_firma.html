@@ -1,0 +1,807 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static %}
+
+{% block title %}Configurar Firma Digital - Comunicaciones Internas{% endblock %}
+{% block page_title %}Configurar Firma Digital{% endblock %}
+
+{% block extra_css %}
+<style>
+    .interna-signature-page {
+        --signature-bg: #f4f7f8;
+        --signature-surface: rgba(255, 255, 255, 0.94);
+        --signature-surface-strong: #ffffff;
+        --signature-line: rgba(20, 48, 64, 0.12);
+        --signature-soft-line: rgba(20, 48, 64, 0.08);
+        --signature-ink: #143040;
+        --signature-muted: #5f7381;
+        --signature-primary: #0f6c7a;
+        --signature-primary-deep: #0b4b56;
+        --signature-success: #237f63;
+        --signature-warning: #c9851d;
+        --signature-danger: #c2534d;
+        --signature-info: #2d6f9f;
+        --signature-shadow: 0 28px 72px -40px rgba(18, 43, 56, 0.34);
+        --signature-radius-xl: 28px;
+        --signature-radius-lg: 22px;
+        --signature-radius-md: 16px;
+        background:
+            radial-gradient(circle at top left, rgba(15, 108, 122, 0.08), transparent 28%),
+            radial-gradient(circle at top right, rgba(201, 133, 29, 0.08), transparent 24%),
+            linear-gradient(180deg, #f8fbfb 0%, var(--signature-bg) 100%);
+        padding: 1rem 0 2rem;
+    }
+
+    .interna-signature-page .signature-shell {
+        width: 95%;
+        margin: 0 auto;
+        display: grid;
+        gap: 1.35rem;
+    }
+
+    .interna-signature-page .signature-hero,
+    .interna-signature-page .signature-panel,
+    .interna-signature-page .signature-side-panel,
+    .interna-signature-page .signature-summary-card,
+    .interna-signature-page .signature-acceptance-card,
+    .interna-signature-page .signature-canvas-card {
+        border: 1px solid var(--signature-line);
+        border-radius: var(--signature-radius-xl);
+        background: var(--signature-surface);
+        box-shadow: var(--signature-shadow);
+        backdrop-filter: blur(12px);
+    }
+
+    .interna-signature-page .signature-hero {
+        padding: 1.7rem;
+        background:
+            radial-gradient(circle at top left, rgba(201, 133, 29, 0.14), transparent 28%),
+            linear-gradient(135deg, rgba(15, 108, 122, 0.08), rgba(255, 255, 255, 0.92));
+    }
+
+    .interna-signature-page .signature-kicker,
+    .interna-signature-page .signature-chip,
+    .interna-signature-page .signature-status,
+    .interna-signature-page .signature-mini-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        width: fit-content;
+        padding: 0.5rem 0.85rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .interna-signature-page .signature-kicker {
+        background: rgba(15, 108, 122, 0.1);
+        color: var(--signature-primary-deep);
+    }
+
+    .interna-signature-page .signature-chip {
+        background: rgba(255, 255, 255, 0.84);
+        color: var(--signature-ink);
+        border: 1px solid rgba(20, 48, 64, 0.1);
+    }
+
+    .interna-signature-page .signature-status {
+        background: rgba(35, 127, 99, 0.12);
+        color: var(--signature-success);
+    }
+
+    .interna-signature-page .signature-status.is-warning {
+        background: rgba(201, 133, 29, 0.14);
+        color: var(--signature-warning);
+    }
+
+    .interna-signature-page .signature-title {
+        margin: 0.9rem 0 0.45rem;
+        color: var(--signature-ink);
+        font-size: clamp(1.9rem, 1.4rem + 1vw, 2.7rem);
+        line-height: 1.04;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+    }
+
+    .interna-signature-page .signature-copy,
+    .interna-signature-page .signature-body-text,
+    .interna-signature-page .signature-muted {
+        color: var(--signature-muted);
+    }
+
+    .interna-signature-page .signature-copy {
+        margin: 0;
+        max-width: 68ch;
+        font-size: 1rem;
+        line-height: 1.65;
+    }
+
+    .interna-signature-page .signature-chip-row,
+    .interna-signature-page .signature-hero-meta,
+    .interna-signature-page .signature-main-grid,
+    .interna-signature-page .signature-summary-grid,
+    .interna-signature-page .signature-check-grid,
+    .interna-signature-page .signature-form-actions,
+    .interna-signature-page .signature-footer-actions {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .interna-signature-page .signature-chip-row,
+    .interna-signature-page .signature-hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .interna-signature-page .signature-main-grid {
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+    }
+
+    .interna-signature-page .signature-summary-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .interna-signature-page .signature-check-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .interna-signature-page .signature-summary-card {
+        padding: 1rem 1.05rem;
+        background: rgba(255, 255, 255, 0.88);
+    }
+
+    .interna-signature-page .signature-label {
+        display: block;
+        margin-bottom: 0.28rem;
+        color: var(--signature-muted);
+        font-size: 0.73rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .interna-signature-page .signature-value {
+        color: var(--signature-ink);
+        font-weight: 700;
+        line-height: 1.55;
+    }
+
+    .interna-signature-page .signature-panel-head,
+    .interna-signature-page .signature-side-head {
+        padding: 1rem 1.15rem;
+        border-bottom: 1px solid var(--signature-line);
+        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(246,249,250,0.92));
+    }
+
+    .interna-signature-page .signature-panel-body,
+    .interna-signature-page .signature-side-body {
+        padding: 1.1rem 1.15rem 1.2rem;
+    }
+
+    .interna-signature-page .signature-panel-title,
+    .interna-signature-page .signature-side-title,
+    .interna-signature-page .signature-section-title {
+        margin: 0;
+        color: var(--signature-ink);
+        font-size: 1rem;
+        font-weight: 800;
+    }
+
+    .interna-signature-page .signature-legal-note {
+        padding: 1rem 1.05rem;
+        border-radius: 18px;
+        background: rgba(45, 111, 159, 0.08);
+        border: 1px solid rgba(45, 111, 159, 0.12);
+        color: var(--signature-ink);
+    }
+
+    .interna-signature-page .accordion-item {
+        border: 1px solid var(--signature-soft-line);
+        border-radius: 18px !important;
+        overflow: hidden;
+        margin-bottom: 0.85rem;
+        background: rgba(255,255,255,0.9);
+    }
+
+    .interna-signature-page .accordion-button {
+        background: rgba(255,255,255,0.96);
+        color: var(--signature-ink);
+        font-weight: 700;
+        box-shadow: none;
+    }
+
+    .interna-signature-page .accordion-button:not(.collapsed) {
+        background: rgba(240, 248, 249, 0.95);
+        color: var(--signature-primary-deep);
+    }
+
+    .interna-signature-page .accordion-button:focus {
+        box-shadow: 0 0 0 0.25rem rgba(15, 108, 122, 0.12);
+        border-color: rgba(15, 108, 122, 0.24);
+    }
+
+    .interna-signature-page .accordion-body {
+        color: var(--signature-muted);
+        line-height: 1.7;
+    }
+
+    .interna-signature-page .signature-ordered-list,
+    .interna-signature-page .signature-list {
+        margin-bottom: 0;
+        padding-left: 1.15rem;
+    }
+
+    .interna-signature-page .signature-list li,
+    .interna-signature-page .signature-ordered-list li {
+        margin-bottom: 0.55rem;
+    }
+
+    .interna-signature-page .signature-side-panel {
+        position: static;
+        display: grid;
+        gap: 1rem;
+    }
+
+    .interna-signature-page .signature-acceptance-card,
+    .interna-signature-page .signature-canvas-card {
+        overflow: hidden;
+    }
+
+    .interna-signature-page .signature-acceptance-card .form-check {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.95rem;
+        margin: 0;
+    }
+
+    .interna-signature-page .signature-acceptance-card .form-check-input {
+        margin-top: 0.2rem;
+        transform: scale(1.2);
+    }
+
+    .interna-signature-page .signature-acceptance-card .form-check-label {
+        font-size: 1rem;
+        color: var(--signature-ink);
+    }
+
+    .interna-signature-page .signature-gate-note {
+        margin-top: 0.9rem;
+        padding: 0.85rem 0.95rem;
+        border-radius: 16px;
+        background: rgba(201, 133, 29, 0.08);
+        border: 1px solid rgba(201, 133, 29, 0.12);
+        color: #7a540f;
+        font-size: 0.92rem;
+    }
+
+    .interna-signature-page .signature-existing-alert {
+        padding: 0.95rem 1rem;
+        border-radius: 18px;
+        border: 1px solid rgba(45, 111, 159, 0.12);
+        background: rgba(241, 248, 253, 0.96);
+        color: var(--signature-ink);
+    }
+
+    .interna-signature-page .signature-canvas-wrap {
+        padding: 1rem;
+        border-radius: 20px;
+        border: 1px solid var(--signature-soft-line);
+        background:
+            linear-gradient(135deg, rgba(245, 248, 249, 0.95), rgba(255,255,255,0.98));
+    }
+
+    .interna-signature-page .signature-canvas-grid {
+        position: relative;
+        padding: 0.75rem;
+        border-radius: 18px;
+        background:
+            linear-gradient(45deg, #f8f9fa 25%, transparent 25%),
+            linear-gradient(-45deg, #f8f9fa 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #f8f9fa 75%),
+            linear-gradient(-45deg, transparent 75%, #f8f9fa 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+        border: 1px dashed rgba(20, 48, 64, 0.16);
+    }
+
+    .interna-signature-page #signatureCanvas {
+        border: 1px solid #ccd5da;
+        cursor: crosshair;
+        width: 100%;
+        max-width: 700px;
+        height: 250px;
+        touch-action: none;
+        background: white;
+        display: block;
+        margin: 0 auto;
+        border-radius: 14px;
+        box-shadow: inset 0 0 0 1px rgba(20, 48, 64, 0.02);
+    }
+
+    .interna-signature-page .signature-form-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .interna-signature-page .signature-btn,
+    .interna-signature-page .signature-btn-outline,
+    .interna-signature-page .signature-back-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        min-height: 46px;
+        padding: 0.78rem 1.1rem;
+        border-radius: 16px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+
+    .interna-signature-page .signature-btn {
+        background: linear-gradient(135deg, var(--signature-primary), var(--signature-primary-deep));
+        color: #fff;
+        border: 0;
+        box-shadow: 0 16px 38px -20px rgba(15, 108, 122, 0.5);
+    }
+
+    .interna-signature-page .signature-btn.is-success {
+        background: linear-gradient(135deg, var(--signature-success), #1a6650);
+    }
+
+    .interna-signature-page .signature-btn-outline,
+    .interna-signature-page .signature-back-link {
+        border: 1px solid rgba(20, 48, 64, 0.12);
+        background: rgba(255, 255, 255, 0.92);
+        color: var(--signature-ink);
+    }
+
+    .interna-signature-page .signature-btn:hover,
+    .interna-signature-page .signature-btn-outline:hover,
+    .interna-signature-page .signature-back-link:hover {
+        transform: translateY(-1px);
+    }
+
+    .interna-signature-page .signature-footer-actions {
+        justify-content: center;
+    }
+
+    @media (max-width: 991.98px) {
+        .interna-signature-page .signature-main-grid,
+        .interna-signature-page .signature-summary-grid,
+        .interna-signature-page .signature-check-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .interna-signature-page .signature-side-panel {
+            position: static;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .interna-signature-page .signature-shell {
+            width: calc(100% - 1rem);
+        }
+
+        .interna-signature-page .signature-hero,
+        .interna-signature-page .signature-panel-head,
+        .interna-signature-page .signature-panel-body,
+        .interna-signature-page .signature-side-head,
+        .interna-signature-page .signature-side-body {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .interna-signature-page .signature-form-actions {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="interna-signature-page">
+    <div class="signature-shell">
+        <section class="signature-hero">
+            <span class="signature-kicker">
+                <i class="bi bi-pen-fill"></i>
+                Firma para comunicaciones internas
+            </span>
+            <h1 class="signature-title">Configurar firma digital manuscrita</h1>
+            <p class="signature-copy">Registre la firma que se insertará en los documentos internos del sistema. Antes de habilitar la captura, revise el alcance de uso, sus responsabilidades, las reglas de custodia y el efecto jurídico de esta autorización.</p>
+
+            <div class="signature-chip-row mt-3">
+                <span class="signature-chip"><i class="bi bi-shield-check"></i>Uso institucional controlado</span>
+                <span class="signature-chip"><i class="bi bi-journal-check"></i>Trazabilidad documental</span>
+                <span class="signature-chip"><i class="bi bi-lock"></i>Custodia de credenciales</span>
+            </div>
+
+            <div class="signature-hero-meta mt-4">
+                {% if tiene_firma %}
+                <span class="signature-status"><i class="bi bi-check-circle-fill"></i>Firma activa</span>
+                <span class="signature-chip"><i class="bi bi-clock-history"></i>Última actualización: {{ fecha_firma|date:"d/m/Y H:i" }}</span>
+                {% else %}
+                <span class="signature-status is-warning"><i class="bi bi-exclamation-circle-fill"></i>Firma pendiente de registro</span>
+                <span class="signature-chip"><i class="bi bi-info-circle"></i>La captura se habilita al aceptar los términos</span>
+                {% endif %}
+            </div>
+        </section>
+
+        <div class="signature-summary-grid">
+            <div class="signature-summary-card">
+                <span class="signature-label">Qué autoriza</span>
+                <div class="signature-value">La inserción de su firma manuscrita digitalizada en documentos internos generados desde este módulo.</div>
+            </div>
+            <div class="signature-summary-card">
+                <span class="signature-label">Qué exige</span>
+                <div class="signature-value">Lectura completa de términos, aceptación expresa y custodia diligente de su acceso al sistema.</div>
+            </div>
+            <div class="signature-summary-card">
+                <span class="signature-label">Qué conserva el sistema</span>
+                <div class="signature-value">Registro de la firma almacenada, momento de actualización y uso asociado a los documentos emitidos.</div>
+            </div>
+        </div>
+
+        <div class="signature-main-grid">
+            <section class="signature-panel">
+                <div class="signature-panel-head">
+                    <h2 class="signature-panel-title"><i class="bi bi-shield-exclamation-fill me-2"></i>Términos y condiciones de uso</h2>
+                </div>
+                <div class="signature-panel-body">
+                    <div class="signature-legal-note mb-3">
+                        <strong><i class="bi bi-info-circle-fill me-2"></i>Lectura recomendada:</strong>
+                        Revise primero el alcance del uso, luego sus responsabilidades y finalmente las reglas de revocación, conservación y consecuencias por uso indebido.
+                    </div>
+
+                    <div class="accordion" id="signatureTermsAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingScope">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseScope" aria-expanded="true" aria-controls="collapseScope">
+                                    1. Alcance, finalidad y marco normativo
+                                </button>
+                            </h2>
+                            <div id="collapseScope" class="accordion-collapse collapse show" aria-labelledby="headingScope" data-bs-parent="#signatureTermsAccordion">
+                                <div class="accordion-body">
+                                    <p>La firma capturada en este módulo se utilizará exclusivamente dentro de los flujos internos de correspondencia para respaldar la emisión, aprobación o validación de documentos institucionales según el rol y permisos del usuario. Su uso se interpreta dentro del marco de la <strong>Ley 527 de 1999</strong>, el <strong>Decreto 2364 de 2012</strong> y las reglas internas aplicables a mensajes de datos, firma electrónica y gestión documental.</p>
+                                    <p>Esta captura no habilita por sí sola la firma de cualquier documento fuera del proceso autorizado ni sustituye controles de competencia, cargo, autorización o flujo aprobatorio que el sistema o la institución exijan.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingValidity">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseValidity" aria-expanded="false" aria-controls="collapseValidity">
+                                    2. Validez, vinculación y efectos de la firma
+                                </button>
+                            </h2>
+                            <div id="collapseValidity" class="accordion-collapse collapse" aria-labelledby="headingValidity" data-bs-parent="#signatureTermsAccordion">
+                                <div class="accordion-body">
+                                    <p>Al registrar esta firma manuscrita digitalizada, usted reconoce que su imagen quedará vinculada a su identidad de usuario dentro del sistema y podrá ser insertada en documentos generados desde su sesión o por operaciones autorizadas por su perfil.</p>
+                                    <ol class="signature-ordered-list">
+                                        <li>La firma debe corresponder de forma auténtica a su identidad.</li>
+                                        <li>Su uso está condicionado a los permisos y flujos configurados en el sistema.</li>
+                                        <li>Los documentos firmados conservarán trazabilidad operativa sobre quién, cuándo y desde qué contexto se generó la firma.</li>
+                                        <li>La actualización o revocación futura no invalida automáticamente documentos ya emitidos dentro del flujo institucional.</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingUser">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUser" aria-expanded="false" aria-controls="collapseUser">
+                                    3. Declaraciones y responsabilidades del usuario
+                                </button>
+                            </h2>
+                            <div id="collapseUser" class="accordion-collapse collapse" aria-labelledby="headingUser" data-bs-parent="#signatureTermsAccordion">
+                                <div class="accordion-body">
+                                    <p>Al aceptar estos términos y registrar la firma, usted declara bajo su responsabilidad que:</p>
+                                    <ul class="signature-list">
+                                        <li>La firma suministrada le pertenece y representa su trazo habitual o institucionalmente reconocido.</li>
+                                        <li>No autoriza a terceros para capturar, reutilizar o registrar firmas en su nombre.</li>
+                                        <li>Mantendrá reserva sobre sus credenciales y accesos para evitar uso indebido de la firma asociada a su cuenta.</li>
+                                        <li>Verificará el contenido del documento antes de completar acciones que impliquen su firma o distribución.</li>
+                                        <li>Reportará de inmediato cualquier sospecha de suplantación, acceso no autorizado o uso irregular.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingSecurity">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSecurity" aria-expanded="false" aria-controls="collapseSecurity">
+                                    4. Custodia, seguridad y tratamiento de la información
+                                </button>
+                            </h2>
+                            <div id="collapseSecurity" class="accordion-collapse collapse" aria-labelledby="headingSecurity" data-bs-parent="#signatureTermsAccordion">
+                                <div class="accordion-body">
+                                    <p>La institución implementará medidas técnicas y organizativas razonables para proteger la integridad de la firma almacenada y su asociación con la cuenta del usuario, en coherencia con la <strong>Ley 1581 de 2012</strong> y políticas internas de seguridad de la información.</p>
+                                    <div class="signature-check-grid mt-3">
+                                        <div class="signature-summary-card">
+                                            <span class="signature-label">Custodia institucional</span>
+                                            <div class="signature-value">Protección de almacenamiento, acceso controlado y conservación del registro asociado a la firma.</div>
+                                        </div>
+                                        <div class="signature-summary-card">
+                                            <span class="signature-label">Custodia del usuario</span>
+                                            <div class="signature-value">Protección de credenciales, cierre de sesión oportuno y reporte inmediato de incidentes.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingRevocation">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRevocation" aria-expanded="false" aria-controls="collapseRevocation">
+                                    5. Actualización, revocación y conservación del historial
+                                </button>
+                            </h2>
+                            <div id="collapseRevocation" class="accordion-collapse collapse" aria-labelledby="headingRevocation" data-bs-parent="#signatureTermsAccordion">
+                                <div class="accordion-body">
+                                    <p>Usted puede actualizar su firma cuando cambie su trazo, cargo, condiciones de representación o cuando existan razones de seguridad. La modificación operará hacia adelante sobre nuevos documentos o nuevos eventos de firma, pero no implica la eliminación del valor probatorio u operativo de registros históricos ya generados.</p>
+                                    <p>La institución podrá conservar evidencias de actualización, fechas de registro y eventos relacionados para auditoría, control interno, investigación disciplinaria o requerimientos de autoridad competente.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingConsequences">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConsequences" aria-expanded="false" aria-controls="collapseConsequences">
+                                    6. Uso indebido, restricciones y consecuencias
+                                </button>
+                            </h2>
+                            <div id="collapseConsequences" class="accordion-collapse collapse" aria-labelledby="headingConsequences" data-bs-parent="#signatureTermsAccordion">
+                                <div class="accordion-body">
+                                    <p>Queda prohibido registrar una firma ajena, reutilizar una firma sin autorización, facilitar credenciales a terceros, alterar documentos después del proceso autorizado o emplear la firma para actuaciones fuera del marco funcional permitido.</p>
+                                    <p>El uso fraudulento, la suplantación o la alteración de documentos podrá activar medidas administrativas, disciplinarias, contractuales o penales, incluidas las relacionadas con falsedad documental y uso indebido de sistemas de información. El Hospital del Sarare E.S.E. podrá colaborar con auditorías internas y con autoridades competentes cuando exista un incidente.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingConsent">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseConsent" aria-expanded="false" aria-controls="collapseConsent">
+                                    7. Aceptación expresa e inicio de captura
+                                </button>
+                            </h2>
+                            <div id="collapseConsent" class="accordion-collapse collapse" aria-labelledby="headingConsent" data-bs-parent="#signatureTermsAccordion">
+                                <div class="accordion-body">
+                                    <p>Al activar la casilla de aceptación y proceder con la captura, usted manifiesta que leyó, comprendió y aceptó el contenido anterior, que la firma registrada corresponde a su identidad real y que asume la responsabilidad derivada del uso institucional permitido dentro del sistema.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="signature-side-panel">
+                <div class="signature-acceptance-card">
+                    <div class="signature-side-head">
+                        <h2 class="signature-side-title"><i class="bi bi-check2-square me-2"></i>Aceptación previa</h2>
+                    </div>
+                    <div class="signature-side-body">
+                        <div class="form-check form-check-lg">
+                            <input class="form-check-input" type="checkbox" id="aceptoTerminos">
+                            <label class="form-check-label" for="aceptoTerminos">
+                                <strong>He leído y acepto los términos y condiciones establecidos en esta pantalla.</strong><br>
+                                <small class="signature-muted">Declaro que la firma que voy a registrar corresponde a mi identidad real, que su uso quedará limitado al marco institucional autorizado y que asumo responsabilidad sobre los documentos firmados desde mi acceso.</small>
+                            </label>
+                        </div>
+                        <div class="signature-gate-note">
+                            <i class="bi bi-lock-fill me-2"></i>
+                            La captura de firma permanece bloqueada hasta que esta aceptación quede marcada.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="signature-canvas-card">
+                    <div class="signature-side-head">
+                        <h2 class="signature-side-title"><i class="bi bi-pen-fill me-2"></i>{% if tiene_firma %}Actualizar firma digital{% else %}Capturar firma digital{% endif %}</h2>
+                    </div>
+                    <div class="signature-side-body" id="formularioFirma" style="opacity: 0.5; pointer-events: none;">
+                        {% if tiene_firma %}
+                        <div class="signature-existing-alert mb-3">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Ya tiene una firma configurada desde el {{ fecha_firma|date:"d/m/Y H:i" }}. Si registra una nueva, será la que se use en documentos generados a partir de esta actualización.
+                        </div>
+                        {% endif %}
+
+                        <form id="formFirma">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Dibuje su firma en el área siguiente:</label>
+                                <div class="signature-canvas-wrap">
+                                    <div class="signature-canvas-grid">
+                                        <canvas id="signatureCanvas"></canvas>
+                                    </div>
+                                </div>
+                                <small class="form-text signature-muted d-block mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Use el mouse o su dedo en dispositivos táctiles. Procure que el trazo sea claro, centrado y similar a la firma que utiliza en actuaciones institucionales.
+                                </small>
+                            </div>
+
+                            <div class="signature-form-actions">
+                                <button type="button" class="signature-btn-outline" id="btnLimpiarFirma">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i>Limpiar
+                                </button>
+                                <button type="button" class="signature-btn is-success" id="btnGuardarFirma">
+                                    <i class="bi bi-save me-1"></i>Guardar firma digital
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+    </div>
+</div>
+
+<!-- Signature Pad desde CDN -->
+<script src="/static/correspondencia/vendor/js/signature_pad.umd.min.js"></script>
+
+<script>
+// Función para mostrar notificaciones de estilo Bootstrap
+function showNotification(type, title, message) {
+    // Crear contenedor si no existe
+    let container = document.querySelector('.messages-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'messages-container';
+        const main = document.querySelector('main') || document.querySelector('.container-fluid');
+        if (main) {
+            main.insertBefore(container, main.firstChild);
+        }
+    }
+    
+    // Mapear tipo a icono
+    const iconMap = {
+        'success': 'check-circle',
+        'danger': 'exclamation-triangle',
+        'warning': 'exclamation-triangle',
+        'info': 'info-circle'
+    };
+    
+    const icon = iconMap[type] || 'info-circle';
+    
+    // Crear alerta
+    const alertHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            <i class="bi bi-${icon} me-2"></i>
+            <strong>${title}</strong>${message ? ': ' + message : ''}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', alertHTML);
+    
+    // Auto-cerrar después de 5 segundos (solo para success)
+    if (type === 'success') {
+        setTimeout(() => {
+            const alerts = container.querySelectorAll('.alert');
+            if (alerts.length > 0) {
+                const lastAlert = alerts[alerts.length - 1];
+                const bsAlert = new bootstrap.Alert(lastAlert);
+                bsAlert.close();
+            }
+        }, 5000);
+    }
+}
+
+(function() {
+    'use strict';
+    
+    const canvas = document.getElementById('signatureCanvas');
+    const aceptoTerminos = document.getElementById('aceptoTerminos');
+    const formularioFirma = document.getElementById('formularioFirma');
+    
+    if (!canvas || !aceptoTerminos) return;
+    
+    // Habilitar/deshabilitar formulario según aceptación de términos
+    function toggleFormulario() {
+        if (aceptoTerminos.checked) {
+            formularioFirma.style.opacity = '1';
+            formularioFirma.style.pointerEvents = 'auto';
+        } else {
+            formularioFirma.style.opacity = '0.5';
+            formularioFirma.style.pointerEvents = 'none';
+            // Limpiar firma si no está aceptado
+            if (signaturePad) {
+                signaturePad.clear();
+            }
+        }
+    }
+    
+    aceptoTerminos.addEventListener('change', toggleFormulario);
+    
+    // Ajustar tamaño del canvas para alta resolución
+    function resizeCanvas() {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * ratio;
+        canvas.height = rect.height * ratio;
+        canvas.getContext('2d').scale(ratio, ratio);
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+    }
+    
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Inicializar Signature Pad
+    const signaturePad = new SignaturePad(canvas, {
+        backgroundColor: 'rgb(255, 255, 255)',
+        penColor: 'rgb(0, 0, 0)',
+        minWidth: 1.5,
+        maxWidth: 3,
+        throttle: 16
+    });
+    
+    // Limpiar firma
+    document.getElementById('btnLimpiarFirma').addEventListener('click', () => {
+        signaturePad.clear();
+    });
+    
+    // Guardar firma
+    document.getElementById('btnGuardarFirma').addEventListener('click', () => {
+        if (!aceptoTerminos.checked) {
+            showNotification('warning', 'Campos requeridos', 'Debe aceptar los términos y condiciones para continuar');
+            aceptoTerminos.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+        
+        if (signaturePad.isEmpty()) {
+            showNotification('warning', 'Firma requerida', 'Por favor, dibuje su firma primero');
+            canvas.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+        
+        const btn = document.getElementById('btnGuardarFirma');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Guardando...';
+        
+        // Convertir a imagen PNG
+        const dataURL = signaturePad.toDataURL('image/png');
+        
+        // Obtener CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Enviar al servidor
+        fetch('{% url "correspondencia:interna_guardar_firma" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({ firma: dataURL })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Mostrar notificación de éxito
+                showNotification('success', 'Firma guardada exitosamente', 'Será utilizada en todos los documentos que genere.');
+                // Redirigir después de 2 segundos
+                setTimeout(() => {
+                    window.location.href = '{% url "correspondencia:interna_bienvenida" %}';
+                }, 2000);
+            } else {
+                showNotification('danger', 'Error', data.error || 'No se pudo guardar la firma');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Firma Digital';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('danger', 'Error', 'Error al guardar la firma. Por favor, intente nuevamente.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-save me-1"></i> Guardar Firma Digital';
+        });
+    });
+})();
+</script>
+{% endblock %}
+

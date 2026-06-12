@@ -1,0 +1,685 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'correspondencia/css/historial_compacto.css' %}">
+<style>
+    /* Estilos para la bandeja de radicación rápida */
+    .filtros-modernos {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 0.5rem;
+        border: 1px solid #dee2e6;
+    }
+    
+    .filtros-header {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .filtros-content {
+        padding: 1rem;
+    }
+    
+    .filtros-seccion {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px dashed #dee2e6;
+    }
+    
+    .filtros-seccion:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .filtros-seccion-titulo {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .filtros-acciones {
+        padding-top: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .filtros-activos-modernos {
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background: #e7f3ff;
+        border-radius: 0.375rem;
+    }
+    
+    .filtros-activos-header {
+        font-weight: 600;
+        color: #0d6efd;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    /* Hacer la tabla más compacta */
+    .table-sm td, .table-sm th {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Tabla scrollable horizontalmente */
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    /* Estilo para campos de fecha pequeños */
+    .form-control-sm-date {
+        max-width: 150px;
+    }
+
+    /* Columnas expandibles */
+    .col-expandible {
+        display: none;
+    }
+    .cols-expandidas .col-expandible {
+        display: table-cell;
+    }
+    .btn-expandir-cols {
+        transition: transform 0.2s;
+    }
+    .cols-expandidas .btn-expandir-cols i {
+        transform: rotate(180deg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    {# Sección de Filtros #}
+    <div class="filtros-modernos mb-4">
+        <div class="filtros-header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <i class="bi bi-lightning-fill text-warning me-2"></i>
+                    <strong>Bandeja de Radicación Rápida</strong>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'correspondencia:bandeja_radicacion_rapida' %}" class="btn {% if bandeja_activa == 'entrantes' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                            <i class="bi bi-box-arrow-in-down me-1"></i>Entrantes
+                        </a>
+                        <a href="{% url 'correspondencia:bandeja_radicacion_rapida_saliente' %}" class="btn {% if bandeja_activa == 'salientes' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                            <i class="bi bi-box-arrow-up me-1"></i>Salientes
+                        </a>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm {% if not filtros_activos %}collapsed{% endif %}" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse" aria-expanded="{% if filtros_activos %}true{% else %}false{% endif %}" aria-controls="filtrosCollapse">
+                    <i class="bi bi-funnel-fill me-1"></i>Filtros
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="collapse {% if filtros_activos %}show{% endif %}" id="filtrosCollapse">
+            <div class="filtros-content">
+                <form method="get" action="" id="radicacion-rapida-filter-form">
+                    {# Primera fila - Búsqueda principal #}
+                    <div class="filtros-seccion">
+                        <div class="filtros-seccion-titulo">
+                            <i class="bi bi-search text-info"></i>
+                            <span>Búsqueda Principal</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-lg-3">
+                                <label for="id_search_term" class="form-label">
+                                    <i class="bi bi-text-paragraph me-1"></i>Buscar
+                                </label>
+                                <input type="text" name="search_term" placeholder="Radicado, asunto, remitente, anexos, guía..." class="form-control" id="id_search_term" value="{{ search_term }}">
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_oficina_destino" class="form-label">
+                                    <i class="bi bi-building me-1"></i>Oficina Destino
+                                </label>
+                                <input type="text" name="oficina_destino" placeholder="Buscar oficina..." class="form-control" list="oficinas-list" id="id_oficina_destino" value="{{ oficina_destino }}">
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_entidad_remitente" class="form-label">
+                                    <i class="bi bi-person-vcard me-1"></i>Entidad
+                                </label>
+                                <input type="text" name="entidad_remitente" placeholder="Buscar entidad..." class="form-control" id="id_entidad_remitente" value="{{ entidad_remitente }}">
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_remitente_texto" class="form-label">
+                                    <i class="bi bi-person me-1"></i>Remitente texto libre
+                                </label>
+                                <input type="text" name="remitente_texto" placeholder="Buscar remitente..." class="form-control" id="id_remitente_texto" value="{{ remitente_texto }}">
+                            </div>
+                        </div>
+                        <div class="row g-3 mt-1">
+                            <div class="col-lg-3">
+                                <label for="id_funcionario_responsable" class="form-label">
+                                    <i class="bi bi-person-badge me-1"></i>Funcionario Responsable
+                                </label>
+                                <input type="text" name="funcionario_responsable" placeholder="Buscar funcionario..." class="form-control" id="id_funcionario_responsable" value="{{ funcionario_responsable }}">
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_clasificacion" class="form-label">
+                                    <i class="bi bi-tags me-1"></i>Clasificación
+                                </label>
+                                <input type="text" name="clasificacion" placeholder="Buscar clasificación..." class="form-control" id="id_clasificacion" value="{{ clasificacion }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Segunda fila - Medios y Estado #}
+                    <div class="filtros-seccion">
+                        <div class="filtros-seccion-titulo">
+                            <i class="bi bi-tags text-success"></i>
+                            <span>Medios y Estado</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-lg-3">
+                                <label for="id_medio_recepcion" class="form-label">
+                                    <i class="bi bi-broadcast me-1"></i>Medio de Recepción
+                                </label>
+                                <select name="medio_recepcion" class="form-select" id="id_medio_recepcion">
+                                    <option value="">Todos</option>
+                                    {% for value, label in medio_recepcion_choices %}
+                                        <option value="{{ value }}" {% if medio_recepcion == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_medio_recibido" class="form-label">
+                                    <i class="bi bi-inbox me-1"></i>Medio de Recibido
+                                </label>
+                                <select name="medio_recibido" class="form-select" id="id_medio_recibido">
+                                    <option value="">Todos</option>
+                                    {% for value, label in medio_recibido_choices %}
+                                        {% if value %}
+                                        <option value="{{ value }}" {% if medio_recibido == value %}selected{% endif %}>{{ label }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_empresa_transportadora" class="form-label">
+                                    <i class="bi bi-truck me-1"></i>Empresa Transportadora
+                                </label>
+                                <input type="text" name="empresa_transportadora" placeholder="Buscar empresa..." class="form-control" id="id_empresa_transportadora" value="{{ empresa_transportadora }}">
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_estado_respuesta" class="form-label">
+                                    <i class="bi bi-flag me-1"></i>Estado Respuesta
+                                </label>
+                                <select name="estado_respuesta" class="form-select" id="id_estado_respuesta">
+                                    <option value="">Todos</option>
+                                    {% for value, label in estado_respuesta_choices %}
+                                        <option value="{{ value }}" {% if estado_respuesta == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_anexos" class="form-label">
+                                    <i class="bi bi-paperclip me-1"></i>Anexos
+                                </label>
+                                <input type="text" name="anexos" placeholder="Buscar en anexos..." class="form-control" id="id_anexos" value="{{ anexos }}">
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_numero_guia" class="form-label">
+                                    <i class="bi bi-upc-scan me-1"></i>Nº Guía
+                                </label>
+                                <input type="text" name="numero_guia" placeholder="Número de guía..." class="form-control" id="id_numero_guia" value="{{ numero_guia }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Tercera fila - Fechas #}
+                    <div class="filtros-seccion">
+                        <div class="filtros-seccion-titulo">
+                            <i class="bi bi-calendar-range text-primary"></i>
+                            <span>Rango de Fechas</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-lg-3">
+                                <label for="id_fecha_inicio" class="form-label">
+                                    <i class="bi bi-calendar-date me-1"></i>Desde
+                                </label>
+                                <input type="date" name="fecha_inicio" class="form-control" id="id_fecha_inicio" value="{{ fecha_inicio }}">
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_fecha_fin" class="form-label">
+                                    <i class="bi bi-calendar-date me-1"></i>Hasta
+                                </label>
+                                <input type="date" name="fecha_fin" class="form-control" id="id_fecha_fin" value="{{ fecha_fin }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Botones de acción #}
+                    <div class="filtros-acciones">
+                        <div class="row g-3">
+                            <div class="col-lg-6">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-search me-2"></i>Aplicar Filtros
+                                </button>
+                            </div>
+                            <div class="col-lg-6">
+                                <button type="submit" name="reset" value="Limpiar Filtros" class="btn btn-outline-secondary w-100">
+                                    <i class="bi bi-arrow-clockwise me-2"></i>Limpiar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                
+                {# Datalists para autocompletado #}
+                <datalist id="oficinas-list">
+                    {% for oficina in oficinas_list %}
+                        <option value="{{ oficina }}">
+                    {% endfor %}
+                </datalist>
+                
+                {# Mostrar filtros activos #}
+                {% if filtros_activos %}
+                    <div class="filtros-activos-modernos">
+                        <div class="filtros-activos-header">
+                            <i class="bi bi-tags-fill text-info"></i>
+                            <span>Filtros Activos</span>
+                        </div>
+                        <div class="filtros-activos-content">
+                            {% for key, data in filtros_activos.items %}
+                                <span class="badge bg-info text-dark me-2 mb-2">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {{ data.label }}: {{ data.value }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Resultados #}
+    <div class="card card-primary card-outline">
+        <div class="card-header py-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-lightning-fill text-warning me-2"></i>
+                    <strong>Correspondencia Radicada</strong>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-primary">Total: {{ page_obj.paginator.count }} registro{{ page_obj.paginator.count|pluralize }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-striped table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 110px;">Radicado</th>
+                            <th style="width: 95px;">Fecha</th>
+                            <th style="width: 120px;">Entidad</th>
+                            <th style="width: 140px;">Remitente texto libre</th>
+                            <th>Asunto</th>
+                            <th style="width: 120px;">Oficina Destino</th>
+                            <th style="width: 110px;">Funcionario Resp.</th>
+                            <th style="width: 40px;">
+                                <button type="button" class="btn btn-sm btn-outline-secondary btn-expandir-cols p-0 px-1" title="Mostrar/ocultar columnas adicionales">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </th>
+                            <th class="col-expandible" style="width: 110px;">Tipo trámite</th>
+                            <th class="col-expandible" style="width: 55px;">Folios</th>
+                            <th class="col-expandible" style="width: 75px;">Med. Recep.</th>
+                            <th class="col-expandible" style="width: 85px;">Med. Recibido</th>
+                            <th class="col-expandible" style="width: 75px;">Anexos</th>
+                            <th class="col-expandible" style="width: 85px;">Nº Guía</th>
+                            <th class="col-expandible" style="width: 95px;">Fecha Lím. Resp.</th>
+                            <th class="col-expandible" style="width: 85px;">1° Seg.</th>
+                            <th class="col-expandible" style="width: 85px;">2° Seg.</th>
+                            <th class="col-expandible" style="width: 85px;">F. Resp.</th>
+                            <th class="col-expandible" style="width: 95px;">Estado Resp.</th>
+                            <th class="col-expandible" style="width: 100px;">Radic. Enviado</th>
+                            <th class="col-expandible" style="width: 70px;">Origen</th>
+                            <th style="width: 100px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in page_obj %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'correspondencia:detalle_correspondencia' pk=item.pk %}" class="text-decoration-none fw-semibold">
+                                    {{ item.numero_radicado }}
+                                </a>
+                            </td>
+                            <td title="{{ item.fecha_radicacion|date:'d/m/Y H:i:s' }}">
+                                {{ item.fecha_radicacion|naturaltime }}
+                            </td>
+                            <td title="{{ item.entidad_persona_remitente }}">{{ item.entidad_persona_remitente|default:"-"|truncatechars:18 }}</td>
+                            {% with remitente_texto=item.entidad_persona_remitente %}
+                            <td title="{{ remitente_texto }}">{{ remitente_texto|default:"-"|truncatechars:22 }}</td>
+                            {% endwith %}
+                            <td title="{{ item.asunto }}">{{ item.asunto|truncatechars:40 }}</td>
+                            <td>{{ item.oficina_destino.nombre|default:"-"|truncatechars:18 }}</td>
+                            <td title="{{ item.funcionario_responsable_tramite }}">{{ item.funcionario_responsable_tramite|default:"-"|truncatechars:15 }}</td>
+                            <td></td>
+                            <td class="col-expandible" title="{% if item.tipo_tramite %}{{ item.get_tipo_tramite_display|default:item.tipo_tramite }}{% else %}{{ item.clasificacion_comunicacion|default:"-" }}{% endif %}">
+                                {% if item.tipo_tramite %}
+                                    {{ item.get_tipo_tramite_display|default:item.tipo_tramite|truncatechars:16 }}
+                                {% else %}
+                                    {{ item.clasificacion_comunicacion|default:"-"|truncatechars:16 }}
+                                {% endif %}
+                            </td>
+                            <td class="col-expandible text-center">{{ item.numero_folios|default:"-" }}</td>
+                            <td class="col-expandible">
+                                {% if item.medio_recepcion %}
+                                    <span class="badge bg-primary">{{ item.get_medio_recepcion_display }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="col-expandible">
+                                {% if item.medio_recibido %}
+                                    <span class="badge bg-secondary">{{ item.get_medio_recibido_display }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="col-expandible" title="{{ item.anexos }}">{{ item.anexos|default:"-"|truncatechars:10 }}</td>
+                            <td class="col-expandible">{{ item.numero_guia|default:"-"|truncatechars:10 }}</td>
+                            <td class="col-expandible">
+                                {% if item.fecha_limite_respuesta_manual %}
+                                    {{ item.fecha_limite_respuesta_manual|date:"d/m/Y" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="col-expandible">
+                                {% if item.fecha_primer_seguimiento %}
+                                    {{ item.fecha_primer_seguimiento|date:"d/m/Y" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="col-expandible">
+                                {% if item.fecha_segundo_seguimiento %}
+                                    {{ item.fecha_segundo_seguimiento|date:"d/m/Y" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="col-expandible">
+                                {% if item.fecha_respuesta %}
+                                    {{ item.fecha_respuesta|date:"d/m/Y" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="col-expandible">
+                                {% if item.estado_respuesta %}
+                                    <span class="badge {% if item.estado_respuesta == 'RESPONDIDA' %}bg-success{% elif item.estado_respuesta == 'VENCIDA' %}bg-danger{% else %}bg-secondary{% endif %}">{{ item.get_estado_respuesta_display|default:item.estado_respuesta }}</span>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td class="col-expandible" title="{{ item.radicado_enviado_respuesta }}">{{ item.radicado_enviado_respuesta|default:"-"|truncatechars:12 }}</td>
+                            <td class="col-expandible">
+                                <span class="badge bg-warning text-dark" title="Radicación Rápida">
+                                    <i class="bi bi-lightning-fill"></i>
+                                </span>
+                            </td>
+                            <td class="text-nowrap">
+                                <a href="{% url 'correspondencia:detalle_correspondencia' pk=item.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% with correo=item.correo_origen.first %}
+                                    {% if correo %}
+                                        <a href="{% url 'correspondencia:detalle_correo_entrante' correo_id=correo.id %}" class="btn btn-sm btn-outline-info" title="Ver correo origen">
+                                            <i class="bi bi-envelope-open"></i>
+                                        </a>
+                                    {% endif %}
+                                {% endwith %}
+                                <button type="button" class="btn btn-sm btn-outline-warning btn-editar-entrante"
+                                        data-pk="{{ item.pk }}"
+                                        data-url-datos="{% url 'correspondencia:api_radicacion_rapida_entrante_data' pk=item.pk %}"
+                                        data-url-editar="{% url 'correspondencia:editar_radicacion_rapida_entrante' pk=item.pk %}"
+                                        title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="22" class="text-center fst-italic text-muted py-4">
+                                <i class="bi bi-inbox me-2"></i>
+                                No hay registros que coincidan con los filtros aplicados.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer clearfix">
+            {% if page_obj.has_other_pages %}
+                {% include "includes/paginacion.html" with page_obj=page_obj registros_por_pagina=registros_por_pagina %}
+            {% endif %}
+        </div>
+    </div>
+
+    {# Modal reutilizable para creación/edición (debe estar dentro del block para que se renderice) #}
+    {% include 'correspondencia/partials/modals/modal_radicacion_rapida_entrante.html' %}
+{% endblock content %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="{% static 'correspondencia/js/modals/modal-minimizable.js' %}"></script>
+<script>
+$(document).ready(function() {
+    // Toggle columnas expandibles
+    $('.btn-expandir-cols').on('click', function() {
+        var $table = $(this).closest('table');
+        $table.toggleClass('cols-expandidas');
+        var $icon = $(this).find('i');
+        if ($table.hasClass('cols-expandidas')) {
+            $icon.removeClass('bi-chevron-right').addClass('bi-chevron-left');
+            $(this).attr('title', 'Ocultar columnas adicionales');
+        } else {
+            $icon.removeClass('bi-chevron-left').addClass('bi-chevron-right');
+            $(this).attr('title', 'Mostrar columnas adicionales');
+        }
+    });
+    // Mejorar la experiencia del botón de colapso
+    $('[data-bs-toggle="collapse"]').on('click', function() {
+        var icon = $(this).find('i.bi-chevron-down, i.bi-chevron-up');
+        if ($(this).attr('aria-expanded') === 'true') {
+            icon.removeClass('bi-chevron-up').addClass('bi-chevron-down');
+        } else {
+            icon.removeClass('bi-chevron-down').addClass('bi-chevron-up');
+        }
+    });
+
+    // ====== LÓGICA DE EDICIÓN VÍA MODAL ======
+    var modalEl = document.getElementById('modalRadicacionRapidaEntrante');
+    var modal = new bootstrap.Modal(modalEl);
+    var $form = $('#form-radicacion-rapida-entrante');
+    var editandoPk = null;
+
+    // Textos originales para modo creación
+    var tituloOriginal = $('#modalRadicacionRapidaEntranteLabel').html();
+    var alertaOriginal = $('#alert-rapida-entrante').html();
+    var btnTextoOriginal = $('#btn-submit-rapida-entrante').html();
+
+    // Abrir modal en modo edición
+    $(document).on('click', '.btn-editar-entrante', function() {
+        var $btn = $(this);
+        var pk = $btn.data('pk');
+        var urlDatos = $btn.data('url-datos');
+        var urlEditar = $btn.data('url-editar');
+
+        // Indicador de carga
+        $btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i>');
+
+        $.ajax({
+            url: urlDatos,
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                if (!data.success) {
+                    alert(data.error || 'Error al cargar datos');
+                    return;
+                }
+
+                editandoPk = pk;
+
+                // Cambiar modal a modo edición
+                $('#modalRadicacionRapidaEntranteLabel').html(
+                    '<i class="bi bi-pencil-square me-2"></i>Editar Radicación - ' + data.numero_radicado
+                );
+                $('#alert-rapida-entrante').html(
+                    '<i class="bi bi-pencil-fill me-2"></i><strong>Modo edición:</strong> Modificando radicación <strong>' + data.numero_radicado + '</strong>'
+                );
+                $('#btn-submit-rapida-entrante').html(
+                    '<i class="bi bi-check-lg me-1"></i>Guardar Cambios'
+                );
+
+                // Poblar campos del formulario
+                var f = data.fields;
+                var prefix = 'rapida_ent';
+                $form.find('#id_' + prefix + '-asunto').val(f.asunto);
+                $form.find('#id_' + prefix + '-remitente_texto').val(f.remitente_texto || '');
+                $form.find('#id_' + prefix + '-tipo_tramite').val(f.tipo_tramite);
+                $form.find('#id_' + prefix + '-entidad_persona_remitente').val(f.entidad_persona_remitente);
+                $form.find('#id_' + prefix + '-funcionario_responsable_tramite').val(f.funcionario_responsable_tramite);
+                $form.find('#id_' + prefix + '-clasificacion_comunicacion').val(f.clasificacion_comunicacion);
+                $form.find('#id_' + prefix + '-numero_folios').val(f.numero_folios);
+                $form.find('#id_' + prefix + '-anexos').val(f.anexos);
+                $form.find('#id_' + prefix + '-direccion_correo_remitente').val(f.direccion_correo_remitente);
+                $form.find('#id_' + prefix + '-empresa_transportadora').val(f.empresa_transportadora);
+                $form.find('#id_' + prefix + '-numero_guia').val(f.numero_guia);
+                $form.find('#id_' + prefix + '-fecha_limite_respuesta_manual').val(f.fecha_limite_respuesta_manual);
+                $form.find('#id_' + prefix + '-fecha_primer_seguimiento').val(f.fecha_primer_seguimiento);
+                $form.find('#id_' + prefix + '-fecha_segundo_seguimiento').val(f.fecha_segundo_seguimiento);
+                $form.find('#id_' + prefix + '-fecha_notificacion_vencimiento').val(f.fecha_notificacion_vencimiento);
+                $form.find('#id_' + prefix + '-fecha_respuesta').val(f.fecha_respuesta);
+                $form.find('#id_' + prefix + '-estado_respuesta').val(f.estado_respuesta);
+                $form.find('#id_' + prefix + '-radicado_enviado_respuesta').val(f.radicado_enviado_respuesta);
+
+                // Selects (remitente, oficina_destino, medio_recepcion, medio_recibido)
+                var $remitente = $form.find('#id_' + prefix + '-remitente');
+                var $oficina = $form.find('#id_' + prefix + '-oficina_destino');
+                var $medioRecep = $form.find('#id_' + prefix + '-medio_recepcion');
+                var $medioRecib = $form.find('#id_' + prefix + '-medio_recibido');
+
+                $remitente.val(f.remitente);
+                $oficina.val(f.oficina_destino);
+                $medioRecep.val(f.medio_recepcion);
+                $medioRecib.val(f.medio_recibido);
+
+                // Guardar URL de edición para el submit
+                $form.data('edit-url', urlEditar);
+
+                modal.show();
+            },
+            error: function() {
+                alert('Error al obtener datos de la radicación.');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="bi bi-pencil"></i>');
+            }
+        });
+    });
+
+    // Submit del formulario vía AJAX
+    $form.on('submit', function(e) {
+        e.preventDefault();
+
+        // Solo interceptar si estamos en modo edición
+        if (!editandoPk) return;
+
+        var editUrl = $form.data('edit-url');
+        var $submitBtn = $('#btn-submit-rapida-entrante');
+        $submitBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split me-1"></i>Guardando...');
+
+        // Limpiar errores previos
+        $form.find('.invalid-feedback.ajax-error').remove();
+        $form.find('.is-invalid').removeClass('is-invalid');
+
+        $.ajax({
+            url: editUrl,
+            method: 'POST',
+            data: $form.serialize(),
+            dataType: 'json',
+            success: function(data) {
+                if (data.success) {
+                    modal.hide();
+                    // Recargar la página para ver los cambios
+                    location.reload();
+                } else if (data.errors) {
+                    // Mostrar errores de validación en los campos
+                    var prefix = 'rapida_ent';
+                    $.each(data.errors, function(field, msgs) {
+                        var fieldId = '#id_' + prefix + '-' + field;
+                        var $field = $form.find(fieldId);
+                        if ($field.length) {
+                            $field.addClass('is-invalid');
+                            $field.after('<div class="invalid-feedback d-block ajax-error">' + msgs.join(', ') + '</div>');
+                        }
+                    });
+                    if (data.errors.__all__) {
+                        $form.find('.modal-body').prepend(
+                            '<div class="alert alert-danger ajax-error">' + data.errors.__all__.join('<br>') + '</div>'
+                        );
+                    }
+                }
+            },
+            error: function(xhr) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.error) {
+                        alert(data.error);
+                    } else if (data.errors) {
+                        var prefix = 'rapida_ent';
+                        $.each(data.errors, function(field, msgs) {
+                            var fieldId = '#id_' + prefix + '-' + field;
+                            var $field = $form.find(fieldId);
+                            if ($field.length) {
+                                $field.addClass('is-invalid');
+                                $field.after('<div class="invalid-feedback d-block ajax-error">' + msgs.join(', ') + '</div>');
+                            }
+                        });
+                    }
+                } catch(e) {
+                    alert('Error al guardar los cambios.');
+                }
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i>Guardar Cambios');
+            }
+        });
+    });
+
+    // Restaurar modal al cerrarse
+    $(modalEl).on('hidden.bs.modal', function() {
+        if (editandoPk) {
+            editandoPk = null;
+            // Restaurar textos originales
+            $('#modalRadicacionRapidaEntranteLabel').html(tituloOriginal);
+            $('#alert-rapida-entrante').html(alertaOriginal);
+            $('#btn-submit-rapida-entrante').html(btnTextoOriginal);
+            // Limpiar formulario
+            $form[0].reset();
+            $form.data('edit-url', '');
+            // Limpiar errores
+            $form.find('.invalid-feedback.ajax-error').remove();
+            $form.find('.alert.ajax-error').remove();
+            $form.find('.is-invalid').removeClass('is-invalid');
+        }
+    });
+});
+</script>
+{% endblock %}

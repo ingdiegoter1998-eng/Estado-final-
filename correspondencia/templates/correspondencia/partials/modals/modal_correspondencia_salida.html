@@ -1,0 +1,614 @@
+<style>
+    .modal-salida-redesign {
+        --salida-ink: #153243;
+        --salida-muted: #5f6f7b;
+        --salida-line: rgba(25, 61, 82, 0.14);
+        --salida-soft: #f7f4ec;
+        --salida-card: #fffdf8;
+        --salida-primary: #0f6c7a;
+        --salida-primary-deep: #0a4c57;
+        --salida-accent: #c88a2d;
+        --salida-shadow: 0 28px 80px -36px rgba(16, 46, 61, 0.42);
+    }
+
+    .modal-salida-redesign .modal-dialog {
+        max-width: min(1240px, calc(100vw - 2rem));
+        height: calc(100vh - 2rem);
+        margin: 1rem auto;
+    }
+
+    .modal-salida-redesign .modal-content {
+        border: 1px solid rgba(16, 76, 87, 0.16);
+        border-radius: 28px;
+        overflow: hidden;
+        box-shadow: var(--salida-shadow);
+        height: 100%;
+        max-height: calc(100vh - 2rem);
+        display: flex;
+        flex-direction: column;
+        background:
+            radial-gradient(circle at top left, rgba(200, 138, 45, 0.14), transparent 28%),
+            linear-gradient(180deg, #fffdf9 0%, #f8fbfb 100%);
+    }
+
+    .modal-salida-redesign #formCorrespondenciaSalida {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .modal-salida-redesign .modal-header,
+    .modal-salida-redesign .modal-footer {
+        border: 0;
+        padding: 1.5rem 1.75rem;
+        background: transparent;
+    }
+
+    .modal-salida-redesign .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 0 1.75rem 1.75rem;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(15, 108, 122, 0.55) rgba(15, 108, 122, 0.08);
+    }
+
+    .modal-salida-redesign .modal-body::-webkit-scrollbar {
+        width: 12px;
+    }
+
+    .modal-salida-redesign .modal-body::-webkit-scrollbar-track {
+        background: rgba(15, 108, 122, 0.08);
+        border-radius: 999px;
+    }
+
+    .modal-salida-redesign .modal-body::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, rgba(15, 108, 122, 0.72), rgba(10, 76, 87, 0.92));
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        border-radius: 999px;
+    }
+
+    .modal-salida-redesign .modal-body::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, rgba(15, 108, 122, 0.9), rgba(10, 76, 87, 1));
+    }
+
+    .modal-salida-hero {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .modal-salida-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.4rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(15, 108, 122, 0.1);
+        color: var(--salida-primary-deep);
+        font-size: 0.77rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .modal-salida-title {
+        margin: 0.8rem 0 0.35rem;
+        color: var(--salida-ink);
+        font-size: clamp(1.55rem, 1.2rem + 1vw, 2.05rem);
+        font-weight: 800;
+        line-height: 1.08;
+    }
+
+    .modal-salida-copy {
+        margin: 0;
+        max-width: 60ch;
+        color: var(--salida-muted);
+        line-height: 1.65;
+    }
+
+    .modal-salida-stamp {
+        flex: 0 0 auto;
+        min-width: 180px;
+        padding: 1rem 1.1rem;
+        border: 1px solid rgba(200, 138, 45, 0.22);
+        border-radius: 20px;
+        background: rgba(255, 248, 233, 0.88);
+        text-align: right;
+    }
+
+    .modal-salida-stamp-label {
+        display: block;
+        color: var(--salida-accent);
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .modal-salida-stamp-value {
+        display: block;
+        margin-top: 0.45rem;
+        color: var(--salida-ink);
+        font-size: 0.98rem;
+        font-weight: 700;
+    }
+
+    .modal-salida-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.95fr);
+        gap: 1.25rem;
+        margin-top: 1.35rem;
+    }
+
+    .modal-salida-panel {
+        border: 1px solid var(--salida-line);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 16px 40px -34px rgba(21, 50, 67, 0.4);
+        overflow: hidden;
+    }
+
+    .modal-salida-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1rem 1.15rem;
+        border-bottom: 1px solid var(--salida-line);
+        background: linear-gradient(135deg, rgba(15, 108, 122, 0.1), rgba(200, 138, 45, 0.08));
+    }
+
+    .modal-salida-panel-head h6,
+    .modal-salida-panel-head p {
+        margin: 0;
+    }
+
+    .modal-salida-panel-head h6 {
+        color: var(--salida-ink);
+        font-size: 0.98rem;
+        font-weight: 800;
+    }
+
+    .modal-salida-panel-head p {
+        color: var(--salida-muted);
+        font-size: 0.85rem;
+    }
+
+    .modal-salida-panel-body {
+        padding: 1.15rem;
+    }
+
+    .modal-salida-redesign .form-label {
+        margin-bottom: 0.45rem;
+        color: var(--salida-ink);
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .modal-salida-redesign .form-control,
+    .modal-salida-redesign .form-select,
+    .modal-salida-redesign .dropdown-toggle {
+        min-height: 50px;
+        border: 1px solid rgba(15, 108, 122, 0.18);
+        border-radius: 16px;
+        background: #fffefa;
+        box-shadow: none;
+    }
+
+    .modal-salida-redesign .form-control:focus,
+    .modal-salida-redesign .form-select:focus,
+    .modal-salida-redesign .dropdown-toggle:focus {
+        border-color: rgba(15, 108, 122, 0.4);
+        box-shadow: 0 0 0 0.22rem rgba(15, 108, 122, 0.12);
+    }
+
+    .modal-salida-redesign textarea.form-control {
+        min-height: 360px;
+        padding: 1rem 1.1rem;
+        resize: vertical;
+        line-height: 1.6;
+    }
+
+    .modal-salida-filebox {
+        padding: 1rem;
+        border: 1px dashed rgba(15, 108, 122, 0.24);
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(15, 108, 122, 0.03), rgba(255, 255, 255, 0.6));
+    }
+
+    .modal-salida-drive-alert {
+        display: none;
+        margin-top: 0.9rem;
+        padding: 1rem 1.1rem;
+        border: 1px solid rgba(191, 88, 37, 0.18);
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(255, 240, 228, 0.98), rgba(255, 250, 245, 0.94));
+        color: #7b3f1d;
+    }
+
+    .modal-salida-drive-alert.is-visible {
+        display: block;
+    }
+
+    .modal-salida-drive-alert strong {
+        color: #613116;
+    }
+
+    .modal-salida-mini-note {
+        display: grid;
+        gap: 0.35rem;
+        margin-bottom: 1rem;
+        padding: 0.95rem 1rem;
+        border-radius: 18px;
+        background: rgba(21, 50, 67, 0.045);
+        color: var(--salida-muted);
+    }
+
+    .modal-salida-mini-note strong {
+        color: var(--salida-ink);
+    }
+
+    .modal-salida-search-grid {
+        display: grid;
+        gap: 0.8rem;
+    }
+
+    .modal-salida-agenda-guide {
+        display: grid;
+        gap: 0.85rem;
+        padding: 1rem;
+        border: 1px solid rgba(15, 108, 122, 0.18);
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(15, 108, 122, 0.05), rgba(255, 255, 255, 0.82));
+    }
+
+    .modal-salida-agenda-guide p {
+        margin: 0;
+        color: var(--salida-muted);
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    .modal-salida-agenda-guide strong {
+        color: var(--salida-ink);
+    }
+
+    .modal-salida-results {
+        display: none;
+        max-height: 220px;
+        overflow-y: auto;
+        border: 1px solid var(--salida-line);
+        border-radius: 18px;
+        background: #fffdf8;
+    }
+
+    .modal-salida-results .list-group-item,
+    .modal-salida-redesign #salida_resultados_categorias .list-group-item {
+        border-left: 0;
+        border-right: 0;
+        padding: 0.95rem 1rem;
+    }
+
+    .modal-salida-results .list-group-item:first-child,
+    .modal-salida-redesign #salida_resultados_categorias .list-group-item:first-child {
+        border-top: 0;
+    }
+
+    .modal-salida-selected {
+        min-height: 150px;
+        max-height: 280px;
+        overflow-y: auto;
+        padding: 0.9rem;
+        border: 1px solid var(--salida-line);
+        border-radius: 20px;
+        background: rgba(255, 250, 242, 0.86);
+    }
+
+    .modal-salida-selected .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.7rem 0.82rem;
+        border-radius: 999px;
+        font-weight: 600;
+    }
+
+    .modal-salida-selected:empty::before {
+        content: 'Aun no has agregado destinatarios.';
+        color: var(--salida-muted);
+    }
+
+    .modal-salida-selected-note {
+        margin-top: 0.7rem;
+        color: var(--salida-muted);
+        font-size: 0.84rem;
+        line-height: 1.55;
+    }
+
+    .modal-salida-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .modal-salida-counter {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        color: var(--salida-muted);
+        font-size: 0.88rem;
+        font-weight: 700;
+    }
+
+    .modal-salida-check {
+        padding: 1rem;
+        border: 1px solid var(--salida-line);
+        border-radius: 18px;
+        background: rgba(15, 108, 122, 0.05);
+    }
+
+    .modal-salida-redesign .form-check-input {
+        width: 2.8rem;
+        height: 1.4rem;
+        margin-top: 0.1rem;
+    }
+
+    .modal-salida-redesign .form-check-label {
+        color: var(--salida-ink);
+        font-weight: 600;
+    }
+
+    .modal-salida-redesign .dropdown-menu {
+        border: 1px solid rgba(15, 108, 122, 0.16);
+        border-radius: 22px;
+        box-shadow: 0 24px 60px -38px rgba(18, 54, 73, 0.55);
+    }
+
+    .modal-salida-redesign .btn {
+        border-radius: 14px;
+        font-weight: 700;
+    }
+
+    .modal-salida-redesign .btn-primary {
+        background: linear-gradient(135deg, var(--salida-primary), var(--salida-primary-deep));
+        border-color: transparent;
+    }
+
+    .modal-salida-redesign .btn-warning {
+        background: linear-gradient(135deg, #e5a33a, #ca7f1d);
+        border-color: transparent;
+        color: #fff;
+    }
+
+    .modal-salida-redesign .btn-secondary {
+        background: #eef2f3;
+        border-color: #eef2f3;
+        color: var(--salida-ink);
+    }
+
+    .modal-salida-redesign .btn-outline-secondary,
+    .modal-salida-redesign .btn-outline-warning,
+    .modal-salida-redesign .btn-outline-success {
+        border-width: 1px;
+    }
+
+    .modal-salida-redesign .modal-header {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        backdrop-filter: blur(10px);
+        background: linear-gradient(180deg, rgba(255, 253, 249, 0.96), rgba(255, 253, 249, 0.88));
+    }
+
+    .modal-salida-redesign .modal-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 3;
+        backdrop-filter: blur(10px);
+        background: linear-gradient(180deg, rgba(248, 251, 251, 0.9), rgba(248, 251, 251, 0.98));
+        box-shadow: 0 -10px 24px -24px rgba(21, 50, 67, 0.65);
+    }
+
+    @media (max-width: 991.98px) {
+        .modal-salida-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .modal-salida-stamp {
+            display: none;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .modal-salida-redesign .modal-dialog {
+            height: calc(100vh - 1rem);
+            margin: 0.5rem auto;
+        }
+
+        .modal-salida-redesign .modal-header,
+        .modal-salida-redesign .modal-body,
+        .modal-salida-redesign .modal-footer {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .modal-salida-panel-body,
+        .modal-salida-panel-head {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+    }
+</style>
+
+<!-- Modal para nueva correspondencia de salida -->
+<div class="modal fade modal-salida-redesign" id="modalCorrespondenciaSalida" tabindex="-1" aria-labelledby="modalCorrespondenciaSalidaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-salida-hero w-100">
+                    <div>
+                        <span class="modal-salida-kicker">
+                            <i class="bi bi-send-check-fill"></i>
+                            Correspondencia oficial
+                        </span>
+                        <h5 class="modal-title modal-salida-title" id="modalCorrespondenciaSalidaLabel">Redactar nueva salida institucional</h5>
+                        <p class="modal-salida-copy">Prepara el oficio, agrega adjuntos y define destinatarios desde agenda global o categorias sin salir del flujo principal.</p>
+                    </div>
+                    <div class="modal-salida-stamp">
+                        <span class="modal-salida-stamp-label">Flujo actual</span>
+                        <span class="modal-salida-stamp-value">Borrador + aprobacion</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formCorrespondenciaSalida"
+                  method="post"
+                  enctype="multipart/form-data"
+                  data-salida-endpoint="{% url 'correspondencia:crear_correspondencia_salida_ajax' %}"
+                  data-buscar-contactos-endpoint="{% url 'correspondencia:buscar_contactos_ajax' %}"
+                  data-buscar-grupos-endpoint="{% url 'correspondencia:buscar_grupos_ajax' %}"
+                  data-grupo-detalle-endpoint="{% url 'correspondencia:grupo_agenda_detalle_ajax' 0 %}"
+                  data-buscar-categorias-endpoint="{% url 'correspondencia:buscar_categorias_ajax' %}"
+                  data-categoria-detalle-endpoint="{% url 'correspondencia:categoria_detalle_ajax' 0 %}"
+                  data-buscar-entidades-endpoint="{% url 'correspondencia:buscar_entidades_ajax' %}"
+                  data-adjuntos-upload-max-bytes="{{ outbound_adjuntos_upload_bytes }}"
+                  data-adjuntos-postmark-max-bytes="{{ outbound_adjuntos_postmark_bytes }}"
+                  data-envio-postmark="{{ outbound_envio_usa_postmark|yesno:'1,0' }}"
+                  data-blocked-recipient-emails="{{ blocked_recipient_emails|join:',' }}"
+                  data-blocked-recipient-message="{{ blocked_recipient_message|escape }}">
+                {% csrf_token %}
+                <input type="hidden" name="categoria_contacto_id" id="salida_grupo_agenda_id" value="">
+                <div class="modal-body">
+                    <div class="modal-salida-grid">
+                        <section class="modal-salida-panel">
+                            <div class="modal-salida-panel-head">
+                                <div>
+                                    <h6><i class="bi bi-pencil-square me-2"></i>Redaccion del documento</h6>
+                                    <p>Define asunto, contenido y anexos con una estructura mas limpia y facil de revisar.</p>
+                                </div>
+                            </div>
+                            <div class="modal-salida-panel-body">
+                                <div class="modal-salida-mini-note">
+                                    <strong>Recomendacion operativa</strong>
+                                    <span>Redacta el asunto como una linea ejecutiva clara. El cuerpo puede usarse como base para revision y aprobacion posterior.</span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="salida_asunto" class="form-label">Asunto</label>
+                                    <input type="text" class="form-control" id="salida_asunto" name="asunto" required placeholder="Ej: Respuesta a solicitud de informacion o remision de documentos">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="salida_cuerpo" class="form-label">Cuerpo del mensaje</label>
+                                    <textarea class="form-control" id="salida_cuerpo" name="cuerpo" rows="14" required placeholder="Escriba el contenido oficial que sera enviado..."></textarea>
+                                    <div class="form-text mt-2">Puedes estructurarlo con saludo, contexto, solicitud o respuesta, y cierre institucional.</div>
+                                </div>
+
+                                <div class="modal-salida-filebox">
+                                    <label for="salida_adjuntos" class="form-label d-flex align-items-center gap-2">
+                                        <i class="bi bi-paperclip"></i>
+                                        Archivos adjuntos
+                                    </label>
+                                    <input type="file" class="form-control" id="salida_adjuntos" name="adjuntos" multiple>
+                                    <div class="form-text mt-2">
+                                        Admite múltiples archivos (máx. {{ outbound_adjuntos_upload_mb }} MB en total al cargar).
+                                        {% if outbound_envio_usa_postmark %}
+                                        El envío por Postmark acepta hasta {{ outbound_adjuntos_postmark_mb }} MB en adjuntos; por encima de ese límite el correo será rechazado al aprobar.
+                                        {% endif %}
+                                    </div>
+                                    <div id="salidaAdjuntosDriveAlert" class="modal-salida-drive-alert" role="alert" aria-live="polite"></div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="modal-salida-panel">
+                            <div class="modal-salida-panel-head">
+                                <div>
+                                    <h6><i class="bi bi-people me-2"></i>Destinatarios y despacho</h6>
+                                    <p>Combina agenda global, categorias o busqueda puntual sin perder trazabilidad.</p>
+                                </div>
+                            </div>
+                            <div class="modal-salida-panel-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Categoria de destinatarios</label>
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-warning dropdown-toggle w-100 text-start" type="button" id="salida_btn_abrir_categorias" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-tags me-2"></i><span id="salida_btn_texto_categoria">Seleccionar categoria</span>
+                                        </button>
+                                        <div class="dropdown-menu w-100 p-3" id="salida_dropdown_categorias" style="max-height: 400px; overflow-y: auto;">
+                                            <div class="input-group mb-3">
+                                                <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search"></i></span>
+                                                <input type="text" class="form-control border-start-0" id="salida_buscar_categoria_input" placeholder="Buscar categoria..." autocomplete="off">
+                                            </div>
+                                            <div id="salida_resultados_categorias" class="list-group list-group-flush"></div>
+                                        </div>
+                                    </div>
+                                    <div id="salida_categoria_seleccionada" class="mt-2" style="display:none;">
+                                        <div class="border border-success rounded-4 p-3 bg-success bg-opacity-10">
+                                            <div class="d-flex justify-content-between align-items-center gap-3">
+                                                <div>
+                                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                                    <strong id="salida_categoria_nombre" class="text-success"></strong>
+                                                    <span class="badge bg-success text-white ms-2" id="salida_categoria_count"></span>
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-success" id="salida_btn_quitar_categoria" title="Quitar categoria"><i class="bi bi-x"></i></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal-salida-search-grid mb-3">
+                                    <div class="modal-salida-agenda-guide">
+                                        <div>
+                                            <label class="form-label mb-2">Agenda global</label>
+                                            <p><strong>Como funciona:</strong> abre la agenda global y selecciona los contactos que deseas agregar a esta salida.</p>
+                                        </div>
+                                        <div>
+                                            <button type="button" class="btn btn-warning" onclick="abrirAgendaContactosModal('salida')">
+                                                <i class="bi bi-journal-bookmark me-1"></i>Agenda global
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal-salida-meta">
+                                    <div class="modal-salida-counter">
+                                        <i class="bi bi-person-check"></i>
+                                        Seleccionados: <span id="salida_contador_chips">0</span>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" id="salida_btn_limpiar_chips">Limpiar</button>
+                                </div>
+
+                                <div class="alert alert-info border-0 py-2 px-3 mb-2 small" role="note">
+                                    <i class="bi bi-info-circle me-1"></i>{{ blocked_recipient_message }}
+                                </div>
+
+                                <div id="salida_chips_dest" class="modal-salida-selected"></div>
+                                <div class="modal-salida-selected-note">Los contactos elegidos desde la agenda global apareceran aqui para revisar y limpiar antes de crear el borrador.</div>
+
+                                <input type="hidden" id="salida_enviar_inmediatamente" name="enviar_inmediatamente" value="on">
+
+                                <div id="salida_hidden_dest_inputs"></div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><i class="bi bi-x-circle me-1"></i>Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Crear y enviar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,8 @@
+/var/log/correspondencia/*.log {
+    daily
+    rotate 14
+    compress
+    missingok
+    notifempty
+    copytruncate
+}

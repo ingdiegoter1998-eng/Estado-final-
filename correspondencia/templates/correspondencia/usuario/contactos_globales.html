@@ -1,0 +1,651 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static humanize %}
+
+{% block title %}Contactos Globales{% endblock %}
+{% block page_title %}Contactos Globales{% endblock %}
+
+{% block extra_css %}
+<style>
+    .contacts-page {
+        --contacts-surface: #ffffff;
+        --contacts-surface-muted: #f8fafc;
+        --contacts-border: #e2e8f0;
+        --contacts-muted: #64748b;
+        --contacts-title: #0f172a;
+        --contacts-primary: var(--bs-primary, #0d6efd);
+        --contacts-shadow: 0 18px 40px -28px rgba(15, 23, 42, 0.26);
+        --contacts-radius: 22px;
+    }
+
+    .contacts-page .contacts-shell {
+        width: 95%;
+        margin: 0 auto 2rem;
+    }
+
+    .contacts-page .contacts-hero {
+        background:
+            radial-gradient(circle at top right, rgba(13, 110, 253, 0.14), transparent 34%),
+            linear-gradient(135deg, #ffffff 0%, #f8fbff 48%, #f4f8ff 100%);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 28px;
+        padding: 2rem;
+        box-shadow: var(--contacts-shadow);
+        margin-bottom: 1.5rem;
+    }
+
+    .contacts-page .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(13, 110, 253, 0.1);
+        color: var(--contacts-primary);
+        font-weight: 700;
+        font-size: 0.82rem;
+        margin-bottom: 1rem;
+    }
+
+    .contacts-page .contacts-hero h1 {
+        font-size: clamp(2rem, 3vw, 2.55rem);
+        line-height: 1.1;
+        font-weight: 800;
+        color: var(--contacts-title);
+        margin-bottom: 0.75rem;
+    }
+
+    .contacts-page .contacts-hero p {
+        margin: 0;
+        max-width: 70ch;
+        color: var(--contacts-muted);
+        font-size: 1rem;
+    }
+
+    .contacts-page .hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1.25rem;
+    }
+
+    .contacts-page .hero-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.7rem 0.95rem;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 16px;
+        color: #1e293b;
+        font-weight: 600;
+    }
+
+    .contacts-page .summary-card,
+    .contacts-page .filter-card,
+    .contacts-page .entity-card,
+    .contacts-page .pagination-card,
+    .contacts-page .empty-card {
+        border: 1px solid var(--contacts-border);
+        border-radius: var(--contacts-radius);
+        background: var(--contacts-surface);
+        box-shadow: var(--contacts-shadow);
+    }
+
+    .contacts-page .summary-card {
+        height: 100%;
+        padding: 1.25rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .contacts-page .summary-card::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: linear-gradient(180deg, rgba(var(--bs-primary-rgb, 13, 110, 253), 0.9), rgba(var(--bs-info-rgb, 13, 202, 240), 0.65));
+    }
+
+    .contacts-page .summary-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(13, 110, 253, 0.1);
+        color: var(--contacts-primary);
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .contacts-page .summary-value {
+        font-size: 1.85rem;
+        line-height: 1;
+        font-weight: 800;
+        color: var(--contacts-title);
+        margin-bottom: 0.3rem;
+    }
+
+    .contacts-page .summary-label {
+        color: var(--contacts-muted);
+        font-weight: 600;
+    }
+
+    .contacts-page .filter-card {
+        padding: 1.4rem;
+        margin: 1.5rem 0;
+    }
+
+    .contacts-page .section-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .contacts-page .section-heading h2,
+    .contacts-page .section-heading h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--contacts-title);
+    }
+
+    .contacts-page .section-heading p {
+        margin: 0.2rem 0 0;
+        color: var(--contacts-muted);
+    }
+
+    .contacts-page .filter-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .contacts-page .entity-card {
+        --entity-accent: rgba(13, 110, 253, 0.14);
+        --entity-accent-strong: #0d6efd;
+        --entity-soft: rgba(13, 110, 253, 0.08);
+        --entity-soft-strong: #0b5ed7;
+        margin-bottom: 1.25rem;
+        overflow: hidden;
+        border-color: color-mix(in srgb, var(--entity-accent-strong) 20%, #e2e8f0);
+    }
+
+    .contacts-page .entity-card.theme-ocean {
+        --entity-accent: rgba(13, 110, 253, 0.16);
+        --entity-accent-strong: #0d6efd;
+        --entity-soft: rgba(13, 110, 253, 0.08);
+        --entity-soft-strong: #0b5ed7;
+    }
+
+    .contacts-page .entity-card.theme-emerald {
+        --entity-accent: rgba(25, 135, 84, 0.16);
+        --entity-accent-strong: #198754;
+        --entity-soft: rgba(25, 135, 84, 0.08);
+        --entity-soft-strong: #157347;
+    }
+
+    .contacts-page .entity-card.theme-violet {
+        --entity-accent: rgba(111, 66, 193, 0.16);
+        --entity-accent-strong: #6f42c1;
+        --entity-soft: rgba(111, 66, 193, 0.08);
+        --entity-soft-strong: #5f35ad;
+    }
+
+    .contacts-page .entity-card.theme-amber {
+        --entity-accent: rgba(255, 193, 7, 0.2);
+        --entity-accent-strong: #b58105;
+        --entity-soft: rgba(255, 193, 7, 0.1);
+        --entity-soft-strong: #8f6a00;
+    }
+
+    .contacts-page .entity-card.theme-rose {
+        --entity-accent: rgba(220, 53, 69, 0.16);
+        --entity-accent-strong: #dc3545;
+        --entity-soft: rgba(220, 53, 69, 0.08);
+        --entity-soft-strong: #bb2d3b;
+    }
+
+    .contacts-page .entity-card.theme-cyan {
+        --entity-accent: rgba(13, 202, 240, 0.18);
+        --entity-accent-strong: #0dcaf0;
+        --entity-soft: rgba(13, 202, 240, 0.08);
+        --entity-soft-strong: #0aa2c0;
+    }
+
+    .contacts-page .entity-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        width: 100%;
+        padding: 1.2rem 1.35rem;
+        background: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--entity-accent) 40%, #ffffff) 100%);
+        border: 0;
+        text-align: left;
+    }
+
+    .contacts-page .entity-header:hover {
+        background: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--entity-accent) 58%, #ffffff) 100%);
+    }
+
+    .contacts-page .entity-toggle-chevron {
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--entity-soft);
+        color: var(--entity-soft-strong);
+        transition: transform .2s ease, background-color .2s ease;
+        flex-shrink: 0;
+    }
+
+    .contacts-page .entity-header[aria-expanded="true"] .entity-toggle-chevron {
+        transform: rotate(180deg);
+    }
+
+    .contacts-page .entity-body {
+        padding: 0 1.35rem 1.35rem;
+    }
+
+    .contacts-page .entity-title {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+    }
+
+    .contacts-page .entity-icon {
+        width: 2.75rem;
+        height: 2.75rem;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--entity-soft);
+        color: var(--entity-soft-strong);
+        font-size: 1.15rem;
+    }
+
+    .contacts-page .entity-title h3 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: var(--contacts-title);
+    }
+
+    .contacts-page .entity-title span {
+        color: var(--contacts-muted);
+        font-size: 0.9rem;
+    }
+
+    .contacts-page .entity-badge {
+        border-radius: 999px;
+        padding: 0.5rem 0.8rem;
+        background: var(--entity-soft);
+        color: var(--entity-soft-strong);
+        font-weight: 700;
+    }
+
+    .contacts-page .contact-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .contacts-page .contact-card {
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        border-radius: 20px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        padding: 1rem;
+        height: 100%;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+    }
+
+    .contacts-page .contact-head {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .contacts-page .contact-head > div {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .contacts-page .contact-avatar {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--entity-accent), color-mix(in srgb, var(--entity-accent-strong) 18%, #ffffff));
+        color: var(--entity-soft-strong);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .contacts-page .contact-name {
+        color: var(--contacts-title);
+        font-size: 1rem;
+        font-weight: 800;
+        margin-bottom: 0.2rem;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .contacts-page .contact-role {
+        color: var(--contacts-muted);
+        font-size: 0.92rem;
+        line-height: 1.45;
+        text-align: justify;
+        text-justify: inter-word;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .contacts-page .contact-meta {
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .contacts-page .meta-row {
+        display: flex;
+        gap: 0.7rem;
+        align-items: flex-start;
+        color: #334155;
+        line-height: 1.45;
+    }
+
+    .contacts-page .meta-row span,
+    .contacts-page .meta-row a {
+        flex: 1 1 auto;
+        min-width: 0;
+        text-align: justify;
+        text-justify: inter-word;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .contacts-page .meta-row i {
+        color: var(--entity-soft-strong);
+        margin-top: 0.15rem;
+    }
+
+    .contacts-page .meta-row a {
+        color: inherit;
+        text-decoration: none;
+    }
+
+    .contacts-page .meta-row a:hover {
+        color: var(--entity-soft-strong);
+    }
+
+    .contacts-page .pagination-card,
+    .contacts-page .empty-card {
+        padding: 1.4rem;
+        margin-top: 1.5rem;
+    }
+
+    .contacts-page .pagination-card .pagination {
+        margin-bottom: 0;
+    }
+
+    @media (max-width: 991.98px) {
+        .contacts-page .contacts-hero {
+            padding: 1.5rem;
+            border-radius: 24px;
+        }
+
+        .contacts-page .contact-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .contacts-page .filter-actions {
+            width: 100%;
+        }
+
+        .contacts-page .filter-actions .btn {
+            flex: 1 1 auto;
+        }
+
+        .contacts-page .entity-header,
+        .contacts-page .section-heading {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .contacts-page .contact-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    @media (min-width: 992px) and (max-width: 1399.98px) {
+        .contacts-page .contact-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="contacts-page">
+    <div class="contacts-shell">
+        <section class="contacts-hero">
+            <span class="hero-eyebrow"><i class="bi bi-journal-bookmark"></i> Agenda institucional</span>
+            <h1>Contactos globales</h1>
+            <p>Consulta la agenda consolidada de entidades y contactos en una vista más clara, con filtros rápidos y tarjetas de lectura inmediata.</p>
+            <div class="hero-meta">
+                <span class="hero-chip"><i class="bi bi-people"></i> {{ contactos_filtrados_total|intcomma }} contacto{{ contactos_filtrados_total|pluralize }}</span>
+                <span class="hero-chip"><i class="bi bi-building"></i> {{ entidades_total|intcomma }} entidades visibles</span>
+                <span class="hero-chip"><i class="bi bi-funnel"></i> Orden actual: {{ filtros.orden|default:"entidad"|capfirst }}</span>
+            </div>
+        </section>
+
+        <div class="row g-4 mb-1">
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="summary-card">
+                    <div class="summary-icon"><i class="bi bi-person-lines-fill"></i></div>
+                    <div class="summary-value">{{ contactos_filtrados_total|intcomma }}</div>
+                    <div class="summary-label">Resultados filtrados</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="summary-card">
+                    <div class="summary-icon"><i class="bi bi-envelope-check"></i></div>
+                    <div class="summary-value">{{ contactos_con_email_total|intcomma }}</div>
+                    <div class="summary-label">Con correo registrado</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="summary-card">
+                    <div class="summary-icon"><i class="bi bi-envelope-dash"></i></div>
+                    <div class="summary-value">{{ contactos_sin_email_total|intcomma }}</div>
+                    <div class="summary-label">Sin correo registrado</div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-xl-3">
+                <div class="summary-card">
+                    <div class="summary-icon"><i class="bi bi-diagram-3"></i></div>
+                    <div class="summary-value">{{ entidades_total|intcomma }}</div>
+                    <div class="summary-label">Entidades visibles</div>
+                </div>
+            </div>
+        </div>
+
+        <section class="filter-card">
+            <div class="section-heading">
+                <div>
+                    <h2><i class="bi bi-sliders2 me-2"></i>Explorar agenda</h2>
+                    <p>Filtra por nombre, entidad, disponibilidad de correo y criterio de orden.</p>
+                </div>
+            </div>
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-12 col-lg-4">
+                    <label for="buscar" class="form-label">Búsqueda</label>
+                    <input type="text" id="buscar" name="q" value="{{ filtros.q }}" class="form-control"
+                           placeholder="Nombre, cargo, correo o entidad">
+                </div>
+                <div class="col-12 col-lg-4">
+                    <label for="entidad" class="form-label">Entidad</label>
+                    <select id="entidad" name="entidad" class="form-select">
+                        <option value="">Todas las entidades</option>
+                        {% for entidad in entidades %}
+                            <option value="{{ entidad.id }}" {% if filtros.entidad == entidad.id|stringformat:"s" %}selected{% endif %}>
+                                {{ entidad.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                    <label for="tiene_email" class="form-label">Correo</label>
+                    <select id="tiene_email" name="tiene_email" class="form-select">
+                        <option value="">Todos</option>
+                        <option value="con" {% if filtros.tiene_email == 'con' %}selected{% endif %}>Con email</option>
+                        <option value="sin" {% if filtros.tiene_email == 'sin' %}selected{% endif %}>Sin email</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-6 col-lg-2">
+                    <label for="orden" class="form-label">Ordenar por</label>
+                    <select id="orden" name="orden" class="form-select">
+                        <option value="entidad" {% if filtros.orden == 'entidad' %}selected{% endif %}>Entidad</option>
+                        <option value="nombre" {% if filtros.orden == 'nombre' %}selected{% endif %}>Nombre</option>
+                        <option value="recientes" {% if filtros.orden == 'recientes' %}selected{% endif %}>Más recientes</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search me-2"></i>Aplicar filtros
+                        </button>
+                        <a href="{% url 'correspondencia:contactos_usuario' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-counterclockwise me-2"></i>Restablecer
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        {% if contactos %}
+            {% regroup contactos.object_list by entidad_externa as contactos_por_entidad %}
+            <section>
+                {% for grupo in contactos_por_entidad %}
+                    <article class="entity-card {% cycle 'theme-ocean' 'theme-emerald' 'theme-violet' 'theme-amber' 'theme-rose' 'theme-cyan' %}">
+                        <button class="entity-header" type="button" data-bs-toggle="collapse" data-bs-target="#entityContacts{{ forloop.counter }}" aria-expanded="false" aria-controls="entityContacts{{ forloop.counter }}">
+                            <div class="entity-title">
+                                <span class="entity-icon"><i class="bi bi-building"></i></span>
+                                <div>
+                                    <h3>{% if grupo.grouper %}{{ grupo.grouper.nombre }}{% else %}Sin entidad asociada{% endif %}</h3>
+                                    <span>Haz clic para ver los contactos agrupados de esta entidad.</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 ms-auto">
+                                <span class="entity-badge">{{ grupo.list|length }} contacto{{ grupo.list|length|pluralize }}</span>
+                                <span class="entity-toggle-chevron"><i class="bi bi-chevron-down"></i></span>
+                            </div>
+                        </button>
+
+                        <div id="entityContacts{{ forloop.counter }}" class="collapse">
+                            <div class="entity-body">
+                                <div class="contact-grid">
+                                    {% for contacto in grupo.list %}
+                                        <div class="contact-card">
+                                            <div class="contact-head">
+                                                <div class="contact-avatar">{{ contacto.nombres|default:'C'|slice:':1' }}{{ contacto.apellidos|default:''|slice:':1' }}</div>
+                                                <div>
+                                                    <div class="contact-name">{{ contacto.nombre_completo }}</div>
+                                                    <div class="contact-role">{{ contacto.cargo|default:"Cargo no registrado" }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="contact-meta">
+                                                <div class="meta-row">
+                                                    <i class="bi bi-buildings"></i>
+                                                    <span>{% if contacto.entidad_externa %}{{ contacto.entidad_externa.nombre }}{% else %}Sin entidad asociada{% endif %}</span>
+                                                </div>
+                                                <div class="meta-row">
+                                                    <i class="bi bi-envelope"></i>
+                                                    {% if contacto.correo_electronico %}
+                                                        <a href="mailto:{{ contacto.correo_electronico }}">{{ contacto.correo_electronico }}</a>
+                                                    {% else %}
+                                                        <span class="text-muted">Sin correo electrónico</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="meta-row">
+                                                    <i class="bi bi-telephone"></i>
+                                                    {% if contacto.telefono_contacto %}
+                                                        <a href="tel:{{ contacto.telefono_contacto }}">{{ contacto.telefono_contacto }}</a>
+                                                    {% else %}
+                                                        <span class="text-muted">Sin teléfono registrado</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+            </section>
+
+            {% if contactos.has_other_pages %}
+                <div class="pagination-card">
+                    <div class="section-heading mb-3">
+                        <div>
+                            <h3><i class="bi bi-arrow-left-right me-2"></i>Navegación</h3>
+                            <p>Desplázate entre páginas manteniendo los filtros activos.</p>
+                        </div>
+                    </div>
+                    <nav aria-label="Paginación de contactos globales">
+                        <ul class="pagination justify-content-center">
+                            {% if contactos.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ contactos.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}" aria-label="Anterior">&laquo;</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                            {% endif %}
+
+                            <li class="page-item disabled">
+                                <span class="page-link">Página {{ contactos.number }} de {{ contactos.paginator.num_pages }}</span>
+                            </li>
+
+                            {% if contactos.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ contactos.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}" aria-label="Siguiente">&raquo;</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="empty-card">
+                <div class="section-heading mb-2">
+                    <div>
+                        <h3><i class="bi bi-search me-2"></i>Sin resultados</h3>
+                        <p>No se encontraron contactos que coincidan con los filtros aplicados.</p>
+                    </div>
+                </div>
+                <a href="{% url 'correspondencia:contactos_usuario' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-counterclockwise me-2"></i>Limpiar filtros
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

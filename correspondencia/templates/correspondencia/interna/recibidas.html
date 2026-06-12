@@ -1,0 +1,309 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static humanize %}
+
+{% block title %}Comunicaciones Recibidas{% endblock %}
+{% block page_title %}{{ titulo_pagina|default:'Comunicaciones Recibidas' }}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'correspondencia/css/comunicacion-interna-bandejas.css' %}">
+    <style>
+        .interna-recibidas-page {
+            --tray-accent: #0891b2;
+            --tray-accent-strong: #0f766e;
+            --tray-hero-start: #ecfeff;
+            --tray-hero-end: #ffffff;
+            --tray-kpi-bg: rgba(8, 145, 178, 0.1);
+        }
+
+        .interna-recibidas-page .internal-tray-shell {
+            width: 95%;
+        }
+
+        .interna-recibidas-page .distribution-tag.is-user {
+            color: #7c3aed;
+            background: rgba(124, 58, 237, 0.1);
+        }
+
+        .interna-recibidas-page .distribution-tag.is-office {
+            color: #0369a1;
+            background: rgba(14, 165, 233, 0.1);
+        }
+
+        .interna-recibidas-page .distribution-tag.is-process {
+            color: #0f766e;
+            background: rgba(20, 184, 166, 0.1);
+        }
+
+        .interna-recibidas-page .distribution-tag.is-entity {
+            color: #1d4ed8;
+            background: rgba(37, 99, 235, 0.08);
+        }
+
+        .interna-recibidas-page .tray-filter-actions {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        @media (min-width: 992px) {
+            .interna-recibidas-page .tray-filter-actions {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+{% with grupos=request.user.groups.all|join:"," %}
+{% if "Lider de Oficina" in grupos %}
+<script>
+    document.body.dataset.esLider = 'true';
+</script>
+{% endif %}
+<div class="internal-tray-page interna-recibidas-page">
+    <div class="internal-tray-shell">
+        <section class="tray-hero-card">
+            <div class="tray-hero-copy">
+                <span class="tray-kicker">
+                    <i class="bi bi-inbox-fill"></i>
+                    Comunicaciones internas
+                </span>
+                <div>
+                    <h1 class="tray-hero-title">{{ titulo_pagina|default:'Comunicaciones Recibidas' }}</h1>
+                    <p class="tray-hero-subtitle">Revisa si cada comunicación llegó directamente a ti, a tu oficina, a tu proceso o a toda la entidad, con filtros más útiles para depurar la bandeja.</p>
+                </div>
+                <div class="tray-meta-row">
+                    <span class="tray-meta-pill"><i class="bi bi-buildings"></i>Bandeja de oficina</span>
+                    {% if filtro_q %}
+                    <span class="tray-meta-pill"><i class="bi bi-search"></i>Texto: {{ filtro_q }}</span>
+                    {% endif %}
+                    {% if filtro_destino %}
+                    <span class="tray-meta-pill"><i class="bi bi-signpost-split"></i>Destino: {{ filtro_destino }}</span>
+                    {% endif %}
+                    {% if filtro_estado %}
+                    <span class="tray-meta-pill"><i class="bi bi-hourglass-split"></i>Estado: {{ filtro_estado }}</span>
+                    {% endif %}
+                    {% if "Lider de Oficina" in grupos %}
+                    <span class="tray-meta-pill"><i class="bi bi-shield-check"></i>Perfil líder habilitado</span>
+                    {% endif %}
+                </div>
+                <div class="tray-hero-actions">
+                    <button type="button" class="tray-btn-primary" data-bs-toggle="modal" data-bs-target="#modalComunicacionInternaV2">
+                        <i class="bi bi-send-fill"></i>
+                        Enviar comunicación interna
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section class="tray-nav-card">
+            <div class="tray-nav-list">
+                <a href="{% url 'correspondencia:interna_recibidas' %}" class="tray-nav-link is-active"><i class="bi bi-inbox-fill"></i>Recibidas</a>
+                <a href="{% url 'correspondencia:interna_enviadas' %}" class="tray-nav-link"><i class="bi bi-send-fill"></i>Enviadas</a>
+                {% if "Lider de Oficina" in grupos %}
+                <a href="{% url 'correspondencia:interna_pendientes' %}" class="tray-nav-link"><i class="bi bi-clock-history"></i>Pendientes</a>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="tray-filter-card">
+            <div class="tray-section-head">
+                <div>
+                    <h2>Filtrar la bandeja</h2>
+                    <p>Combina búsqueda, estado y canal de recepción para distinguir qué llegó a ti y qué llegó a tu oficina.</p>
+                </div>
+                <div class="tray-summary-pills">
+                    <span class="tray-summary-pill"><i class="bi bi-funnel"></i>{{ filtros_activos }} filtro{{ filtros_activos|pluralize:'s' }} activo{{ filtros_activos|pluralize:'s' }}</span>
+                </div>
+            </div>
+            <div class="tray-filter-body">
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-lg-4">
+                        <label class="tray-form-label" for="busqueda-recibidas">Radicado o asunto</label>
+                        <input id="busqueda-recibidas" type="text" name="q" class="form-control tray-form-control" placeholder="Radicado, asunto, remitente u oficina origen..." value="{{ filtro_q }}">
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="tray-form-label" for="destino-recibidas">Recibida como</label>
+                        <select id="destino-recibidas" name="destino" class="form-select tray-form-select">
+                            <option value="">Todos los canales</option>
+                            <option value="mi" {% if filtro_destino == 'mi' %}selected{% endif %}>Dirigida a mí</option>
+                            <option value="oficina" {% if filtro_destino == 'oficina' %}selected{% endif %}>Dirigida a mi oficina</option>
+                            <option value="proceso" {% if filtro_destino == 'proceso' %}selected{% endif %}>Dirigida a mi proceso</option>
+                            <option value="entidad" {% if filtro_destino == 'entidad' %}selected{% endif %}>Dirigida a toda la entidad</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="tray-form-label" for="estado-recibidas">Estado</label>
+                        <select id="estado-recibidas" name="estado" class="form-select tray-form-select">
+                            <option value="">Todos los estados</option>
+                            <option value="ENVIADA" {% if filtro_estado == 'ENVIADA' %}selected{% endif %}>Enviada</option>
+                            <option value="DISTRIBUIDA" {% if filtro_estado == 'DISTRIBUIDA' %}selected{% endif %}>Distribuida</option>
+                            <option value="RESPONDIDA" {% if filtro_estado == 'RESPONDIDA' %}selected{% endif %}>Respondida</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="tray-form-label" for="fecha-inicio-recibidas">Desde</label>
+                        <input id="fecha-inicio-recibidas" type="date" name="fecha_inicio" class="form-control tray-form-control" value="{{ filtro_fecha_inicio }}">
+                    </div>
+                    <div class="col-lg-2">
+                        <label class="tray-form-label" for="fecha-fin-recibidas">Hasta</label>
+                        <input id="fecha-fin-recibidas" type="date" name="fecha_fin" class="form-control tray-form-control" value="{{ filtro_fecha_fin }}">
+                    </div>
+                    <div class="col-lg-2">
+                        <div class="tray-filter-actions">
+                            <button type="submit" class="tray-btn-primary"><i class="bi bi-search"></i>Filtrar</button>
+                            <a href="{% url 'correspondencia:interna_recibidas' %}" class="tray-btn-secondary"><i class="bi bi-arrow-clockwise"></i>Limpiar</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        {% if comunicaciones %}
+        <section class="tray-table-card">
+            <div class="tray-table-head">
+                <div>
+                    <h2>Entradas recibidas</h2>
+                    <p>Consulta radicado, origen, quién proyectó la comunicación, canal de recepción y destinatarios desde una sola superficie de trabajo.</p>
+                </div>
+                <span class="tray-page-chip"><i class="bi bi-collection"></i>{% if is_paginated %}{{ page_obj.paginator.count|intcomma }} registros{% else %}{{ comunicaciones|length|intcomma }} registros{% endif %}</span>
+            </div>
+            <div class="tray-table-body">
+                <div class="table-responsive tray-table-wrap">
+                    <table class="table tray-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Radicado y fecha</th>
+                                <th>Asunto</th>
+                                <th>Oficina origen</th>
+                                <th>Proyectado por</th>
+                                <th>Recibida como</th>
+                                <th>Destinatarios</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for com in comunicaciones %}
+                            <tr>
+                                <td>
+                                    <div class="radicado-stack">
+                                        <span class="radicado-pill"><i class="bi bi-hash"></i>{{ com.radicado|default:'BORRADOR' }}</span>
+                                        <span class="muted-copy">{{ com.fecha_documento|date:'d/m/Y' }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="subject-stack">
+                                        <span class="subject-title">{{ com.asunto|default:'Sin asunto'|truncatechars:110 }}</span>
+                                        <span class="subcopy">Documento recibido para gestión interna.</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="person-stack">
+                                        <span class="person-name">{{ com.remitente_oficina.nombre|default:'Sin oficina' }}</span>
+                                        <span class="subcopy">Origen de la comunicación</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="person-stack">
+                                        <span class="person-name">{{ com.remitente_nombre|default:'Sin remitente' }}</span>
+                                        {% if com.remitente_cargo %}
+                                        <span class="subcopy">{{ com.remitente_cargo }}</span>
+                                        {% else %}
+                                        <span class="subcopy">Usuario que proyectó la comunicación</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="destination-stack">
+                                        {% if com.canal_recepcion == 'MI' %}
+                                        <span class="distribution-tag is-user"><i class="bi bi-person-fill"></i>Dirigida a mí</span>
+                                        <span class="subcopy">Destinatario directo</span>
+                                        {% elif com.canal_recepcion == 'OFICINA' %}
+                                        <span class="distribution-tag is-office"><i class="bi bi-building-fill"></i>A mi oficina</span>
+                                        <span class="subcopy">{{ oficina_actual.nombre|default:'Oficina actual' }}</span>
+                                        {% elif com.canal_recepcion == 'PROCESO' %}
+                                        <span class="distribution-tag is-process"><i class="bi bi-diagram-3-fill"></i>A mi proceso</span>
+                                        <span class="subcopy">Recepción por proceso</span>
+                                        {% elif com.canal_recepcion == 'ENTIDAD' %}
+                                        <span class="distribution-tag is-entity"><i class="bi bi-people-fill"></i>Toda la entidad</span>
+                                        <span class="subcopy">Difusión institucional</span>
+                                        {% else %}
+                                        <span class="distribution-placeholder">Sin clasificar</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="destination-stack">
+                                        {% if com.es_a_toda_entidad or com.tipo_distribucion == 'ENTIDAD' %}
+                                        <button type="button" class="distribution-trigger is-entity" data-bs-toggle="modal" data-bs-target="#modalDestinatariosInterna" data-comunicacion-id="{{ com.id }}" data-comunicacion-radicado="{{ com.radicado }}" data-comunicacion-asunto="{{ com.asunto }}" data-tipo-distribucion="ENTIDAD" data-entidad-nombre="{% with entidad=com.remitente_oficina.unidad_administrativa.entidad_productora %}{{ entidad.nombre|default:'Toda la Entidad' }}{% endwith %}">
+                                            <i class="bi bi-people-fill"></i>Toda la entidad
+                                        </button>
+                                        {% elif com.tipo_distribucion == 'PROCESO' %}
+                                        <button type="button" class="distribution-trigger is-process" data-bs-toggle="modal" data-bs-target="#modalDestinatariosInterna" data-comunicacion-id="{{ com.id }}" data-comunicacion-radicado="{{ com.radicado }}" data-comunicacion-asunto="{{ com.asunto }}" data-tipo-distribucion="PROCESO" data-proceso-nombre="{{ com.destinatario_proceso.nombre|default:'Proceso' }}">
+                                            <i class="bi bi-diagram-3-fill"></i>{{ com.destinatario_proceso.nombre|default:'Proceso' }}
+                                        </button>
+                                        {% elif com.destinatarios_multiples.exists %}
+                                        {% with total=com.destinatarios_multiples.count %}
+                                        <button type="button" class="distribution-trigger is-entity" data-bs-toggle="modal" data-bs-target="#modalDestinatariosInterna" data-comunicacion-id="{{ com.id }}" data-comunicacion-radicado="{{ com.radicado }}" data-comunicacion-asunto="{{ com.asunto }}" data-tipo-distribucion="MULTIPLE" data-total-destinatarios="{{ total }}">
+                                            <i class="bi bi-people"></i>{{ total }} destinatario{{ total|pluralize:'s' }}
+                                        </button>
+                                        {% endwith %}
+                                        {% elif com.destinatario_oficina %}
+                                        <button type="button" class="distribution-trigger is-office" data-bs-toggle="modal" data-bs-target="#modalDestinatariosInterna" data-comunicacion-id="{{ com.id }}" data-comunicacion-radicado="{{ com.radicado }}" data-comunicacion-asunto="{{ com.asunto }}" data-tipo-distribucion="OFICINA" data-oficina-nombre="{{ com.destinatario_oficina.nombre }}" data-usuario-nombre="{% if com.destinatario_usuario %}{{ com.destinatario_usuario.get_full_name|default:com.destinatario_usuario.username }}{% endif %}">
+                                            <i class="bi bi-building-fill"></i>{{ com.destinatario_oficina.nombre|truncatewords:2 }}{% if com.destinatario_usuario %}<span class="badge bg-primary">+1</span>{% endif %}
+                                        </button>
+                                        {% elif com.destinatario_usuario %}
+                                        <button type="button" class="distribution-trigger is-user" data-bs-toggle="modal" data-bs-target="#modalDestinatariosInterna" data-comunicacion-id="{{ com.id }}" data-comunicacion-radicado="{{ com.radicado }}" data-comunicacion-asunto="{{ com.asunto }}" data-tipo-distribucion="USUARIO" data-usuario-nombre="{{ com.destinatario_usuario.get_full_name|default:com.destinatario_usuario.username }}">
+                                            <i class="bi bi-person-fill"></i>{{ com.destinatario_usuario.get_full_name|default:com.destinatario_usuario.username|truncatewords:2 }}
+                                        </button>
+                                        {% else %}
+                                        <span class="distribution-placeholder">Sin detalle visible</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="action-stack">
+                                        <a href="{% url 'correspondencia:interna_detalle' com.pk %}" class="action-btn is-primary" title="Ver detalle"><i class="bi bi-eye"></i></a>
+                                        {% if com.archivo_generado %}
+                                        <a href="/calendario/documento/{{ com.pk }}" target="_blank" class="action-btn" title="Ver PDF"><i class="bi bi-file-pdf"></i></a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        {% else %}
+        <section class="tray-empty-card">
+            <div class="tray-empty-icon"><i class="bi bi-inbox"></i></div>
+            <h2>No hay comunicaciones recibidas</h2>
+            <p>Cuando lleguen nuevas comunicaciones internas para tu oficina, aparecerán en esta bandeja.</p>
+        </section>
+        {% endif %}
+
+        {% if is_paginated %}
+        <nav aria-label="Paginación">
+            <ul class="pagination pagination-modern justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filtro_q %}&q={{ filtro_q }}{% endif %}{% if filtro_destino %}&destino={{ filtro_destino }}{% endif %}{% if filtro_estado %}&estado={{ filtro_estado }}{% endif %}">Anterior</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filtro_q %}&q={{ filtro_q }}{% endif %}{% if filtro_destino %}&destino={{ filtro_destino }}{% endif %}{% if filtro_estado %}&estado={{ filtro_estado }}{% endif %}">Siguiente</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+{% include 'correspondencia/partials/modals/modal_comunicacion_interna.html' %}
+{% include 'correspondencia/partials/modals/modal_comunicacion_interna_v2.html' %}
+{% with modal_theme='info' %}
+{% include 'correspondencia/partials/modals/modal_destinatarios_interna.html' %}
+{% endwith %}
+{% endwith %}
+{% endblock %}
+

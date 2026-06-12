@@ -1,0 +1,337 @@
+{% extends "basefichas.html" %}
+
+{% load static %}
+
+{% block content %}
+<div class="container" style="max-width: 700px;">
+    <h2 class="mb-4">
+        <i class="bi bi-file-earmark-spreadsheet text-success me-2"></i>
+        Importar registros desde Excel
+    </h2>
+
+    <!-- ══════════════════════════════════════════════════════════
+         FORMULARIO DE CARGA
+         ══════════════════════════════════════════════════════════ -->
+    <div id="form-section" class="card shadow-sm">
+        <div class="card-body">
+            <form id="import-form" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="fuid_id" class="form-label fw-semibold">
+                        <i class="bi bi-folder2-open me-1"></i> Selecciona FUID:
+                    </label>
+                    <select name="fuid_id" id="fuid_id" class="form-select" required>
+                        <option value="" disabled selected>-- Seleccionar FUID --</option>
+                        {% for fuid in fuids %}
+                            <option value="{{ fuid.id }}">
+                                FUID #{{ fuid.id }} - {{ fuid.entidad_productora.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="excel" class="form-label fw-semibold">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Archivo Excel:
+                    </label>
+                    <input type="file" name="excel" id="excel" class="form-control"
+                           accept=".xlsx,.xls" required>
+                    <div class="form-text">
+                        Formatos aceptados: .xlsx, .xls
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" id="btn-importar">
+                    <i class="bi bi-cloud-upload me-1"></i> Importar y asociar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         SECCIÓN DE PROGRESO (oculta inicialmente)
+         ══════════════════════════════════════════════════════════ -->
+    <div id="progress-section" class="card shadow-sm mt-4" style="display: none;">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-hourglass-split me-2 text-primary"></i>
+                Importando registros...
+            </h5>
+
+            <!-- Fase actual -->
+            <p id="progress-fase" class="text-muted mb-2" style="font-size: 0.9rem;">
+                Iniciando...
+            </p>
+
+            <!-- Barra de progreso -->
+            <div class="progress mb-3" style="height: 28px; border-radius: 8px;">
+                <div id="progress-bar"
+                     class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                     role="progressbar"
+                     style="width: 0%; transition: width 0.4s ease;"
+                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    0%
+                </div>
+            </div>
+
+            <!-- Contadores en vivo -->
+            <div class="d-flex justify-content-between" style="font-size: 0.85rem;">
+                <span>
+                    <i class="bi bi-check-circle text-success me-1"></i>
+                    Procesados: <strong id="progress-current">0</strong>
+                    de <strong id="progress-total">0</strong>
+                </span>
+                <span>
+                    <i class="bi bi-exclamation-triangle text-warning me-1"></i>
+                    Errores: <strong id="progress-errors">0</strong>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         SECCIÓN DE RESULTADOS (oculta inicialmente)
+         ══════════════════════════════════════════════════════════ -->
+    <div id="result-section" class="mt-4" style="display: none;">
+
+        <!-- Resumen -->
+        <div id="result-summary" class="card shadow-sm mb-3">
+            <div class="card-body text-center">
+                <div id="result-icon" style="font-size: 3rem;"></div>
+                <h4 id="result-title" class="mt-2"></h4>
+                <p id="result-subtitle" class="text-muted"></p>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="row g-3 mb-3">
+            <div class="col-6">
+                <div class="card border-success">
+                    <div class="card-body text-center py-3">
+                        <div class="text-success" style="font-size: 2rem; font-weight: bold;">
+                            <span id="result-exitos">0</span>
+                        </div>
+                        <small class="text-muted">Registros importados</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card border-danger">
+                    <div class="card-body text-center py-3">
+                        <div class="text-danger" style="font-size: 2rem; font-weight: bold;">
+                            <span id="result-errores-count">0</span>
+                        </div>
+                        <small class="text-muted">Errores</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de errores -->
+        <div id="errores-section" class="card border-warning mb-3" style="display: none;">
+            <div class="card-header bg-warning bg-opacity-10">
+                <i class="bi bi-exclamation-triangle text-warning me-1"></i>
+                <strong>Errores encontrados</strong>
+            </div>
+            <div class="card-body p-0">
+                <ul id="errores-list" class="list-group list-group-flush"
+                    style="max-height: 300px; overflow-y: auto;">
+                </ul>
+            </div>
+        </div>
+
+        <!-- Botón para volver -->
+        <a href="{% url 'importar_excel_archivo' %}" class="btn btn-outline-primary w-100">
+            <i class="bi bi-arrow-repeat me-1"></i> Importar otro archivo
+        </a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('import-form');
+    const formSection = document.getElementById('form-section');
+    const progressSection = document.getElementById('progress-section');
+    const resultSection = document.getElementById('result-section');
+
+    // Elementos de progreso
+    const progressBar = document.getElementById('progress-bar');
+    const progressFase = document.getElementById('progress-fase');
+    const progressCurrent = document.getElementById('progress-current');
+    const progressTotal = document.getElementById('progress-total');
+    const progressErrors = document.getElementById('progress-errors');
+
+    // Elementos de resultado
+    const resultIcon = document.getElementById('result-icon');
+    const resultTitle = document.getElementById('result-title');
+    const resultSubtitle = document.getElementById('result-subtitle');
+    const resultExitos = document.getElementById('result-exitos');
+    const resultErroresCount = document.getElementById('result-errores-count');
+    const erroresSection = document.getElementById('errores-section');
+    const erroresList = document.getElementById('errores-list');
+
+    let pollingInterval = null;
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+        const btnImportar = document.getElementById('btn-importar');
+
+        // Deshabilitar botón
+        btnImportar.disabled = true;
+        btnImportar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Enviando...';
+
+        fetch('{% url "importar_excel_archivo" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert(data.error);
+                btnImportar.disabled = false;
+                btnImportar.innerHTML = '<i class="bi bi-cloud-upload me-1"></i> Importar y asociar';
+                return;
+            }
+
+            // Ocultar formulario, mostrar progreso
+            formSection.style.display = 'none';
+            progressSection.style.display = 'block';
+
+            // Iniciar polling de progreso
+            startPolling(data.task_id);
+        })
+        .catch(err => {
+            alert('Error al enviar el archivo: ' + err);
+            btnImportar.disabled = false;
+            btnImportar.innerHTML = '<i class="bi bi-cloud-upload me-1"></i> Importar y asociar';
+        });
+    });
+
+    function startPolling(taskId) {
+        const url = '{% url "importar_excel_archivo" %}progreso/' + taskId + '/';
+
+        pollingInterval = setInterval(function() {
+            fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.state === 'PROGRESS') {
+                    updateProgress(data);
+                } else if (data.state === 'PENDING') {
+                    progressFase.textContent = 'En cola, esperando inicio...';
+                    progressBar.style.width = '0%';
+                    progressBar.textContent = 'En cola...';
+                    progressBar.classList.remove('bg-primary');
+                    progressBar.classList.add('bg-info');
+                } else if (data.state === 'SUCCESS') {
+                    clearInterval(pollingInterval);
+                    showResults(data);
+                } else if (data.state === 'FAILURE') {
+                    clearInterval(pollingInterval);
+                    showError(data.mensaje || 'Error desconocido en la tarea.');
+                }
+            })
+            .catch(err => {
+                console.error('Error al consultar progreso:', err);
+            });
+        }, 1200); // Cada 1.2 segundos
+    }
+
+    function updateProgress(data) {
+        const current = data.current || 0;
+        const total = data.total || 1;
+        const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+
+        progressBar.style.width = pct + '%';
+        progressBar.textContent = pct + '%';
+        progressBar.setAttribute('aria-valuenow', pct);
+        progressBar.classList.remove('bg-info');
+        progressBar.classList.add('bg-primary');
+
+        progressFase.textContent = data.fase || 'Procesando...';
+        progressCurrent.textContent = current;
+        progressTotal.textContent = total;
+        progressErrors.textContent = data.errores_count || 0;
+    }
+
+    function showResults(data) {
+        // Completar barra al 100%
+        progressBar.style.width = '100%';
+        progressBar.textContent = '100%';
+        progressBar.classList.remove('progress-bar-animated', 'bg-primary', 'bg-info');
+        progressBar.classList.add('bg-success');
+        progressFase.textContent = 'Importacion completada.';
+
+        setTimeout(function() {
+            progressSection.style.display = 'none';
+            resultSection.style.display = 'block';
+
+            const exitos = data.exitos || 0;
+            const errores = data.errores || [];
+            const estado = data.estado || 'completado';
+
+            if (estado === 'error') {
+                resultIcon.innerHTML = '<i class="bi bi-x-circle text-danger"></i>';
+                resultTitle.textContent = 'Error en la importacion';
+                resultSubtitle.textContent = data.mensaje || 'Ocurrio un error.';
+                resultExitos.textContent = 0;
+                resultErroresCount.textContent = 1;
+                return;
+            }
+
+            // Icono y titulo segun resultado
+            if (errores.length === 0) {
+                resultIcon.innerHTML = '<i class="bi bi-check-circle text-success"></i>';
+                resultTitle.textContent = 'Importacion exitosa';
+                resultSubtitle.textContent =
+                    'Todos los registros se importaron correctamente.';
+            } else if (exitos > 0) {
+                resultIcon.innerHTML = '<i class="bi bi-exclamation-circle text-warning"></i>';
+                resultTitle.textContent = 'Importacion parcial';
+                resultSubtitle.textContent =
+                    'Algunos registros tuvieron errores.';
+            } else {
+                resultIcon.innerHTML = '<i class="bi bi-x-circle text-danger"></i>';
+                resultTitle.textContent = 'Importacion fallida';
+                resultSubtitle.textContent =
+                    'No se pudo importar ningun registro.';
+            }
+
+            resultExitos.textContent = exitos;
+            resultErroresCount.textContent = errores.length;
+
+            // Mostrar lista de errores
+            if (errores.length > 0) {
+                erroresSection.style.display = 'block';
+                erroresList.innerHTML = '';
+                errores.forEach(function(err) {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item list-group-item-action py-2';
+                    li.style.fontSize = '0.85rem';
+                    li.innerHTML = '<i class="bi bi-dot text-danger"></i> ' + err;
+                    erroresList.appendChild(li);
+                });
+            }
+
+        }, 800); // Breve pausa para ver el 100%
+    }
+
+    function showError(mensaje) {
+        progressSection.style.display = 'none';
+        resultSection.style.display = 'block';
+        resultIcon.innerHTML = '<i class="bi bi-x-circle text-danger"></i>';
+        resultTitle.textContent = 'Error en la importacion';
+        resultSubtitle.textContent = mensaje;
+        resultExitos.textContent = 0;
+        resultErroresCount.textContent = 1;
+    }
+});
+</script>
+{% endblock %}

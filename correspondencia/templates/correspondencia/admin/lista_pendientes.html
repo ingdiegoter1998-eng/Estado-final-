@@ -1,0 +1,492 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load static humanize auth_extras %}
+
+{% block title %}{{ titulo_pagina|default:"Portal Principal de Correspondencia" }}{% endblock %}
+{% block page_title %}{{ titulo_pagina|default:"Portal Principal de Correspondencia" }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pendientes-page {
+        --pend-ink: #143040;
+        --pend-muted: #5f7381;
+        --pend-line: rgba(20, 48, 64, 0.12);
+        --pend-primary: #0f6c7a;
+        --pend-primary-deep: #0b4b56;
+        --pend-success: #237f63;
+        --pend-radius: 20px;
+    }
+
+    .pendientes-shell {
+        display: grid;
+        gap: 1rem;
+        max-width: 100%;
+    }
+
+    .pendientes-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem 1.25rem;
+        padding: 0.15rem 0 0.35rem;
+    }
+
+    .pendientes-lead {
+        margin: 0;
+        color: var(--pend-muted);
+        font-size: 0.95rem;
+        line-height: 1.5;
+        max-width: 52ch;
+    }
+
+    .pendientes-meta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+    }
+
+    .pendientes-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.38rem 0.72rem;
+        border-radius: 999px;
+        background: rgba(15, 108, 122, 0.08);
+        color: var(--pend-primary-deep);
+        font-size: 0.82rem;
+        font-weight: 800;
+    }
+
+    .pendientes-link {
+        color: var(--pend-primary);
+        font-size: 0.86rem;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .pendientes-link:hover {
+        color: var(--pend-primary-deep);
+        text-decoration: underline;
+    }
+
+    .pendientes-panel {
+        border: 1px solid var(--pend-line);
+        border-radius: var(--pend-radius);
+        background: #fff;
+        box-shadow: 0 18px 40px -34px rgba(18, 43, 56, 0.28);
+        overflow: hidden;
+    }
+
+    .pendientes-panel-head {
+        padding: 0.95rem 1.1rem;
+        border-bottom: 1px solid var(--pend-line);
+        background: #f8fbfc;
+    }
+
+    .pendientes-panel-title {
+        margin: 0;
+        color: var(--pend-ink);
+        font-size: 0.98rem;
+        font-weight: 800;
+    }
+
+    .pendientes-panel-body {
+        padding: 1rem 1.1rem 1.1rem;
+    }
+
+    .pendientes-filter-grid {
+        display: grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 0.85rem;
+    }
+
+    .pendientes-field {
+        grid-column: span 3;
+        display: grid;
+        gap: 0.35rem;
+    }
+
+    .pendientes-field.is-wide {
+        grid-column: span 6;
+    }
+
+    .pendientes-field .form-label {
+        margin: 0;
+        color: var(--pend-ink);
+        font-size: 0.84rem;
+        font-weight: 700;
+    }
+
+    .pendientes-field .form-control,
+    .pendientes-field .form-select {
+        min-height: 2.75rem;
+        border-radius: 14px;
+        border-color: var(--pend-line);
+        box-shadow: none;
+    }
+
+    .pendientes-field .form-control:focus,
+    .pendientes-field .form-select:focus {
+        border-color: rgba(15, 108, 122, 0.45);
+        box-shadow: 0 0 0 0.2rem rgba(15, 108, 122, 0.1);
+    }
+
+    .pendientes-filter-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        margin-top: 0.95rem;
+    }
+
+    .pendientes-btn,
+    .pendientes-btn-outline,
+    .pendientes-assign-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        min-height: 42px;
+        padding: 0.65rem 1rem;
+        border-radius: 14px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        text-decoration: none;
+        border: 0;
+    }
+
+    .pendientes-btn {
+        background: linear-gradient(135deg, var(--pend-success), #1a6650);
+        color: #fff;
+    }
+
+    .pendientes-btn-outline {
+        border: 1px solid var(--pend-line);
+        background: #fff;
+        color: var(--pend-ink);
+    }
+
+    .pendientes-assign-btn {
+        background: linear-gradient(135deg, var(--pend-primary), var(--pend-primary-deep));
+        color: #fff;
+        white-space: nowrap;
+    }
+
+    .pendientes-table-wrap {
+        overflow-x: auto;
+        border: 1px solid rgba(20, 48, 64, 0.08);
+        border-radius: 16px;
+        background: #fff;
+    }
+
+    #tabla-pendientes {
+        width: 100%;
+        min-width: 900px;
+        margin: 0;
+        border-collapse: collapse;
+    }
+
+    #tabla-pendientes thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        padding: 0.85rem;
+        border-bottom: 1px solid #dbe6ea;
+        background: #f5fafb;
+        color: var(--pend-ink);
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    #tabla-pendientes tbody td {
+        padding: 0.85rem;
+        border-bottom: 1px solid #edf3f5;
+        vertical-align: middle;
+        font-size: 0.9rem;
+        color: #334b59;
+    }
+
+    #tabla-pendientes tbody tr:hover td {
+        background: #f8fbfc;
+    }
+
+    .col-radicado {
+        width: 128px;
+        min-width: 118px;
+        font-weight: 800;
+        color: var(--pend-ink);
+    }
+
+    .col-fecha {
+        width: 150px;
+        min-width: 130px;
+        font-size: 0.82rem;
+    }
+
+    .col-remitente,
+    .col-oficina {
+        max-width: 220px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .col-asunto {
+        min-width: 280px;
+        max-width: 420px;
+        line-height: 1.45;
+    }
+
+    .col-estado,
+    .col-acciones {
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .pendientes-state-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.38rem 0.68rem;
+        border-radius: 999px;
+        background: rgba(201, 133, 29, 0.14);
+        color: #9b6105;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .pendientes-empty {
+        padding: 2rem 1rem;
+        text-align: center;
+        color: var(--pend-muted);
+    }
+
+    .pendientes-empty i {
+        display: block;
+        margin-bottom: 0.65rem;
+        font-size: 1.6rem;
+        color: #8aa0ad;
+    }
+
+    .pendientes-empty strong {
+        display: block;
+        margin-bottom: 0.35rem;
+        color: var(--pend-ink);
+        font-size: 1rem;
+    }
+
+    .pendientes-pagination-meta {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.35rem 1rem;
+        margin-top: 0.75rem;
+        color: var(--pend-muted);
+        font-size: 0.82rem;
+    }
+
+    .pendientes-page .pagination .page-link {
+        border-radius: 10px;
+        min-width: 40px;
+        text-align: center;
+    }
+
+    .pendientes-page .pagination .active .page-link {
+        background: linear-gradient(135deg, var(--pend-primary), var(--pend-primary-deep));
+        border-color: transparent;
+    }
+
+    @media (max-width: 1199.98px) {
+        .pendientes-filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .pendientes-field,
+        .pendientes-field.is-wide {
+            grid-column: span 12;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .pendientes-toolbar {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        #tabla-pendientes {
+            min-width: 760px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pendientes-page">
+    <div class="pendientes-shell">
+        <div class="pendientes-toolbar">
+            <p class="pendientes-lead">
+                Consulta radicados en estado <strong>Radicada</strong> y asígnalos al usuario responsable en la oficina destino.
+            </p>
+            <div class="pendientes-meta">
+                <span class="pendientes-count">
+                    <i class="bi bi-inbox"></i>
+                    {{ page_obj.paginator.count|default:0 }} pendiente{{ page_obj.paginator.count|pluralize }}
+                </span>
+                {% if request.user|has_group:"Ventanilla" %}
+                <a href="{% url 'correspondencia:bandeja_correos_pendientes' %}" class="pendientes-link">Correos pendientes</a>
+                <a href="{% url 'correspondencia:historial_correspondencia' %}" class="pendientes-link">Historial</a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if request.user|has_group:"Ventanilla" %}
+        <section class="pendientes-panel">
+            <div class="pendientes-panel-head">
+                <h2 class="pendientes-panel-title">Filtros de búsqueda</h2>
+            </div>
+            <div class="pendientes-panel-body">
+                <form method="get" action="" id="historial-filter-form">
+                    <div class="pendientes-filter-grid">
+                        <div class="pendientes-field is-wide">
+                            <label for="id_search_term" class="form-label">Buscar</label>
+                            <input type="text" name="search_term" placeholder="Asunto, radicado, remitente..." class="form-control" id="id_search_term" value="{{ filtro_search_term }}">
+                        </div>
+                        <div class="pendientes-field">
+                            <label for="id_oficina" class="form-label">Oficina destino</label>
+                            <input type="text" name="oficina" placeholder="Nombre de la oficina..." class="form-control" id="id_oficina" value="{{ filtro_oficina }}">
+                        </div>
+                        <div class="pendientes-field">
+                            <label for="id_medio" class="form-label">Medio</label>
+                            <select name="medio_recepcion" class="form-select" id="id_medio">
+                                <option value="" {% if not filtro_medio %}selected{% endif %}>Todos</option>
+                                <option value="FISICO" {% if filtro_medio == 'FISICO' %}selected{% endif %}>Físico</option>
+                                <option value="ELECTRONICO" {% if filtro_medio == 'ELECTRONICO' %}selected{% endif %}>Electrónico</option>
+                            </select>
+                        </div>
+                        <div class="pendientes-field">
+                            <label for="id_serie" class="form-label">Serie</label>
+                            <input type="text" name="serie" placeholder="Serie..." class="form-control" id="id_serie" value="{{ filtro_serie }}">
+                        </div>
+                        <div class="pendientes-field">
+                            <label for="id_subserie" class="form-label">Subserie</label>
+                            <input type="text" name="subserie" placeholder="Subserie..." class="form-control" id="id_subserie" value="{{ filtro_subserie }}">
+                        </div>
+                        <div class="pendientes-field">
+                            <label for="id_fecha_inicio" class="form-label">Desde</label>
+                            <input type="date" name="fecha_inicio" class="form-control" id="id_fecha_inicio" value="{{ filtro_fecha_inicio }}">
+                        </div>
+                        <div class="pendientes-field">
+                            <label for="id_fecha_fin" class="form-label">Hasta</label>
+                            <input type="date" name="fecha_fin" class="form-control" id="id_fecha_fin" value="{{ filtro_fecha_fin }}">
+                        </div>
+                    </div>
+                    <div class="pendientes-filter-actions">
+                        <button type="submit" name="submit" class="pendientes-btn"><i class="bi bi-search"></i>Buscar</button>
+                        <a href="{% url 'correspondencia:pendientes_distribuir' %}" class="pendientes-btn-outline"><i class="bi bi-arrow-clockwise"></i>Limpiar</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="pendientes-panel">
+            <div class="pendientes-panel-head">
+                <h2 class="pendientes-panel-title">Listado</h2>
+            </div>
+            <div class="pendientes-panel-body">
+                {% if not correspondencias %}
+                <div class="pendientes-empty">
+                    <i class="bi bi-inbox"></i>
+                    <strong>No hay correspondencia pendiente de asignar</strong>
+                    <span>Ajusta los filtros o vuelve más tarde si ya se distribuyó todo.</span>
+                </div>
+                {% else %}
+                <div class="pendientes-table-wrap">
+                    <table id="tabla-pendientes" class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="col-radicado"># Radicado</th>
+                                <th class="col-fecha">Fecha Rad.</th>
+                                <th class="col-remitente">Remitente</th>
+                                <th class="col-asunto">Asunto</th>
+                                <th class="col-oficina">Oficina Destino</th>
+                                <th class="col-estado">Estado</th>
+                                <th class="col-acciones">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in correspondencias %}
+                            <tr>
+                                <td class="col-radicado">{{ item.numero_radicado }}</td>
+                                <td class="col-fecha">{{ item.fecha_radicacion|date:"Y-m-d H:i" }}</td>
+                                <td class="col-remitente text-truncate" title="{{ item.remitente }}">{{ item.remitente }}</td>
+                                <td class="col-asunto wrap-text" title="{{ item.asunto }}">{{ item.asunto }}</td>
+                                <td class="col-oficina text-truncate" title="{{ item.oficina_destino.nombre }}">{{ item.oficina_destino.nombre }}</td>
+                                <td class="col-estado"><span class="pendientes-state-badge">{{ item.get_estado_display }}</span></td>
+                                <td class="col-acciones">
+                                    <a href="{% url 'correspondencia:distribuir_correspondencia' pk=item.pk %}" class="pendientes-assign-btn" title="Asignar a un usuario de la oficina destino">
+                                        <i class="bi bi-person-check-fill"></i>Asignar
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if correspondencias.has_other_pages %}
+                <nav aria-label="Paginación de correspondencia" class="mt-4">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if correspondencias.has_previous %}
+                            <li class="page-item"><a class="page-link" href="?page=1{% if filtro_search_term %}&search_term={{ filtro_search_term }}{% endif %}{% if filtro_oficina %}&oficina={{ filtro_oficina }}{% endif %}{% if filtro_serie %}&serie={{ filtro_serie }}{% endif %}{% if filtro_subserie %}&subserie={{ filtro_subserie }}{% endif %}{% if filtro_fecha_inicio %}&fecha_inicio={{ filtro_fecha_inicio }}{% endif %}{% if filtro_fecha_fin %}&fecha_fin={{ filtro_fecha_fin }}{% endif %}{% if filtro_medio %}&medio_recepcion={{ filtro_medio }}{% endif %}">&laquo;&laquo;</a></li>
+                            <li class="page-item"><a class="page-link" href="?page={{ correspondencias.previous_page_number }}{% if filtro_search_term %}&search_term={{ filtro_search_term }}{% endif %}{% if filtro_oficina %}&oficina={{ filtro_oficina }}{% endif %}{% if filtro_serie %}&serie={{ filtro_serie }}{% endif %}{% if filtro_subserie %}&subserie={{ filtro_subserie }}{% endif %}{% if filtro_fecha_inicio %}&fecha_inicio={{ filtro_fecha_inicio }}{% endif %}{% if filtro_fecha_fin %}&fecha_fin={{ filtro_fecha_fin }}{% endif %}{% if filtro_medio %}&medio_recepcion={{ filtro_medio }}{% endif %}">&laquo;</a></li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">&laquo;&laquo;</span></li>
+                            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                        {% endif %}
+
+                        {% for i in correspondencias.paginator.page_range %}
+                            {% if correspondencias.number == i %}
+                                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                            {% elif i > correspondencias.number|add:'-3' and i < correspondencias.number|add:'3' %}
+                                <li class="page-item"><a class="page-link" href="?page={{ i }}{% if filtro_search_term %}&search_term={{ filtro_search_term }}{% endif %}{% if filtro_oficina %}&oficina={{ filtro_oficina }}{% endif %}{% if filtro_serie %}&serie={{ filtro_serie }}{% endif %}{% if filtro_subserie %}&subserie={{ filtro_subserie }}{% endif %}{% if filtro_fecha_inicio %}&fecha_inicio={{ filtro_fecha_inicio }}{% endif %}{% if filtro_fecha_fin %}&fecha_fin={{ filtro_fecha_fin }}{% endif %}{% if filtro_medio %}&medio_recepcion={{ filtro_medio }}{% endif %}">{{ i }}</a></li>
+                            {% elif i == correspondencias.number|add:'-3' or i == correspondencias.number|add:'3' %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if correspondencias.has_next %}
+                            <li class="page-item"><a class="page-link" href="?page={{ correspondencias.next_page_number }}{% if filtro_search_term %}&search_term={{ filtro_search_term }}{% endif %}{% if filtro_oficina %}&oficina={{ filtro_oficina }}{% endif %}{% if filtro_serie %}&serie={{ filtro_serie }}{% endif %}{% if filtro_subserie %}&subserie={{ filtro_subserie }}{% endif %}{% if filtro_fecha_inicio %}&fecha_inicio={{ filtro_fecha_inicio }}{% endif %}{% if filtro_fecha_fin %}&fecha_fin={{ filtro_fecha_fin }}{% endif %}{% if filtro_medio %}&medio_recepcion={{ filtro_medio }}{% endif %}">&raquo;</a></li>
+                            <li class="page-item"><a class="page-link" href="?page={{ correspondencias.paginator.num_pages }}{% if filtro_search_term %}&search_term={{ filtro_search_term }}{% endif %}{% if filtro_oficina %}&oficina={{ filtro_oficina }}{% endif %}{% if filtro_serie %}&serie={{ filtro_serie }}{% endif %}{% if filtro_subserie %}&subserie={{ filtro_subserie }}{% endif %}{% if filtro_fecha_inicio %}&fecha_inicio={{ filtro_fecha_inicio }}{% endif %}{% if filtro_fecha_fin %}&fecha_fin={{ filtro_fecha_fin }}{% endif %}{% if filtro_medio %}&medio_recepcion={{ filtro_medio }}{% endif %}">&raquo;&raquo;</a></li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                            <li class="page-item disabled"><span class="page-link">&raquo;&raquo;</span></li>
+                        {% endif %}
+                    </ul>
+                    <div class="pendientes-pagination-meta">
+                        <span>Página {{ correspondencias.number }} de {{ correspondencias.paginator.num_pages }}</span>
+                        <span>{{ correspondencias.paginator.count }} registros</span>
+                    </div>
+                </nav>
+                {% endif %}
+                {% endif %}
+            </div>
+        </section>
+        {% else %}
+        <section class="pendientes-panel">
+            <div class="pendientes-panel-body">
+                <div class="pendientes-empty">
+                    <i class="bi bi-shield-lock"></i>
+                    <strong>Acceso restringido</strong>
+                    <span>Esta vista está disponible para usuarios de ventanilla.</span>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static %}
+
+{% block title %}Bienvenida - Comunicaciones Internas{% endblock %}
+{% block page_title %}Bienvenida - Comunicaciones Internas{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'correspondencia/css/comunicacion-interna-hub-detalle.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="interna-module-page interna-hub-page">
+    <div class="internal-module-shell">
+        <section class="module-hero module-hero--single-column">
+            <div>
+                <span class="module-kicker">
+                    <i class="bi bi-file-earmark-text-fill"></i>
+                    Comunicaciones internas
+                </span>
+                <h1 class="module-title">Centro de trabajo{% if user.first_name %} de {{ user.first_name }}{% endif %}</h1>
+                <p class="module-subtitle">Gestiona oficios internos, revisa tus bandejas y prepara documentos con una vista más clara del estado operativo del módulo.</p>
+
+                <div class="module-chip-row module-chip-row--inline mt-3">
+                    <span class="module-chip"><i class="bi bi-send"></i>Redacción, revisión y distribución</span>
+                    <span class="module-chip"><i class="bi bi-arrow-left-right"></i>Flujo interno entre oficinas</span>
+                    <span class="module-chip-soft"><i class="bi bi-shield-check"></i>Trazabilidad documental</span>
+                </div>
+
+                <div class="module-hero-actions mt-4">
+                    <button type="button" class="module-btn is-success" data-bs-toggle="modal" data-bs-target="#modalComunicacionInternaV2">
+                        <i class="bi bi-plus-circle"></i>Nueva comunicación
+                    </button>
+                    <a href="{% url 'correspondencia:interna_recibidas' %}" class="module-btn-outline">
+                        <i class="bi bi-inbox-fill"></i>Ir a recibidas
+                    </a>
+                    <a href="{% url 'correspondencia:interna_enviadas' %}" class="module-btn-outline">
+                        <i class="bi bi-send-fill"></i>Ir a enviadas
+                    </a>
+                </div>
+
+                <div class="module-hero-workflow mt-4">
+                    <div class="module-hero-workflow-head">
+                        <h2 class="module-panel-title"><i class="bi bi-info-circle me-2"></i>Uso recomendado</h2>
+                        <button class="module-workflow-toggle collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#moduleHeroWorkflowBody" aria-expanded="false" aria-controls="moduleHeroWorkflowBody">
+                            <span class="module-workflow-toggle-label module-workflow-toggle-label--closed">Ver guía de uso</span>
+                            <span class="module-workflow-toggle-label module-workflow-toggle-label--open">Ocultar guía</span>
+                            <i class="bi bi-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div class="collapse" id="moduleHeroWorkflowBody">
+                        <div class="module-guide-grid">
+                            <div class="module-guide-card">
+                                <span class="module-info-label">Por qué usarlo</span>
+                                <div class="module-info-value">Ayuda a evitar envíos incompletos, errores de destinatario y documentos sin validación suficiente antes de circular.</div>
+                            </div>
+                            <div class="module-guide-card">
+                                <span class="module-info-label">Para qué sirve</span>
+                                <div class="module-info-value">Ordena el trabajo de redacción, revisión y distribución para que cada comunicación salga clara, correcta y con trazabilidad.</div>
+                            </div>
+                            <div class="module-guide-card">
+                                <span class="module-info-label">Cuándo aplicarlo</span>
+                                <div class="module-info-value">Úsalo cuando el oficio requiera destinatarios definidos, revisión previa, firma digital o seguimiento posterior dentro del flujo interno.</div>
+                            </div>
+                        </div>
+
+                        <div class="module-step-grid module-step-grid--hero mt-3">
+                            <div class="module-step-card">
+                                <span class="module-step-number">1</span>
+                                <h3 class="module-section-title mt-3">Redacta</h3>
+                                <p class="module-copy">Crea el oficio, define destinatarios, asunto y contenido. Este paso ordena el mensaje desde el inicio y reduce correcciones posteriores.</p>
+                            </div>
+                            <div class="module-step-card">
+                                <span class="module-step-number">2</span>
+                                <h3 class="module-section-title mt-3">Revisa</h3>
+                                <p class="module-copy">Valida datos, anexos, firma requerida y estado del documento. Revisar antes de enviar evita devoluciones, errores de forma y reprocesos.</p>
+                            </div>
+                            <div class="module-step-card">
+                                <span class="module-step-number">3</span>
+                                <h3 class="module-section-title mt-3">Distribuye</h3>
+                                <p class="module-copy">Una vez aprobado y firmado, distribuye el documento para dejar registro de entrega, lectura y seguimiento dentro del circuito institucional.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </section>
+
+        {% if tiene_firma %}
+        <section class="module-banner is-success">
+            <div class="module-banner-icon"><i class="bi bi-check-circle-fill"></i></div>
+            <div>
+                <h3 class="module-section-title">Firma digital activa</h3>
+                <p class="module-copy">Tu firma quedó registrada el {{ fecha_firma|date:"d/m/Y a las H:i" }} y está lista para usarse en comunicaciones que exijan validación del líder o del redactor autorizado.</p>
+            </div>
+        </section>
+        {% else %}
+        <section class="module-banner is-warning">
+            <div class="module-banner-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+            <div>
+                <h3 class="module-section-title">Configuración requerida antes de firmar</h3>
+                <p class="module-copy">Puedes entrar al módulo y redactar, pero debes registrar tu firma digital manuscrita para completar la distribución de documentos que la requieran.</p>
+            </div>
+        </section>
+        {% endif %}
+        <section class="module-card module-card--compact">
+            <div class="module-panel-head">
+                <h2 class="module-panel-title"><i class="bi bi-pen-fill me-2"></i>Configuración de firma digital</h2>
+                <p class="module-copy">La firma se inserta automáticamente en los documentos que la requieren dentro del flujo interno.</p>
+            </div>
+            <div class="module-panel-body module-panel-body--inline">
+                <div class="module-note mb-0">
+                    Para emitir documentos oficiales con firma, el sistema usa la imagen manuscrita registrada en tu perfil. Puedes actualizarla cuando cambie tu cargo, firma o responsabilidad operativa.
+                </div>
+                <div class="module-hero-actions module-hero-actions--compact">
+                    <a href="{% url 'correspondencia:interna_configurar_firma' %}" class="module-btn">
+                        <i class="bi bi-pen-fill"></i>
+                        {% if tiene_firma %}Actualizar firma digital{% else %}Configurar firma digital{% endif %}
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <section class="module-info-card">
+            <div class="module-panel-head">
+                <h2 class="module-panel-title"><i class="bi bi-list-check me-2"></i>Capacidades del módulo</h2>
+                <p class="module-copy">Resumen de lo que ya puedes hacer desde este frente de trabajo.</p>
+            </div>
+            <div class="module-panel-body">
+                <div class="module-info-grid">
+                    <div class="module-info-item">
+                        <span class="module-info-label">Comunicación</span>
+                        <div class="module-info-value">Crear y enviar oficios internos hacia usuarios, oficinas, procesos o toda la entidad.</div>
+                    </div>
+                    <div class="module-info-item">
+                        <span class="module-info-label">Seguimiento</span>
+                        <div class="module-info-value">Consultar recibidas, enviadas, estados de aprobación e historial de respuestas.</div>
+                    </div>
+                    <div class="module-info-item">
+                        <span class="module-info-label">Respuesta</span>
+                        <div class="module-info-value">Responder comunicaciones distribuidas cuando el flujo y el destinatario lo permitan.</div>
+                    </div>
+                    <div class="module-info-item">
+                        <span class="module-info-label">Control documental</span>
+                        <div class="module-info-value">Mantener trazabilidad, anexos, PDF generado y datos de clasificación documental.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<!-- Incluir los modales de comunicación interna -->
+{% include 'correspondencia/partials/modals/modal_comunicacion_interna.html' %}
+{% include 'correspondencia/partials/modals/modal_comunicacion_interna_v2.html' %}
+{% endblock %}
+

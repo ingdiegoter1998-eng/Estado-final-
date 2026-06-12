@@ -1,0 +1,353 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle de Ficha #{{ ficha.consecutivo }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background: #f8f9fa;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        line-height: 1.6;
+    }
+    .fichas-layout {
+        display: flex;
+        min-height: 100vh;
+    }
+    .fichas-content {
+        flex: 1;
+        padding: 1.5rem 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    .fichas-navbar {
+        background-color: #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        padding: 0.75rem 1.5rem;
+        margin-bottom: 1.5rem;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .fichas-navbar-brand {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #003366;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .fichas-navbar-brand i {
+        font-size: 1.8rem;
+        color: #0077cc;
+    }
+    .fichas-detail-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .fichas-detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #e1e8ed;
+    }
+    .fichas-detail-header h2 {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #003366;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .fichas-detail-header h2 i {
+        color: #0077cc;
+    }
+    .fichas-section {
+        margin-bottom: 2rem;
+    }
+    .fichas-section-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #003366;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #e1e8ed;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .fichas-section-title i {
+        color: #0077cc;
+    }
+    .fichas-info-box {
+        background: #f8f9fa;
+        border: 1px solid #e1e8ed;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.2s ease;
+    }
+    .fichas-info-box:hover {
+        background: #f0f4f8;
+        border-color: #0077cc;
+    }
+    .fichas-info-box strong {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #003366;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    .fichas-info-box p {
+        font-size: 0.95rem;
+        color: #4a4a4a;
+        margin: 0;
+    }
+    .btn-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        border: none;
+        box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+        transition: all 0.3s ease;
+    }
+    .btn-warning:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+    }
+    .btn-secondary {
+        background-color: #6c757d;
+        border: none;
+        transition: all 0.3s ease;
+    }
+    .btn-secondary:hover {
+        background-color: #5a6268;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block body_content %}
+<div class="fichas-layout">
+    {% include 'partials/sidebar_nav.html' %}
+    <div class="fichas-content">
+        <nav class="fichas-navbar">
+            <div class="fichas-navbar-brand">
+                <i class="bi bi-file-person-fill"></i>
+                <span>Detalle de Ficha #{{ ficha.consecutivo }}</span>
+            </div>
+            <div>
+                <a href="{% url 'lista_fichas1' %}" class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="bi bi-arrow-left me-1"></i>Volver a Lista
+                </a>
+                <a href="{% url 'editar_ficha1' ficha.consecutivo %}" class="btn btn-warning btn-sm">
+                    <i class="bi bi-pencil me-1"></i>Editar
+                </a>
+            </div>
+        </nav>
+
+        <div class="fichas-detail-card">
+            <div class="fichas-detail-header">
+                <h2>
+                    <i class="bi bi-file-person-fill"></i>
+                    Ficha #{{ ficha.consecutivo }}
+                </h2>
+                <a href="{% url 'crear_ficha1' %}" class="btn btn-success btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>Crear Nueva Ficha
+                </a>
+            </div>
+
+            <!-- Sección: Información Personal -->
+            <div class="fichas-section">
+                <h3 class="fichas-section-title">
+                    <i class="bi bi-person"></i>
+                    Información Personal
+                </h3>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Primer Nombre:</strong>
+                            <p>{{ ficha.primer_nombre }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Segundo Nombre:</strong>
+                            <p>{{ ficha.segundo_nombre|default:"—" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Primer Apellido:</strong>
+                            <p>{{ ficha.primer_apellido }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Segundo Apellido:</strong>
+                            <p>{{ ficha.segundo_apellido|default:"—" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Fecha de Nacimiento:</strong>
+                            <p>{{ ficha.fecha_nacimiento|date:"d/m/Y" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Sexo:</strong>
+                            <p>{{ ficha.sexo|default:"—" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección: Identificación -->
+            <div class="fichas-section">
+                <h3 class="fichas-section-title">
+                    <i class="bi bi-card-text"></i>
+                    Identificación
+                </h3>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Número de Identificación:</strong>
+                            <p>{{ ficha.num_identificacion|default:"—" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Tipo de Identificación:</strong>
+                            <p>{{ ficha.tipo_identificacion|default:"—" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Identificación Secundaria:</strong>
+                            <p>{{ ficha.num_identificacion_secundario|default:"—" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Tipo de Identificación Secundaria:</strong>
+                            <p>{{ ficha.tipo_identificacion_secundario|default:"—" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Número de Historia Clínica:</strong>
+                            <p>{{ ficha.Numero_historia_clinica|default:"—" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección: Información del Padre -->
+            <div class="fichas-section">
+                <h3 class="fichas-section-title">
+                    <i class="bi bi-person-badge"></i>
+                    Información del Padre
+                </h3>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Primer Nombre:</strong>
+                            <p>{{ ficha.primer_nombre_padre|default:"—" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Segundo Nombre:</strong>
+                            <p>{{ ficha.segundo_nombre_padre|default:"—" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Primer Apellido:</strong>
+                            <p>{{ ficha.primer_apellido_padre|default:"—" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Segundo Apellido:</strong>
+                            <p>{{ ficha.segundo_apellido_padre|default:"—" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección: Ubicación Física -->
+            <div class="fichas-section">
+                <h3 class="fichas-section-title">
+                    <i class="bi bi-geo-alt"></i>
+                    Ubicación Física
+                </h3>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="fichas-info-box">
+                            <strong>Gaveta:</strong>
+                            <p>{{ ficha.gabeta|default:"—" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="fichas-info-box">
+                            <strong>Caja:</strong>
+                            <p>{{ ficha.caja|default:"—" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="fichas-info-box">
+                            <strong>Carpeta:</strong>
+                            <p>{{ ficha.carpeta|default:"—" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección: Fechas de Visita -->
+            <div class="fichas-section">
+                <h3 class="fichas-section-title">
+                    <i class="bi bi-calendar-check"></i>
+                    Fechas de Visita
+                </h3>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Último Registro de Visita:</strong>
+                            <p>{{ ficha.ultimo_registro_de_visita_en_la_base_de_datos|default:"—" }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="fichas-info-box">
+                            <strong>Registro de Visita según FUID:</strong>
+                            <p>{{ ficha.Fecha_de_visita_de_la_tarjeta|default:"—" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                <a href="{% url 'editar_ficha1' ficha.consecutivo %}" class="btn btn-warning">
+                    <i class="bi bi-pencil-square me-2"></i>Editar
+                </a>
+                <a href="{% url 'lista_fichas1' %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left-circle me-2"></i>Volver a Lista
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

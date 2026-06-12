@@ -1,0 +1,60 @@
+{% comment %}Centro de notificaciones global del header{% endcomment %}
+<div class="dropdown notifications-widget">
+    <button class="btn notifications-trigger dropdown-toggle position-relative"
+            type="button"
+            id="notificationsDropdown"
+            data-bs-toggle="dropdown"
+            aria-expanded="false"
+            title="Notificaciones">
+        <span class="notifications-trigger-icon" aria-hidden="true">
+            <i class="bi bi-bell" id="bellIcon"></i>
+        </span>
+        <span class="notifications-trigger-copy">
+            <span class="notifications-trigger-label">Notificaciones</span>
+            <span class="notifications-trigger-meta">Avisos y tareas</span>
+        </span>
+        <span class="badge bg-danger position-absolute top-0 start-100 translate-middle notifications-badge"
+              id="notificationBadge"
+              style="display: none;">0</span>
+    </button>
+
+    <div class="dropdown-menu dropdown-menu-end notifications-panel"
+         aria-labelledby="notificationsDropdown">
+        <div class="notifications-panel-header">
+            <div class="notifications-panel-heading">
+                <span class="notifications-panel-kicker">
+                    <i class="bi bi-broadcast-pin"></i>
+                    Centro de avisos
+                </span>
+                <h6 class="notifications-panel-title mb-0">Notificaciones</h6>
+                <p class="notifications-panel-subtitle mb-0">
+                    Revisa asignaciones, respuestas, vencimientos y alertas operativas.
+                </p>
+            </div>
+            <div class="notifications-panel-actions">
+                <span class="notifications-panel-count" id="notificationPanelCount" aria-live="polite">
+                    0 sin leer
+                </span>
+                <button type="button"
+                        class="btn btn-link btn-sm text-decoration-none notifications-mark-all"
+                        id="marcarTodasLeidasBtn"
+                        style="display: none;">
+                    Marcar todas
+                </button>
+            </div>
+        </div>
+
+        <div class="notifications-panel-body">
+            <ul class="notifications-list" id="notificationsContent">
+                <li>
+                    <div class="notifications-loading">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <span>Cargando notificaciones...</span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

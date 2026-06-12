@@ -1,0 +1,426 @@
+Project hospital_gestion_documental {
+  database_type: 'PostgreSQL'
+}
+
+Table documentos_seriedocumental {
+  id int [pk]
+  codigo varchar
+  nombre varchar
+}
+
+Table documentos_subseriedocumental {
+  id int [pk]
+  codigo varchar
+  nombre varchar
+  serie int
+}
+
+Table documentos_entidadproductora {
+  id int [pk]
+  nombre varchar
+}
+
+Table documentos_unidadadministrativa {
+  id int [pk]
+  nombre varchar
+  entidad_productora int
+}
+
+Table documentos_oficinaproductora {
+  id int [pk]
+  nombre varchar
+  unidad_administrativa int
+}
+
+Table documentos_objeto {
+  id int [pk]
+  nombre varchar
+}
+
+Table documentos_fuid {
+  id int [pk]
+  entidad_productora int
+  unidad_administrativa int
+  oficina_productora int
+  objeto int
+  fecha_creacion datetime
+  creado_por int
+  notas varchar
+  elaborado_por_nombre varchar
+  elaborado_por_cargo varchar
+  elaborado_por_lugar varchar
+  elaborado_por_fecha date
+  entregado_por_nombre varchar
+  entregado_por_cargo varchar
+  entregado_por_lugar varchar
+  entregado_por_fecha date
+  recibido_por_nombre varchar
+  recibido_por_cargo varchar
+  recibido_por_lugar varchar
+  recibido_por_fecha date
+}
+
+Table documentos_registrodearchivo {
+  id int [pk]
+  Estado_archivo boolean
+  numero_orden int
+  codigo varchar
+  codigo_serie int
+  codigo_subserie int
+  unidad_documental varchar
+  fecha_archivo date
+  fecha_inicial date
+  fecha_final date
+  soporte_fisico boolean
+  soporte_electronico boolean
+  caja int
+  carpeta int
+  tomo_legajo_libro varchar
+  numero_folios int
+  tipo varchar
+  cantidad int
+  ubicacion varchar
+  cantidad_documentos_electronicos int
+  tamano_documentos_electronicos varchar
+  identificador_documento varchar
+  notas text
+  creado_por int
+  fecha_creacion datetime
+}
+
+Table documentos_documento {
+  id int [pk]
+  registro int
+  archivo varchar
+  uploaded_at datetime
+}
+
+Table documentos_permisousuarioserie {
+  id int [pk]
+  usuario int
+  serie int
+  permiso_crear boolean
+  permiso_editar boolean
+  permiso_consultar boolean
+  permiso_eliminar boolean
+}
+
+Table documentos_tipodocumento {
+  id int [pk]
+  nombre varchar
+}
+
+Table documentos_nacionalidad {
+  id int [pk]
+  nombre varchar
+}
+
+Table documentos_fichapaciente {
+  consecutivo int [pk]
+  primer_nombre varchar
+  segundo_nombre varchar
+  primer_apellido varchar
+  segundo_apellido varchar
+  num_identificacion varchar
+  tipo_identificacion int
+  num_identificacion_secundario varchar
+  tipo_identificacion_secundario int
+  fecha_nacimiento date
+  primer_nombre_padre varchar
+  segundo_nombre_padre varchar
+  primer_apellido_padre varchar
+  segundo_apellido_padre varchar
+  Numero_historia_clinica int
+  caja varchar
+  carpeta varchar
+  gabeta int
+  sexo varchar
+  activo boolean
+  estado_de_migracion boolean
+  Fecha_de_visita_de_la_tarjeta date
+  ultimo_registro_de_visita_en_la_base_de_datos date
+  año_de_registro int
+  nacionalidad int
+}
+
+Table documentos_perfilusuario {
+  id int [pk]
+  user int
+  oficina int
+  cargo varchar
+}
+
+Table correspondencia_entidadexterna {
+  id int [pk]
+  nombre varchar
+  nit varchar
+  direccion varchar
+  telefono varchar
+  dominio varchar
+}
+
+Table correspondencia_contacto {
+  id int [pk]
+  entidad_externa int
+  nombres varchar
+  apellidos varchar
+  cargo varchar
+  correo_electronico varchar
+  telefono_contacto varchar
+  oficina_propietaria int
+}
+
+Table correspondencia_correspondencia {
+  id int [pk]
+  numero_radicado varchar
+  tipo_radicado varchar
+  fecha_radicacion datetime
+  usuario_radicador int
+  remitente int
+  asunto text
+  serie int
+  subserie int
+  medio_recepcion varchar
+  requiere_respuesta boolean
+  tiempo_respuesta varchar
+  plazo_respuesta_dias int
+  fecha_limite_respuesta_persist datetime
+  plazo_origen varchar
+  tramite_aplicado int
+  estado varchar
+  leido_por_oficina boolean
+  resumen_ia text
+  sellado boolean
+  fecha_sellado datetime
+  oficina_destino int
+  usuario_destino_inicial int
+}
+
+Table correspondencia_historialcorrespondencia {
+  id int [pk]
+  correspondencia int
+  fecha_hora datetime
+  evento varchar
+  usuario int
+  descripcion text
+}
+
+Table correspondencia_adjuntocorreo {
+  id int [pk]
+  correspondencia int
+  archivo varchar
+  nombre_original varchar
+  tipo_mime varchar
+  fecha_carga datetime
+}
+
+Table correspondencia_correoentrante {
+  id int [pk]
+  message_id varchar
+  remitente varchar
+  asunto varchar
+  cuerpo_texto text
+  cuerpo_html text
+  fecha_recepcion_original datetime
+  fecha_lectura_imap datetime
+  procesado boolean
+  radicado_asociado int
+  requiere_revision_manual boolean
+  oficina_clasificada int
+  serie_clasificada int
+  subserie_clasificada int
+  fecha_clasificacion datetime
+}
+
+Table correspondencia_adjuntocorreoentrante {
+  id int [pk]
+  correo_entrante int
+  archivo varchar
+  nombre_original varchar
+  tipo_mime varchar
+  fecha_carga datetime
+}
+
+Table correspondencia_distribucioninternausuario {
+  id int [pk]
+  correspondencia int
+  usuario_asignado int
+  fecha_asignacion datetime
+  asignado_por int
+  leido boolean
+  fecha_lectura datetime
+  observaciones text
+}
+
+Table correspondencia_notificacion {
+  id int [pk]
+  usuario int
+  tipo varchar
+  titulo varchar
+  mensaje text
+  correspondencia int
+  leida boolean
+  fecha_creacion datetime
+  fecha_lectura datetime
+  url varchar
+}
+
+Table correspondencia_correspondenciasalida {
+  id int [pk]
+  respuesta_a int
+  numero_radicado_salida varchar
+  fecha_creacion datetime
+  usuario_redactor int
+  fecha_ultima_modificacion datetime
+  oficina_emisora int
+  oficina_emisora_nombre varchar
+  redactor_nombre varchar
+  redactor_cargo varchar
+  destinatario_contacto int
+  destinatario_email varchar
+  asunto varchar
+  cuerpo text
+  estado varchar
+  usuario_aprobador int
+  fecha_aprobacion datetime
+  motivo_rechazo text
+  fecha_envio datetime
+  id_mensaje_enviado varchar
+  envio_tipo varchar
+  envio_grupo int
+  envio_total_destinatarios int
+  envio_detalle_snapshot varchar
+}
+
+Table correspondencia_adjuntosalida {
+  id int [pk]
+  correspondencia_salida int
+  archivo varchar
+  nombre_original varchar
+  tipo_mime varchar
+  fecha_carga datetime
+}
+
+Table correspondencia_historialsalida {
+  id int [pk]
+  correspondencia_salida int
+  fecha_hora datetime
+  tipo_evento varchar
+  usuario int
+  descripcion text
+}
+
+Table correspondencia_salidadestinatario {
+  id int [pk]
+  correspondencia_salida int
+  contacto int
+  email_snapshot varchar
+  nombre_snapshot varchar
+  estado varchar
+  fecha_envio datetime
+  id_mensaje_enviado varchar
+  detalle_error text
+  smtp_code varchar
+  dsn_status varchar
+  ultimo_evento_at datetime
+}
+
+Table correspondencia_grupoagenda {
+  id int [pk]
+  oficina_propietaria int
+  nombre varchar
+  descripcion text
+  creado_por int
+  activo boolean
+  created_at datetime
+  updated_at datetime
+}
+
+Table correspondencia_comunicacionmasiva {
+  id int [pk]
+  oficina_emisora int
+  usuario_creador int
+  asunto varchar
+  cuerpo text
+  estado varchar
+  fecha_creacion datetime
+  fecha_envio datetime
+}
+
+Table correspondencia_comunicaciondestinatario {
+  id int [pk]
+  comunicacion int
+  contacto int
+  email_snapshot varchar
+  nombre_snapshot varchar
+  estado varchar
+  fecha_envio datetime
+  id_mensaje_enviado varchar
+  detalle_error text
+}
+
+Table correspondencia_tramitetipo {
+  id int [pk]
+  codigo varchar
+  nombre varchar
+  plazo_dias_habiles varchar
+  fundamento_normativo varchar
+  activo boolean
+}
+
+Table correspondencia_subserietramite {
+  id int [pk]
+  subserie int
+  tramite int
+}
+
+Table correspondencia_calendariolaboral {
+  id int [pk]
+  fecha date
+  es_habil boolean
+}
+
+Ref: documentos_subseriedocumental.serie > documentos_seriedocumental.id
+Ref: documentos_unidadadministrativa.entidad_productora > documentos_entidadproductora.id
+Ref: documentos_oficinaproductora.unidad_administrativa > documentos_unidadadministrativa.id
+Ref: documentos_fuid.entidad_productora > documentos_entidadproductora.id
+Ref: documentos_fuid.unidad_administrativa > documentos_unidadadministrativa.id
+Ref: documentos_fuid.oficina_productora > documentos_oficinaproductora.id
+Ref: documentos_fuid.objeto > documentos_objeto.id
+Ref: documentos_registrodearchivo.codigo_serie > documentos_seriedocumental.id
+Ref: documentos_registrodearchivo.codigo_subserie > documentos_subseriedocumental.id
+Ref: documentos_documento.registro > documentos_registrodearchivo.id
+Ref: documentos_permisousuarioserie.serie > documentos_seriedocumental.id
+Ref: documentos_fichapaciente.tipo_identificacion > documentos_tipodocumento.id
+Ref: documentos_fichapaciente.tipo_identificacion_secundario > documentos_tipodocumento.id
+Ref: documentos_fichapaciente.nacionalidad > documentos_nacionalidad.id
+Ref: documentos_perfilusuario.oficina > documentos_oficinaproductora.id
+Ref: correspondencia_contacto.entidad_externa > correspondencia_entidadexterna.id
+Ref: correspondencia_contacto.oficina_propietaria > documentos_oficinaproductora.id
+Ref: correspondencia_correspondencia.remitente > correspondencia_contacto.id
+Ref: correspondencia_correspondencia.serie > documentos_seriedocumental.id
+Ref: correspondencia_correspondencia.subserie > documentos_subseriedocumental.id
+Ref: correspondencia_correspondencia.tramite_aplicado > correspondencia_tramitetipo.id
+Ref: correspondencia_correspondencia.oficina_destino > documentos_oficinaproductora.id
+Ref: correspondencia_historialcorrespondencia.correspondencia > correspondencia_correspondencia.id
+Ref: correspondencia_adjuntocorreo.correspondencia > correspondencia_correspondencia.id
+Ref: correspondencia_correoentrante.radicado_asociado > correspondencia_correspondencia.id
+Ref: correspondencia_correoentrante.oficina_clasificada > documentos_oficinaproductora.id
+Ref: correspondencia_correoentrante.serie_clasificada > documentos_seriedocumental.id
+Ref: correspondencia_correoentrante.subserie_clasificada > documentos_subseriedocumental.id
+Ref: correspondencia_adjuntocorreoentrante.correo_entrante > correspondencia_correoentrante.id
+Ref: correspondencia_distribucioninternausuario.correspondencia > correspondencia_correspondencia.id
+Ref: correspondencia_notificacion.correspondencia > correspondencia_correspondencia.id
+Ref: correspondencia_correspondenciasalida.respuesta_a > correspondencia_correspondencia.id
+Ref: correspondencia_correspondenciasalida.oficina_emisora > documentos_oficinaproductora.id
+Ref: correspondencia_correspondenciasalida.destinatario_contacto > correspondencia_contacto.id
+Ref: correspondencia_correspondenciasalida.envio_grupo > correspondencia_grupoagenda.id
+Ref: correspondencia_adjuntosalida.correspondencia_salida > correspondencia_correspondenciasalida.id
+Ref: correspondencia_historialsalida.correspondencia_salida > correspondencia_correspondenciasalida.id
+Ref: correspondencia_salidadestinatario.correspondencia_salida > correspondencia_correspondenciasalida.id
+Ref: correspondencia_salidadestinatario.contacto > correspondencia_contacto.id
+Ref: correspondencia_grupoagenda.oficina_propietaria > documentos_oficinaproductora.id
+Ref: correspondencia_comunicacionmasiva.oficina_emisora > documentos_oficinaproductora.id
+Ref: correspondencia_comunicaciondestinatario.comunicacion > correspondencia_comunicacionmasiva.id
+Ref: correspondencia_comunicaciondestinatario.contacto > correspondencia_contacto.id
+Ref: correspondencia_subserietramite.tramite > correspondencia_tramitetipo.id

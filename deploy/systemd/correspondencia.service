@@ -1,0 +1,28 @@
+[Unit]
+Description=Django Correspondencia (Gunicorn)
+After=network.target
+
+[Service]
+User=devdiego
+Group=www-data
+WorkingDirectory=/home/devdiego/Correspondencia-diciembre-1.0
+EnvironmentFile=-/home/devdiego/Correspondencia-diciembre-1.0/.env
+Environment="PATH=/home/devdiego/Correspondencia-diciembre-1.0/venv/bin"
+Environment="DJANGO_SETTINGS_MODULE=hospital_document_management.settings"
+RuntimeDirectory=correspondencia
+ExecStartPre=/bin/mkdir -p /var/log/correspondencia
+ExecStartPre=/bin/chown devdiego:www-data /var/log/correspondencia
+
+# Dimensionamiento (VM 4 vCPU, ~8 GiB RAM, SQL Server remoto):
+#   slots = workers × threads  →  6 × 3 = 18 peticiones concurrentes
+#   Regla gthread I/O-bound: workers ≈ núcleos a 1.5×núcleos; threads 2-4
+#   RAM ~150-250 MiB/worker; CONN_MAX_AGE=600 → ~1 conexión BD activa/hilo
+#   Si la VM pasa a 6-8 vCPU: subir workers a 8-10 (mantener threads=3)
+ExecStart=/home/devdiego/Correspondencia-diciembre-1.0/venv/bin/gunicorn --worker-class gthread --workers 6 --threads 3 --timeout 90 --max-requests 1000 --max-requests-jitter 50 --bind unix:/run/correspondencia/gunicorn.sock --access-logfile /var/log/correspondencia/gunicorn.access.log --error-logfile /var/log/correspondencia/gunicorn.error.log --log-level info hospital_document_management.wsgi:application
+
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

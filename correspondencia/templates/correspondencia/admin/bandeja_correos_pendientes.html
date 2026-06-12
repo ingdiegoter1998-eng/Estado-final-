@@ -1,0 +1,314 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load auth_extras %}
+
+{% block title %}Gestión de Correos Entrantes{% endblock %}
+{% block page_title %}Gestión de Correos Entrantes{% endblock %}
+
+{% block page_actions %}
+{% if filtro_papelera == '1' %}
+<a href="{% url 'correspondencia:bandeja_correos_pendientes' %}" class="btn btn-outline-primary me-2">
+  <i class="bi bi-inbox me-1"></i> Ver bandeja activa
+</a>
+{% else %}
+<a href="{% url 'correspondencia:bandeja_correos_pendientes' %}?papelera=1" class="btn btn-outline-secondary me-2">
+  <i class="bi bi-trash me-1"></i> Ver papelera
+</a>
+<a href="{% url 'correspondencia:bandeja_correos_problematicos' %}" class="btn btn-outline-warning me-2">
+    <i class="bi bi-exclamation-triangle me-1"></i> Ver problemáticos
+    {% if correos_problematicos_pendientes %}
+    <span class="badge rounded-pill bg-warning text-dark ms-1">{{ correos_problematicos_pendientes }}</span>
+    {% endif %}
+</a>
+{% endif %}
+<a href="{% url 'correspondencia:procesar_emails_manual' %}" class="btn btn-outline-secondary">
+  <i class="bi bi-arrow-repeat"></i>
+  Procesar nuevos correos
+</a>
+<form method="post" action="{% url 'correspondencia:procesar_emails_imap_manual' %}" class="d-inline">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-primary ms-2">
+    <i class="bi bi-envelope-arrow-down"></i>
+    Procesar por IMAP ahora
+  </button>
+</form>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'correspondencia/css/historial_compacto.css' %}">
+{% endblock %}
+
+{% block content %}
+
+{# Filtros modernos (idéntico look&feel a historial) #}
+<div class="filtros-modernos mb-4">
+    <div class="filtros-header">
+        <div class="filtros-controls">
+            <i class="bi bi-funnel-fill text-primary me-2"></i>
+            <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#filtrosCorreos" aria-expanded="{% if filtro_q or filtro_estado or filtro_papelera or filtro_desde or filtro_hasta or filtro_con_adjuntos == '1' %}true{% else %}false{% endif %}" aria-controls="filtrosCorreos">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+    </div>
+    <div class="collapse {% if filtro_q or filtro_estado or filtro_papelera or filtro_desde or filtro_hasta or filtro_con_adjuntos == '1' %}show{% endif %}" id="filtrosCorreos">
+        <div class="filtros-content">
+            <form method="get" action="">
+                <div class="filtros-seccion">
+                    <div class="filtros-seccion-titulo">
+                        <i class="bi bi-search text-info"></i>
+                        <span>Búsqueda</span>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-lg-5">
+                            <label for="id_q" class="form-label"><i class="bi bi-text-paragraph me-1"></i>Remitente o Asunto</label>
+                            <input type="text" name="q" id="id_q" class="form-control" placeholder="Buscar..." value="{{ filtro_q }}">
+                        </div>
+                        <div class="col-lg-2">
+                            <label for="id_papelera" class="form-label"><i class="bi bi-trash me-1"></i>Bandeja</label>
+                            <select name="papelera" id="id_papelera" class="form-select">
+                                <option value="" {% if not filtro_papelera %}selected{% endif %}>Activa (sin papelera)</option>
+                                <option value="1" {% if filtro_papelera == '1' %}selected{% endif %}>Papelera</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-2">
+                            <label for="id_estado" class="form-label"><i class="bi bi-filter-circle me-1"></i>Estado</label>
+                            <select name="estado" id="id_estado" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="pendiente" {% if filtro_estado == 'pendiente' %}selected{% endif %}>Pendientes</option>
+                                <option value="radicado" {% if filtro_estado == 'radicado' %}selected{% endif %}>Radicados</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-3 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="1" id="id_con_adjuntos" name="con_adjuntos" {% if filtro_con_adjuntos == '1' %}checked{% endif %}>
+                                <label class="form-check-label" for="id_con_adjuntos">
+                                    Solo con adjuntos
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filtros-seccion">
+                    <div class="filtros-seccion-titulo">
+                        <i class="bi bi-calendar-check text-success"></i>
+                        <span>Rango de fechas</span>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-lg-3">
+                            <label for="id_desde" class="form-label"><i class="bi bi-calendar-date me-1"></i>Desde</label>
+                            <input type="date" name="desde" id="id_desde" class="form-control" value="{{ filtro_desde }}">
+                        </div>
+                        <div class="col-lg-3">
+                            <label for="id_hasta" class="form-label"><i class="bi bi-calendar-date me-1"></i>Hasta</label>
+                            <input type="date" name="hasta" id="id_hasta" class="form-control" value="{{ filtro_hasta }}">
+                        </div>
+                        <div class="col-lg-4">
+                            <label for="id_fecha_base" class="form-label">
+                                <i class="bi bi-calendar-range me-1"></i>Filtrar fechas por
+                            </label>
+                            <select name="fecha_base" id="id_fecha_base" class="form-select">
+                                <option value="recepcion_gmail" {% if filtro_fecha_base == 'recepcion_gmail' %}selected{% endif %}>Recepción Gmail</option>
+                                <option value="fecha_correo" {% if filtro_fecha_base == 'fecha_correo' %}selected{% endif %}>Fecha del correo</option>
+                                <option value="lectura_sistema" {% if filtro_fecha_base == 'lectura_sistema' %}selected{% endif %}>Lectura en sistema</option>
+                            </select>
+                            <small class="text-muted d-block mt-1">
+                                El rango Desde/Hasta se aplica al campo seleccionado.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filtros-seccion">
+                    <div class="filtros-seccion-titulo">
+                        <i class="bi bi-sort-down text-primary"></i>
+                        <span>Ordenar bandeja</span>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-lg-4">
+                            <label for="id_orden" class="form-label">
+                                <i class="bi bi-calendar2-week me-1"></i>Criterio de orden
+                            </label>
+                            <select name="orden" id="id_orden" class="form-select">
+                                <option value="recepcion_gmail_desc" {% if orden_actual == 'recepcion_gmail_desc' %}selected{% endif %}>Recepción Gmail: más recientes primero</option>
+                                <option value="recepcion_gmail_asc" {% if orden_actual == 'recepcion_gmail_asc' %}selected{% endif %}>Recepción Gmail: más antiguos primero</option>
+                                <option value="fecha_correo_desc" {% if orden_actual == 'fecha_correo_desc' %}selected{% endif %}>Fecha del correo: más recientes primero</option>
+                                <option value="fecha_correo_asc" {% if orden_actual == 'fecha_correo_asc' %}selected{% endif %}>Fecha del correo: más antiguos primero</option>
+                            </select>
+                            <small class="text-muted d-block mt-1">
+                                “Recepción Gmail” es cuándo llegó al buzón; “Fecha del correo” es el encabezado Date del mensaje.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filtros-acciones">
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search me-2"></i>Aplicar Filtros
+                            </button>
+                        </div>
+                        <div class="col-lg-6">
+                            <a href="{% url 'correspondencia:bandeja_correos_pendientes' %}" class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-arrow-clockwise me-2"></i>Limpiar Filtros
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <h6 class="m-0 font-weight-bold text-primary">
+                {% if filtro_papelera == '1' %}
+                <i class="bi bi-trash me-1"></i> Papelera
+                {% else %}
+                Correos Recibidos
+                {% endif %}
+            </h6>
+            {% if not filtro_papelera %}
+              {% if sync_estado and sync_estado.ultimo_fin %}
+                <small class="text-muted d-block">
+                  Última ejecución Celery (IMAP):
+                  {{ sync_estado.ultimo_fin|date:"d/m/Y H:i" }}
+                  {% if sync_estado.estado == 'SUCCESS' %}
+                    <span class="badge bg-success ms-1">OK</span>
+                  {% elif sync_estado.estado == 'FAIL' %}
+                    <span class="badge bg-danger ms-1">ERROR</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark ms-1">EN EJECUCIÓN</span>
+                  {% endif %}
+                </small>
+                {% if sync_estado.estado == 'FAIL' and sync_estado.ultimo_error %}
+                  <small class="text-danger d-block">Último error: {{ sync_estado.ultimo_error|truncatechars:180 }}</small>
+                {% endif %}
+              {% else %}
+                <small class="text-muted d-block">Última ejecución Celery (IMAP): (sin registros todavía)</small>
+              {% endif %}
+
+              {% if ultimo_fetch %}
+                <small class="text-muted d-block">Último correo guardado en BD: {{ ultimo_fetch|date:"d/m/Y H:i" }}</small>
+              {% endif %}
+
+              <small class="text-muted">Intervalo: cada 5 min (Celery Beat). El botón “Procesar nuevos correos” encola una ejecución inmediata.</small>
+            {% endif %}
+        </div>
+        {% if filtro_papelera == '1' %}
+        <a href="{% url 'correspondencia:bandeja_correos_pendientes' %}" class="btn btn-sm btn-outline-primary">Volver a bandeja activa</a>
+        {% else %}
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="btn-group btn-group-sm" role="group" aria-label="Ordenar correos">
+                <a class="btn {% if orden_actual == 'recepcion_gmail_desc' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                   href="{% url 'correspondencia:bandeja_correos_pendientes' %}?{% if orden_query_base %}{{ orden_query_base }}&{% endif %}orden=recepcion_gmail_desc">
+                    <i class="bi bi-envelope-fill me-1"></i>Recepción Gmail
+                </a>
+                <a class="btn {% if orden_actual == 'fecha_correo_desc' %}btn-primary{% else %}btn-outline-primary{% endif %}"
+                   href="{% url 'correspondencia:bandeja_correos_pendientes' %}?{% if orden_query_base %}{{ orden_query_base }}&{% endif %}orden=fecha_correo_desc">
+                    <i class="bi bi-clock me-1"></i>Fecha correo
+                </a>
+            </div>
+            <a href="{% url 'correspondencia:bandeja_correos_pendientes' %}?papelera=1" class="btn btn-sm btn-outline-secondary"><i class="bi bi-trash me-1"></i> Ver papelera</a>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if filtro_desde_default %}
+    <div class="alert alert-info alert-dismissible d-flex align-items-center mx-3 mt-2 mb-0 py-2" role="alert" style="font-size:.875rem;">
+        <i class="bi bi-clock-history me-2 fs-5"></i>
+        <div>
+            Mostrando correos recibidos <strong>desde la medianoche de hoy</strong>.
+            Para ver correos anteriores usá el filtro de fechas.
+            <a href="{% url 'correspondencia:bandeja_correos_pendientes' %}?desde=2000-01-01" class="alert-link ms-1">Ver todos</a>
+        </div>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+    </div>
+    {% endif %}
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover datatable-correspondencia" id="dataTableCorreos" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th class="col-fecha">Recepción (Gmail)</th>
+                        <th>Remitente</th>
+                        <th class="col-asunto" style="white-space: nowrap;">Asunto</th>
+                        <th>Estado</th>
+                        <th class="col-acciones">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for correo in correos %}
+                    <tr>
+                        <td class="col-fecha align-middle">
+                            <div class="d-flex flex-column gap-1">
+                                <span class="fw-semibold" title="Fecha recibida por Gmail/IMAP (servidor)">
+                                    <i class="bi bi-envelope-fill me-1 text-primary"></i>
+                                    {{ correo.fecha_recibida_gmail|default:correo.fecha_lectura_imap|date:"Y-m-d H:i" }}
+                                </span>
+                                <small class="text-muted" title="Fecha del mensaje (encabezado 'Date')">
+                                    <i class="bi bi-clock me-1"></i>
+                                    Fecha del correo: {{ correo.fecha_recepcion_original|default:"-"|date:"Y-m-d H:i" }}
+                                </small>
+                            </div>
+                        </td>
+                        <td>{{ correo.remitente }}</td>
+                        <td class="col-asunto" title="{{ correo.asunto }}" style="white-space: nowrap;">{{ correo.asunto|oneline|truncatechars:80 }}</td>
+                        <td>
+                            {% if correo.en_papelera %}
+                                <span class="badge bg-secondary"><i class="bi bi-trash me-1"></i>En papelera</span>
+                                {% if correo.motivo_papelera %}<small class="d-block text-muted">{{ correo.get_motivo_papelera_display }}</small>{% endif %}
+                            {% elif correo.radicado_asociado %}
+                                <span class="badge bg-success">Radicado ({{ correo.radicado_asociado.numero_radicado }})</span>
+                            {% elif correo.urgencia_asociada %}
+                                <span class="badge bg-danger"><i class="fas fa-fire me-1"></i>Urgencia ({{ correo.urgencia_asociada.radicado }})</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Pendiente de Radicar</span>
+                            {% endif %}
+                        </td>
+                        <td class="col-acciones text-center">
+                            <a href="{% url 'correspondencia:detalle_correo_entrante' correo.id %}" class="btn btn-info btn-sm" title="Ver Detalle">
+                                <i class="bi bi-eye-fill"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No hay correos entrantes registrados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if correos.has_other_pages %}
+            {% include "includes/paginacion.html" with page_obj=correos registros_por_pagina=registros_por_pagina %}
+        {% endif %}
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script>
+  // Validación simple de rango de fechas
+  document.addEventListener('DOMContentLoaded', function() {
+    const desde = document.getElementById('id_desde');
+    const hasta = document.getElementById('id_hasta');
+    function validateDates(){
+      if (desde.value && hasta.value && desde.value > hasta.value) {
+        hasta.value = '';
+      }
+    }
+    desde && desde.addEventListener('change', validateDates);
+    hasta && hasta.addEventListener('change', validateDates);
+  });
+</script>
+{% endblock %} 

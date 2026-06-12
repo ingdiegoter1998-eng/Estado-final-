@@ -1,0 +1,725 @@
+{% comment %}Sidebar unificado del sistema (correspondencia, documentos, FUID, préstamos, fichas){% endcomment %}
+<style>
+.main-sidebar {
+    --sidebar-bg-top: #f7fbff;
+    --sidebar-bg-bottom: #eef5fb;
+    --sidebar-border: #d6e4f1;
+    --sidebar-border-strong: #c4d6ea;
+    --sidebar-ink: #163047;
+    --sidebar-muted: #627486;
+    --sidebar-primary: #0b4f97;
+    --sidebar-primary-deep: #003366;
+    --sidebar-primary-soft: rgba(11, 79, 151, 0.08);
+    --sidebar-success-soft: rgba(35, 127, 99, 0.12);
+    --sidebar-danger-soft: rgba(194, 83, 77, 0.12);
+    width: 260px;
+    min-width: 260px;
+    background:
+        radial-gradient(circle at top left, rgba(14, 99, 185, 0.12), transparent 28%),
+        linear-gradient(180deg, var(--sidebar-bg-top) 0%, var(--sidebar-bg-bottom) 100%);
+    border-right: 1px solid var(--sidebar-border);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    overflow: hidden;
+    box-sizing: border-box;
+    transition: box-shadow 0.2s ease;
+    z-index: 100;
+    box-shadow: 0 24px 48px -32px rgba(15, 23, 42, 0.42);
+}
+
+.main-sidebar .sidebar-toggle {
+    position: absolute;
+    top: 14px;
+    right: -10px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    background: linear-gradient(180deg, #ffffff 0%, #eef5ff 100%);
+    color: var(--sidebar-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px -10px rgba(2, 35, 71, 0.45);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 101;
+}
+
+.main-sidebar .sidebar-toggle:hover {
+    transform: translateX(2px) scale(1.05);
+    background: #eef5ff;
+    color: #0a58ca;
+    box-shadow: 0 12px 24px -12px rgba(2, 35, 71, 0.5);
+}
+
+.main-sidebar .sidebar-toggle i {
+    font-size: 1rem;
+    transition: transform 0.2s ease;
+}
+
+.main-sidebar-header {
+    flex-shrink: 0;
+    padding: 1.2rem 1rem 1rem;
+    background: linear-gradient(140deg, #003366 0%, #0b4f97 58%, #0e63b9 100%);
+    border-bottom: none;
+    margin-bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.16);
+}
+
+.main-sidebar-header .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-decoration: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.main-sidebar-header .sidebar-brand span {
+    display: grid;
+    gap: 0.08rem;
+    line-height: 1.2;
+}
+
+.main-sidebar-header .sidebar-brand:hover {
+    opacity: 0.9;
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.main-sidebar-header .sidebar-brand i {
+    font-size: 1.35rem;
+    color: #ffffff;
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.main-sidebar-content {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.85rem 0.7rem 1rem;
+    background: transparent;
+}
+
+.main-sidebar-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.main-sidebar-nav .nav-item {
+    margin: 0 0 0.4rem;
+    padding: 0.22rem;
+    border: 1px solid var(--sidebar-border);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 8px 22px -26px rgba(15, 23, 42, 0.38);
+}
+
+.main-sidebar-nav .nav-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.58rem 0.6rem 0.58rem 0.72rem;
+    margin-top: 0;
+    font-size: 0.71rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--sidebar-primary-deep);
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 11px;
+    transition: background 0.18s ease, color 0.18s ease;
+    background: transparent;
+    border: 0;
+    position: relative;
+}
+
+.main-sidebar-nav .nav-section-title::before {
+    content: "";
+    position: absolute;
+    left: 0.18rem;
+    top: 50%;
+    width: 3px;
+    height: 0.92rem;
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--sidebar-primary) 0%, var(--sidebar-primary-deep) 100%);
+    transform: translateY(-50%);
+    opacity: 0.85;
+}
+
+.main-sidebar-nav .nav-section-title:hover {
+    background: rgba(11, 79, 151, 0.06);
+    color: var(--sidebar-primary);
+}
+
+.main-sidebar-nav .nav-section-title i {
+    font-size: 0.7rem;
+    transition: transform 0.2s ease;
+    color: #7388a0;
+}
+
+.main-sidebar-nav .nav-section-title.collapsed i { transform: rotate(-90deg); }
+
+.main-sidebar-nav .nav-section-items {
+    max-height: 0;
+    overflow: hidden;
+}
+
+.main-sidebar-nav .nav-section-items.expanded {
+    max-height: none;
+}
+
+.main-sidebar-nav .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.55rem 0.62rem;
+    margin: 0.16rem 0 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2e4257;
+    text-decoration: none;
+    border-radius: 11px;
+    transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border: 1px solid transparent;
+    position: relative;
+}
+
+.main-sidebar-nav .nav-link:hover {
+    background: #f3f8fd;
+    color: var(--sidebar-primary);
+    transform: translateX(3px);
+    border-color: #d9e7f5;
+}
+
+.main-sidebar-nav .nav-link.active {
+    background: linear-gradient(135deg, var(--sidebar-primary-deep) 0%, var(--sidebar-primary) 100%);
+    color: #ffffff;
+    font-weight: 700;
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 16px 28px -18px rgba(0, 51, 102, 0.68);
+}
+
+.main-sidebar-nav .nav-link.active::after {
+    content: "";
+    position: absolute;
+    right: 0.72rem;
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-50%);
+}
+
+.main-sidebar-nav .nav-link i {
+    font-size: 0.92rem;
+    width: 1.7rem;
+    height: 1.7rem;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    text-align: center;
+    color: #45627f;
+    background: rgba(10, 79, 150, 0.09);
+    box-shadow: inset 0 0 0 1px rgba(10, 79, 150, 0.05);
+}
+
+/* Iconos coloreados por sección */
+#section-internas .nav-link i          { color: #0d6efd; background: rgba(13, 110, 253, 0.10); }
+#section-mi-correspondencia .nav-link i { color: #0b4f97; background: rgba(11, 79, 151, 0.09); }
+#section-mi-correspondencia .bi-fire    { color: #dc3545; background: rgba(220, 53, 69, 0.10); }
+#section-mi-correspondencia .bi-plus-circle-fill { color: #198754; background: rgba(25, 135, 84, 0.10); }
+#section-mi-correspondencia .bi-chat-dots-fill   { color: #6f42c1; background: rgba(111, 66, 193, 0.10); }
+#section-prestamos .nav-link i         { color: #20744a; background: rgba(25, 135, 84, 0.10); }
+#section-fuid .nav-link i              { color: #b45309; background: rgba(180, 83, 9, 0.10); }
+#section-tarjetero .nav-link i         { color: #7c3aed; background: rgba(124, 58, 237, 0.10); }
+#section-recursos .nav-link i          { color: #6c757d; background: rgba(108, 117, 125, 0.10); }
+
+.main-sidebar-nav .nav-link.active i {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.main-sidebar-nav .nav-link .badge {
+    margin-left: 0.38rem !important;
+    padding: 0.25rem 0.46rem;
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    box-shadow: 0 6px 16px -12px rgba(15, 23, 42, 0.35);
+}
+
+.main-sidebar-nav .nav-link-badge {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.18rem 0.55rem;
+    border-radius: 999px;
+    background: #fff3cd;
+    color: #8a4b00;
+    font-size: 0.72rem;
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px rgba(138, 75, 0, 0.12);
+}
+
+.main-sidebar-nav .nav-link.active .nav-link-badge {
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.main-sidebar-footer {
+    flex-shrink: 0;
+    margin-top: auto;
+    padding: 1rem 0.72rem 1.05rem;
+    border-top: 1px solid var(--sidebar-border);
+    background: linear-gradient(180deg, rgba(248, 251, 255, 0.72) 0%, rgba(240, 246, 253, 0.98) 100%);
+}
+
+.main-sidebar-footer .user-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.8rem;
+    padding: 0.82rem;
+    border-radius: 18px;
+    border: 1px solid #d9e6f5;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 12px 28px -24px rgba(15, 23, 42, 0.5);
+}
+
+.main-sidebar-footer .user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #0b5cb3 0%, #0b4b8a 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+    flex-shrink: 0;
+}
+
+.main-sidebar-footer .user-details { min-width: 0; flex: 1; }
+.main-sidebar-footer .user-name {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #18324a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.main-sidebar-footer .user-role {
+    font-size: 0.74rem;
+    color: #66798c;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.main-sidebar-footer .logout-btn {
+    width: 100%;
+    padding: 0.76rem 0.8rem;
+    font-size: 0.82rem;
+    background: linear-gradient(180deg, #ffffff 0%, #f5f9fd 100%);
+    border: 1px solid #d8e5f4;
+    border-radius: 16px;
+    color: #2f4359;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 700;
+    box-shadow: 0 10px 22px -18px rgba(15, 23, 42, 0.45);
+}
+.main-sidebar-footer .logout-btn:hover {
+    background: #f0f6ff;
+    border-color: #c5d9f0;
+    color: #0a3f77;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px -12px rgba(10, 63, 119, 0.5);
+}
+
+.main-sidebar .sidebar-subgroup {
+    margin-left: 0.55rem;
+    margin-top: 0.38rem;
+    padding-left: 0.58rem;
+    border-left: 2px solid #d9e6f5;
+}
+
+.main-sidebar .sidebar-subgroup-title {
+    display: block;
+    margin: 0.5rem 0 0.28rem;
+    padding: 0 0.2rem;
+    color: #6d8196;
+    font-size: 0.67rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.main-sidebar .sidebar-subgroup .nav-link {
+    font-size: 0.82rem;
+    padding: 0.62rem 0.68rem;
+}
+
+/* Sidebar colapsada */
+body.sidebar-collapsed .main-sidebar {
+    width: 72px;
+    min-width: 72px;
+}
+body.sidebar-collapsed .main-sidebar .sidebar-brand span,
+body.sidebar-collapsed .main-sidebar .nav-section-title span,
+body.sidebar-collapsed .main-sidebar .nav-link span,
+body.sidebar-collapsed .main-sidebar .sidebar-subgroup-title,
+body.sidebar-collapsed .main-sidebar .user-details,
+body.sidebar-collapsed .main-sidebar .logout-btn span {
+    display: none;
+}
+body.sidebar-collapsed .main-sidebar .nav-section-title {
+    justify-content: center;
+    padding: 0.75rem 0.5rem;
+}
+body.sidebar-collapsed .main-sidebar .nav-link {
+    justify-content: center;
+    padding: 0.65rem 0.5rem;
+    border: none;
+}
+
+body.sidebar-collapsed .main-sidebar .nav-item {
+    padding: 0.26rem;
+    border-radius: 18px;
+}
+
+body.sidebar-collapsed .main-sidebar .nav-link.active::after {
+    display: none;
+}
+body.sidebar-collapsed .main-sidebar .nav-link:hover {
+    transform: scale(1.1);
+}
+body.sidebar-collapsed .main-sidebar .sidebar-toggle {
+    right: -4px;
+}
+
+body.sidebar-collapsed .main-sidebar .sidebar-subgroup {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+}
+
+/* Scrollbar */
+.main-sidebar-content::-webkit-scrollbar { width: 6px; }
+.main-sidebar-content::-webkit-scrollbar-track { background: #f8f9fa; }
+.main-sidebar-content::-webkit-scrollbar-thumb { 
+    background: #cbd5e0; 
+    border-radius: 10px; 
+}
+.main-sidebar-content::-webkit-scrollbar-thumb:hover { 
+    background: #9ca3af; 
+}
+
+@media (max-width: 991px) {
+    .main-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+    }
+}
+</style>
+
+<nav class="main-sidebar" id="sidebarMenu">
+    <div class="main-sidebar-header">
+        <a class="sidebar-brand" href="{% url 'welcome' %}" title="Ir al Panel General">
+            <i class="bi bi-envelope-fill"></i>
+            <span>Gestión de Comunicaciones</span>
+        </a>
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Colapsar sidebar">
+            <i class="bi bi-chevron-left" id="sidebarToggleIcon"></i>
+        </button>
+    </div>
+
+    <div class="main-sidebar-content">
+        {% with url_name=request.resolver_match.url_name|default:'' %}
+        <ul class="main-sidebar-nav">
+            <!-- Sección: Comunicaciones Internas -->
+            <li class="nav-item">
+                <div class="nav-section-title{% if url_name != 'interna_bienvenida' and url_name != 'interna_recibidas' and url_name != 'interna_enviadas' and url_name != 'interna_pendientes' and url_name != 'interna_aprobar' %} collapsed{% endif %}" data-section="internas">
+                    <span>Comunicaciones Internas</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="nav-section-items{% if url_name == 'interna_bienvenida' or url_name == 'interna_recibidas' or url_name == 'interna_enviadas' or url_name == 'interna_pendientes' or url_name == 'interna_aprobar' %} expanded{% endif %}" id="section-internas">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'interna_bienvenida' %}active{% endif %}" href="{% url 'correspondencia:interna_bienvenida' %}" title="Bienvenida y configuración de firma">
+                        <i class="bi bi-house-door-fill"></i>
+                        <span>Bienvenida</span>
+                    </a>
+                    
+                    <a class="nav-link {% if request.resolver_match.url_name == 'interna_recibidas' %}active{% endif %}" href="{% url 'correspondencia:interna_recibidas' %}" title="Comunicaciones recibidas por mi oficina">
+                        <i class="bi bi-inbox-fill"></i>
+                        <span>Recibidas</span>
+                    </a>
+                    
+                    <a class="nav-link {% if request.resolver_match.url_name == 'interna_enviadas' %}active{% endif %}" href="{% url 'correspondencia:interna_enviadas' %}" title="Comunicaciones enviadas desde mi oficina">
+                        <i class="bi bi-send-fill"></i>
+                        <span>Enviadas</span>
+                    </a>
+                    
+                    {% with grupos=request.user.groups.all|join:"," %}
+                    {% if "Lider de Oficina" in grupos %}
+                    <a class="nav-link {% if request.resolver_match.url_name == 'interna_pendientes' or request.resolver_match.url_name == 'interna_aprobar' %}active{% endif %}" href="{% url 'correspondencia:interna_pendientes' %}" title="Comunicaciones pendientes de aprobación">
+                        <i class="bi bi-clipboard-check text-warning"></i>
+                        <span>Por Aprobar</span>
+                    </a>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            </li>
+
+            <!-- Sección: Mi Correspondencia -->
+            <li class="nav-item">
+                <div class="nav-section-title{% if url_name != 'dashboard_usuario' and url_name != 'buzon_urgencias' and url_name != 'bandeja_personal' and url_name != 'bandeja_oficina' and url_name != 'bandeja_interoficina' and url_name != 'bandeja_respuestas_salientes' and url_name != 'directorio_usuarios' and url_name != 'contactos_usuario' and url_name != 'grupos_agenda_index' and url_name != 'chat-soporte' and url_name != 'asistente_chatbot' %} collapsed{% endif %}" data-section="mi-correspondencia">
+                    <span>Mi Correspondencia</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="nav-section-items{% if url_name == 'dashboard_usuario' or url_name == 'buzon_urgencias' or url_name == 'bandeja_personal' or url_name == 'bandeja_oficina' or url_name == 'bandeja_interoficina' or url_name == 'bandeja_respuestas_salientes' or url_name == 'directorio_usuarios' or url_name == 'contactos_usuario' or url_name == 'grupos_agenda_index' or url_name == 'chat-soporte' or url_name == 'asistente_chatbot' %} expanded{% endif %}" id="section-mi-correspondencia">
+                    <div class="sidebar-subgroup">
+                        <span class="sidebar-subgroup-title">Vista general</span>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard_usuario' %}active{% endif %}" href="{% url 'correspondencia:dashboard_usuario' %}" title="Ver mi dashboard">
+                            <i class="bi bi-speedometer2"></i>
+                            <span>Dashboard</span>
+                        </a>
+
+                        <a class="nav-link {% if request.resolver_match.url_name == 'buzon_urgencias' %}active{% endif %}" href="{% url 'correspondencia:buzon_urgencias' %}" title="Ver urgencias pendientes">
+                            <i class="bi bi-fire text-danger"></i>
+                            <span>Urgencias
+                                {% if urgencias_count > 0 %}
+                                <span class="badge bg-danger rounded-pill ms-1">{{ urgencias_count }}</span>
+                                {% endif %}
+                            </span>
+                        </a>
+
+                        <a class="nav-link" href="{% url 'correspondencia:dashboard_usuario' %}"
+                           onclick="openCorrespondenciaSalidaModal(event)"
+                           title="Enviar nueva correspondencia de salida">
+                            <i class="bi bi-plus-circle-fill"></i>
+                            <span>Enviar Correspondencia</span>
+                        </a>
+                    </div>
+
+                    <div class="sidebar-subgroup">
+                        <span class="sidebar-subgroup-title">Bandejas</span>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'bandeja_personal' %}active{% endif %}" href="{% url 'correspondencia:bandeja_personal' %}" title="Mi Bandeja, Bandeja Oficina e Interoficina">
+                            <i class="bi bi-person-lines-fill"></i>
+                            <span>Mis Bandejas</span>
+                        </a>
+
+                        <a class="nav-link {% if request.resolver_match.url_name == 'bandeja_oficina' %}active{% endif %}" href="{% url 'correspondencia:bandeja_oficina' %}" title="Ver bandeja de oficina">
+                            <i class="bi bi-building-check"></i>
+                            <span>Bandeja Oficina</span>
+                        </a>
+
+                        <a class="nav-link {% if request.resolver_match.url_name == 'bandeja_interoficina' %}active{% endif %}" href="{% url 'correspondencia:bandeja_interoficina' %}" title="Ver bandeja interoficina">
+                            <i class="bi bi-building-down"></i>
+                            <span>Bandeja Interoficina</span>
+                        </a>
+
+                        <a class="nav-link {% if request.resolver_match.url_name == 'bandeja_respuestas_salientes' %}active{% endif %}" href="{% url 'correspondencia:bandeja_respuestas_salientes' %}" title="Ver mis respuestas salientes">
+                            <i class="bi bi-send-fill"></i>
+                            <span>Mis Respuestas</span>
+                        </a>
+                    </div>
+
+                    <div class="sidebar-subgroup">
+                        <span class="sidebar-subgroup-title">Directorio y apoyo</span>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'directorio_usuarios' %}active{% endif %}" href="{% url 'correspondencia:directorio_usuarios' %}" title="Consultar usuarios por oficina">
+                            <i class="bi bi-people-fill"></i>
+                            <span>Directorio</span>
+                        </a>
+
+                        <a class="nav-link {% if request.resolver_match.url_name == 'contactos_usuario' %}active{% endif %}" href="{% url 'correspondencia:contactos_usuario' %}" title="Ver la agenda global de contactos">
+                            <i class="bi bi-journal-bookmark"></i>
+                            <span>Contactos Globales</span>
+                        </a>
+                        
+                        <a class="nav-link {% if request.resolver_match.url_name == 'grupos_agenda_index' %}active{% endif %}" href="{% url 'correspondencia:grupos_agenda_index' %}" title="Gestionar categorías de contactos">
+                            <i class="bi bi-tags"></i>
+                            <span>Categorías</span>
+                        </a>
+
+                        <a class="nav-link {% if request.resolver_match.url_name == 'chat-soporte' or request.resolver_match.url_name == 'asistente_chatbot' %}active{% endif %}" href="{% url 'correspondencia:chat-soporte' %}" title="Abrir soporte del sistema y asistente IA">
+                            <i class="bi bi-chat-dots-fill"></i>
+                            <span>Soporte / IA</span>
+                        </a>
+                    </div>
+                </div>
+            </li>
+
+            <!-- Sección: Préstamos Documentales -->
+            <li class="nav-item">
+                <div class="nav-section-title{% if url_name != 'solicitar_prestamo' and url_name != 'mis_prestamos' and url_name != 'gestion_prestamos' and url_name != 'confirmar_recepcion' and url_name != 'detalle_prestamo' and url_name != 'procesar_prestamo' and url_name != 'reintegrar_prestamo' and url_name != 'solicitar_devolucion' %} collapsed{% endif %}" data-section="prestamos">
+                    <span>Préstamos Documentales</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="nav-section-items{% if url_name == 'solicitar_prestamo' or url_name == 'mis_prestamos' or url_name == 'gestion_prestamos' or url_name == 'confirmar_recepcion' or url_name == 'detalle_prestamo' or url_name == 'procesar_prestamo' or url_name == 'reintegrar_prestamo' or url_name == 'solicitar_devolucion' %} expanded{% endif %}" id="section-prestamos">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'solicitar_prestamo' %}active{% endif %}" href="{% url 'solicitar_prestamo' %}" title="Solicitar nuevo préstamo">
+                        <i class="bi bi-plus-circle"></i>
+                        <span>Nueva Solicitud</span>
+                    </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'mis_prestamos' or request.resolver_match.url_name == 'confirmar_recepcion' or request.resolver_match.url_name == 'detalle_prestamo' and not puede_gestionar %}active{% endif %}" href="{% url 'mis_prestamos' %}" title="Ver mis préstamos">
+                        <i class="bi bi-list-ul"></i>
+                        <span>Mis Préstamos</span>
+                    </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'gestion_prestamos' or request.resolver_match.url_name == 'procesar_prestamo' or request.resolver_match.url_name == 'detalle_prestamo' and puede_gestionar %}active{% endif %}" href="{% url 'gestion_prestamos' %}" title="Gestionar préstamos por área responsable">
+                        <i class="bi bi-gear"></i>
+                        <span>Gestión de Préstamos</span>
+                        {% if prestamos_nuevos_count %}
+                        <span class="nav-link-badge" aria-label="{{ prestamos_nuevos_count }} préstamos nuevos">
+                            <i class="bi bi-bell-fill"></i>
+                            {{ prestamos_nuevos_count }}
+                        </span>
+                        {% endif %}
+                    </a>
+                </div>
+            </li>
+
+            <!-- Sección: FUID -->
+            <li class="nav-item">
+                <div class="nav-section-title{% if url_name != 'fuid_list' and url_name != 'lista_fuids' and url_name != 'fuid_form' and url_name != 'crear_fuid' and url_name != 'agregar_registro_a_fuid' and url_name != 'editar_fuid' and url_name != 'detalle_fuid' %} collapsed{% endif %}" data-section="fuid">
+                    <span>FUID</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="nav-section-items{% if url_name == 'fuid_list' or url_name == 'lista_fuids' or url_name == 'fuid_form' or url_name == 'crear_fuid' or url_name == 'agregar_registro_a_fuid' or url_name == 'editar_fuid' or url_name == 'detalle_fuid' %} expanded{% endif %}" id="section-fuid">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'fuid_list' or request.resolver_match.url_name == 'lista_fuids' %}active{% endif %}" href="{% url 'fuid_list' %}" title="Lista de FUIDs">
+                        <i class="bi bi-card-list"></i>
+                        <span>Lista de FUIDs</span>
+                    </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'fuid_form' or request.resolver_match.url_name == 'crear_fuid' %}active{% endif %}" href="{% url 'fuid_form' %}" title="Crear nuevo FUID">
+                        <i class="bi bi-folder-plus"></i>
+                        <span>Crear FUID</span>
+                    </a>
+                </div>
+            </li>
+
+            <!-- Sección: Tarjetero Índice -->
+            <li class="nav-item">
+                <div class="nav-section-title{% if url_name != 'bienvenida_fichas' and url_name != 'preparar_fichas' and url_name != 'buscar_ficha1' and url_name != 'lista_fichas1' and url_name != 'crear_ficha1' and url_name != 'editar_ficha1' and url_name != 'detalle_ficha1' and url_name != 'crear_ficha' and url_name != 'lista_fichas' and url_name != 'editar_ficha' and url_name != 'detalle_ficha' %} collapsed{% endif %}" data-section="tarjetero">
+                    <span>Tarjetero Índice</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="nav-section-items{% if url_name == 'bienvenida_fichas' or url_name == 'preparar_fichas' or url_name == 'buscar_ficha1' or url_name == 'lista_fichas1' or url_name == 'crear_ficha1' or url_name == 'editar_ficha1' or url_name == 'detalle_ficha1' or url_name == 'crear_ficha' or url_name == 'lista_fichas' or url_name == 'editar_ficha' or url_name == 'detalle_ficha' %} expanded{% endif %}" id="section-tarjetero">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'bienvenida_fichas' %}active{% endif %}" href="{% url 'bienvenida_fichas' %}" title="Tarjetero Índice">
+                        <i class="bi bi-people"></i>
+                        <span>Tarjetero Índice</span>
+                    </a>
+                </div>
+            </li>
+
+            <!-- Sección: Recursos -->
+            <li class="nav-item">
+                <div class="nav-section-title{% if url_name != 'soporte' and url_name != 'welcome' %} collapsed{% endif %}" data-section="recursos">
+                    <span>Recursos</span>
+                    <i class="bi bi-chevron-down"></i>
+                </div>
+                <div class="nav-section-items{% if url_name == 'soporte' or url_name == 'welcome' %} expanded{% endif %}" id="section-recursos">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'soporte' %}active{% endif %}" href="{% url 'soporte' %}" title="Centro de ayuda del sistema">
+                        <i class="bi bi-question-circle"></i>
+                        <span>Centro de Ayuda</span>
+                    </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'welcome' %}active{% endif %}" href="{% url 'welcome' %}" title="Ir al panel general">
+                        <i class="bi bi-speedometer"></i>
+                        <span>Panel General</span>
+                    </a>
+                </div>
+            </li>
+
+        </ul>
+        {% endwith %}
+    </div>
+
+    <div class="main-sidebar-footer">
+        {% if request.user.is_authenticated %}
+            <div class="user-profile">
+                <div class="user-avatar">
+                    {{ request.user.get_full_name|default:request.user.username|first|upper }}
+                </div>
+                <div class="user-details">
+                    <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                    {% if request.user.perfil.oficina %}
+                        <div class="user-role">{{ request.user.perfil.oficina.nombre }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <form method="post" action="{% url 'logout' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn" title="Cerrar sesión">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Cerrar Sesión</span>
+                </button>
+            </form>
+        {% else %}
+            <a href="{% url 'login' %}" class="logout-btn" style="text-decoration: none;">
+                <i class="bi bi-box-arrow-in-right"></i>
+                <span>Iniciar Sesión</span>
+            </a>
+        {% endif %}
+    </div>
+</nav>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Acordeón: solo responde a clics del usuario. El estado inicial lo
+    // define el servidor (clases collapsed/expanded) para evitar parpadeo.
+    document.querySelectorAll('.main-sidebar .nav-section-title').forEach(function(title) {
+        const sectionItems = document.getElementById('section-' + title.getAttribute('data-section'));
+        if (!sectionItems) return;
+
+        title.addEventListener('click', function() {
+            const willExpand = this.classList.contains('collapsed');
+            this.classList.toggle('collapsed', !willExpand);
+            sectionItems.classList.toggle('expanded', willExpand);
+        });
+    });
+
+    // Colapsar/expandir el ancho completo del sidebar (botón flecha).
+    const toggleBtn = document.getElementById('sidebarToggle');
+    const toggleIcon = document.getElementById('sidebarToggleIcon');
+
+    if (toggleBtn && toggleIcon) {
+        toggleBtn.addEventListener('click', function() {
+            const isCollapsed = document.body.classList.toggle('sidebar-collapsed');
+            toggleIcon.classList.toggle('bi-chevron-left', !isCollapsed);
+            toggleIcon.classList.toggle('bi-chevron-right', isCollapsed);
+        });
+    }
+});
+</script> 

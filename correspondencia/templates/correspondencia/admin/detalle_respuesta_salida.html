@@ -1,0 +1,1242 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static %}
+{% load humanize auth_extras %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-page.detail-page-salida,
+    .selective-modal {
+        --detail-surface: #ffffff;
+        --detail-surface-muted: #f8fafc;
+        --detail-border: #e2e8f0;
+        --detail-muted: #64748b;
+        --detail-title: #0f172a;
+        --detail-primary: #0f6c7a;
+        --detail-primary-rgb: 15, 108, 122;
+        --detail-shadow: 0 18px 40px -26px rgba(15, 23, 42, 0.28);
+    }
+
+    .container-fluid.detail-page.detail-page-salida {
+        max-width: none;
+        width: 100%;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .main-content:has(.detail-page.detail-page-salida) {
+        padding: 0;
+    }
+
+    .detail-page.detail-page-salida .detail-shell {
+        width: 95%;
+        margin: 0 auto 2rem;
+    }
+
+    .detail-page.detail-page-salida .detail-content-row {
+        --bs-gutter-x: 1.5rem;
+        --bs-gutter-y: 1.5rem;
+        width: 100%;
+        margin: 0;
+    }
+
+    .detail-page.detail-page-salida .detail-hero {
+        padding: 1.8rem 1.9rem;
+        margin-bottom: 1.5rem;
+        border-radius: 28px;
+        border: 1px solid rgba(var(--detail-primary-rgb), 0.12);
+        background: linear-gradient(180deg, #ffffff 0%, rgba(var(--detail-primary-rgb), 0.04) 100%);
+        box-shadow: var(--detail-shadow);
+    }
+
+    .detail-page.detail-page-salida .detail-breadcrumb {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.45rem;
+        margin-bottom: 0.85rem;
+        color: var(--detail-muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+
+    .detail-page.detail-page-salida .detail-breadcrumb i {
+        font-size: 0.95rem;
+        color: rgba(var(--detail-primary-rgb), 0.7);
+    }
+
+    .detail-page.detail-page-salida .detail-hero h2 {
+        margin: 0;
+        color: var(--detail-title);
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+    }
+
+    .detail-page.detail-page-salida .detail-hero p {
+        margin: 0.55rem 0 0;
+        color: var(--detail-muted);
+        font-size: 0.95rem;
+        max-width: 72ch;
+    }
+
+    .detail-page.detail-page-salida .detail-hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin-top: 1rem;
+    }
+
+    .detail-page.detail-page-salida .detail-meta-chip,
+    .detail-page.detail-page-salida .detail-status-pill,
+    .detail-page.detail-page-salida .detail-inline-pill,
+    .selective-modal .detail-inline-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.5rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 800;
+    }
+
+    .detail-page.detail-page-salida .detail-meta-chip {
+        background: rgba(var(--detail-primary-rgb), 0.06);
+        border: 1px solid rgba(var(--detail-primary-rgb), 0.1);
+        color: #334155;
+    }
+
+    .detail-page.detail-page-salida .card {
+        border: 1px solid var(--detail-border);
+        border-radius: 24px;
+        overflow: hidden;
+        background: var(--detail-surface);
+        box-shadow: var(--detail-shadow);
+    }
+
+    .detail-page.detail-page-salida .detail-card-accent {
+        position: relative;
+    }
+
+    .detail-page.detail-page-salida .detail-card-accent::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        border-radius: 24px;
+        background: var(--detail-primary);
+    }
+
+    .detail-page.detail-page-salida .card-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--detail-border);
+        background: linear-gradient(180deg, #ffffff 0%, var(--detail-surface-muted) 100%);
+        color: var(--detail-title);
+        font-size: 0.92rem;
+        font-weight: 800;
+    }
+
+    .detail-page.detail-page-salida .card-body {
+        padding: 1.35rem;
+    }
+
+    .detail-page.detail-page-salida .section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--detail-title);
+    }
+
+    .detail-page.detail-page-salida .section-title i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 12px;
+        background: rgba(var(--detail-primary-rgb), 0.1);
+        color: var(--detail-primary);
+        font-size: 1rem;
+    }
+
+    .detail-page.detail-page-salida .section-link {
+        color: var(--detail-primary);
+        font-size: 0.76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-decoration: none;
+    }
+
+    .detail-page.detail-page-salida .detail-info-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .detail-page.detail-page-salida .detail-info-item {
+        padding: 1rem 1.05rem;
+        border: 1px solid #edf2f7;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+
+    .detail-page.detail-page-salida .detail-info-item-wide {
+        grid-column: 1 / -1;
+    }
+
+    .detail-page.detail-page-salida .detail-overline {
+        margin-bottom: 0.38rem;
+        color: #94a3b8;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .detail-page.detail-page-salida .detail-value,
+    .detail-page.detail-page-salida .detail-value a {
+        color: var(--detail-title);
+        font-size: 0.96rem;
+        font-weight: 700;
+        line-height: 1.5;
+        word-break: break-word;
+        text-decoration: none;
+    }
+
+    .detail-page.detail-page-salida .detail-subtext {
+        margin-top: 0.25rem;
+        color: var(--detail-muted);
+        font-size: 0.78rem;
+    }
+
+    .detail-page.detail-page-salida .detail-pill-button {
+        border: 0;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .detail-page.detail-page-salida .detail-pill-button:hover,
+    .detail-page.detail-page-salida .detail-pill-button:focus {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 28px -20px rgba(var(--detail-primary-rgb), 0.65);
+        outline: none;
+    }
+
+    .detail-page.detail-page-salida .mini-modal-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+    }
+
+    .detail-page.detail-page-salida .mini-modal-item {
+        padding: 0.95rem 1rem;
+        border: 1px solid #edf2f7;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+
+    .detail-page.detail-page-salida .mini-modal-name {
+        color: var(--detail-title);
+        font-size: 0.92rem;
+        font-weight: 800;
+        line-height: 1.4;
+    }
+
+    .detail-page.detail-page-salida .mini-modal-email {
+        color: var(--detail-muted);
+        font-size: 0.8rem;
+        margin-top: 0.18rem;
+        word-break: break-word;
+    }
+
+    .selective-modal .modal-dialog {
+        max-width: 760px;
+    }
+
+    .selective-modal .modal-content {
+        border: 0;
+        border-radius: 28px;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at top right, rgba(var(--detail-primary-rgb), 0.16), transparent 28%),
+            linear-gradient(180deg, #f8fbfd 0%, #f3f7fb 100%);
+        box-shadow: 0 30px 70px -35px rgba(15, 23, 42, 0.45);
+    }
+
+    .selective-modal .modal-header {
+        padding: 1.5rem 1.5rem 1rem;
+        border-bottom: 0;
+        background: transparent;
+        align-items: flex-start;
+    }
+
+    .selective-modal .modal-body {
+        padding: 0 1.5rem 1.5rem;
+    }
+
+    .selective-modal .selective-modal-header {
+        display: grid;
+        gap: 1rem;
+        width: 100%;
+    }
+
+    .selective-modal .selective-modal-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        align-self: flex-start;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        background: rgba(var(--detail-primary-rgb), 0.1);
+        color: var(--detail-primary);
+        font-size: 0.76rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .selective-modal .selective-modal-title-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .selective-modal .selective-modal-title-block {
+        min-width: 0;
+    }
+
+    .selective-modal .selective-modal-title {
+        margin: 0;
+        color: var(--detail-title);
+        font-size: 1.35rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+
+    .selective-modal .selective-modal-copy {
+        margin: 0.4rem 0 0;
+        color: var(--detail-muted);
+        font-size: 0.9rem;
+        line-height: 1.55;
+        max-width: 58ch;
+    }
+
+    .selective-modal .selective-modal-close {
+        flex: 0 0 auto;
+        width: 42px;
+        height: 42px;
+        padding: 0;
+        border-radius: 999px;
+        background-color: rgba(255, 255, 255, 0.72);
+        box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.28);
+        opacity: 1;
+    }
+
+    .selective-modal .selective-modal-summary {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(220px, 0.85fr);
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .selective-modal .selective-modal-highlight,
+    .selective-modal .selective-modal-aside {
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: 0 18px 38px -30px rgba(15, 23, 42, 0.42);
+    }
+
+    .selective-modal .selective-modal-highlight {
+        padding: 1.15rem 1.2rem;
+        display: grid;
+        gap: 0.7rem;
+    }
+
+    .selective-modal .selective-modal-highlight-label,
+    .selective-modal .selective-modal-aside-label {
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .selective-modal .selective-modal-highlight-value {
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+        color: var(--detail-title);
+    }
+
+    .selective-modal .selective-modal-highlight-number {
+        font-size: 2rem;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -0.04em;
+    }
+
+    .selective-modal .selective-modal-highlight-text {
+        font-size: 0.96rem;
+        font-weight: 700;
+        color: #334155;
+    }
+
+    .selective-modal .selective-modal-helper {
+        margin: 0;
+        color: var(--detail-muted);
+        font-size: 0.84rem;
+        line-height: 1.5;
+    }
+
+    .selective-modal .selective-modal-aside {
+        padding: 1.05rem 1.1rem;
+        display: grid;
+        gap: 0.75rem;
+        align-content: start;
+    }
+
+    .selective-modal .selective-modal-chip-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+    }
+
+    .selective-modal .selective-modal-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.45rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(15, 23, 42, 0.05);
+        color: #334155;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .selective-modal .selective-modal-list-shell {
+        padding: 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    .selective-modal .selective-modal-list-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        margin-bottom: 0.9rem;
+        padding-bottom: 0.85rem;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .selective-modal .selective-modal-list-title {
+        margin: 0;
+        color: var(--detail-title);
+        font-size: 0.96rem;
+        font-weight: 800;
+    }
+
+    .selective-modal .selective-modal-list-note {
+        margin: 0.2rem 0 0;
+        color: var(--detail-muted);
+        font-size: 0.8rem;
+    }
+
+    .selective-modal .selective-modal-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0 0.75rem;
+        border-radius: 14px;
+        background: rgba(var(--detail-primary-rgb), 0.1);
+        color: var(--detail-primary);
+        font-size: 0.92rem;
+        font-weight: 900;
+    }
+
+    .selective-modal .selective-modal-list {
+        display: grid;
+        gap: 0.85rem;
+        max-height: min(48vh, 460px);
+        overflow-y: auto;
+        padding-right: 0.2rem;
+    }
+
+    .selective-modal .selective-modal-card {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 0.9rem;
+        align-items: start;
+        padding: 1rem;
+        border: 1px solid #e8eef5;
+        border-radius: 20px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .selective-modal .selective-modal-card:hover {
+        transform: translateY(-1px);
+        border-color: rgba(var(--detail-primary-rgb), 0.18);
+        box-shadow: 0 18px 34px -30px rgba(15, 23, 42, 0.45);
+    }
+
+    .selective-modal .selective-modal-avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 46px;
+        height: 46px;
+        border-radius: 16px;
+        background: rgba(var(--detail-primary-rgb), 0.1);
+        color: var(--detail-primary);
+        font-size: 1.1rem;
+        flex: 0 0 46px;
+    }
+
+    .selective-modal .selective-modal-card-main {
+        min-width: 0;
+    }
+
+    .selective-modal .selective-modal-name {
+        color: var(--detail-title);
+        font-size: 0.95rem;
+        font-weight: 800;
+        line-height: 1.4;
+        word-break: break-word;
+    }
+
+    .selective-modal .selective-modal-email-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-top: 0.35rem;
+        color: var(--detail-muted);
+        font-size: 0.82rem;
+        word-break: break-word;
+    }
+
+    .selective-modal .selective-modal-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin-top: 0.65rem;
+    }
+
+    .selective-modal .selective-modal-meta-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.38rem 0.62rem;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 0.74rem;
+        font-weight: 700;
+    }
+
+    .selective-modal .selective-modal-state {
+        justify-self: end;
+    }
+
+    .selective-modal .selective-modal-empty {
+        padding: 1.4rem;
+        border: 1px dashed #cbd5e1;
+        border-radius: 22px;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        text-align: center;
+    }
+
+    .selective-modal .selective-modal-empty-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 58px;
+        height: 58px;
+        margin-bottom: 0.9rem;
+        border-radius: 20px;
+        background: rgba(var(--detail-primary-rgb), 0.1);
+        color: var(--detail-primary);
+        font-size: 1.4rem;
+    }
+
+    .selective-modal .selective-modal-empty-title {
+        margin: 0;
+        color: var(--detail-title);
+        font-size: 1rem;
+        font-weight: 800;
+    }
+
+    .selective-modal .selective-modal-empty-copy {
+        margin: 0.45rem auto 0;
+        max-width: 42ch;
+        color: var(--detail-muted);
+        font-size: 0.85rem;
+        line-height: 1.55;
+    }
+
+    .detail-page.detail-page-salida .table thead th {
+        border-bottom: 1px solid var(--detail-border);
+        color: #475569;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .detail-page.detail-page-salida .table > :not(caption) > * > * {
+        padding-top: 0.85rem;
+        padding-bottom: 0.85rem;
+    }
+
+    .detail-page.detail-page-salida .detail-message-box {
+        border: 1px solid #dbe5f1;
+        border-radius: 20px;
+        background: #fff;
+        padding: 1rem 1.15rem;
+    }
+
+    .detail-page.detail-page-salida .detail-message-box pre {
+        margin: 0;
+        white-space: pre-wrap;
+        font-family: inherit;
+        color: #1e293b;
+        line-height: 1.7;
+    }
+
+    .detail-page.detail-page-salida .detail-attachment-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    .detail-page.detail-page-salida .detail-attachment-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.05rem;
+        border: 1px solid #edf2f7;
+        border-radius: 18px;
+        background: #fff;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .detail-page.detail-page-salida .detail-attachment-item:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 35px -28px rgba(15, 23, 42, 0.5);
+    }
+
+    .detail-page.detail-page-salida .attachment-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        font-size: 1.15rem;
+        flex: 0 0 44px;
+    }
+
+    .detail-page.detail-page-salida .attachment-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-left: auto;
+    }
+
+    .detail-page.detail-page-salida .attachment-actions .btn {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .detail-page.detail-page-salida .detail-alert-box {
+        padding: 0.95rem 1rem;
+        border: 1px solid #fde68a;
+        border-radius: 18px;
+        background: #fffbeb;
+        color: #92400e;
+    }
+
+    .detail-page.detail-page-salida .detail-success-box {
+        padding: 0.95rem 1rem;
+        border: 1px solid #bbf7d0;
+        border-radius: 18px;
+        background: #f0fdf4;
+        color: #166534;
+    }
+
+    .detail-page.detail-page-salida .detail-timeline {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        padding-left: 1.55rem;
+    }
+
+    .detail-page.detail-page-salida .detail-timeline::before {
+        content: "";
+        position: absolute;
+        top: 0.3rem;
+        bottom: 0.3rem;
+        left: 0.45rem;
+        width: 1px;
+        background: #dbe5f1;
+    }
+
+    .detail-page.detail-page-salida .detail-timeline-item {
+        position: relative;
+    }
+
+    .detail-page.detail-page-salida .detail-timeline-dot {
+        position: absolute;
+        left: -1.55rem;
+        top: 0.2rem;
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        box-shadow: 0 0 0 5px #fff;
+    }
+
+    .detail-page.detail-page-salida .detail-timeline-title {
+        color: var(--detail-title);
+        font-size: 0.85rem;
+        font-weight: 800;
+    }
+
+    .detail-page.detail-page-salida .detail-timeline-time,
+    .detail-page.detail-page-salida .detail-timeline-text {
+        color: var(--detail-muted);
+        font-size: 0.8rem;
+        line-height: 1.5;
+    }
+
+    .detail-page.detail-page-salida .detail-action-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.9rem;
+    }
+
+    .detail-page.detail-page-salida .detail-action-tile {
+        width: 100%;
+        min-height: 102px;
+        padding: 1rem 0.85rem;
+        border: 1px solid #edf2f7;
+        border-radius: 18px;
+        background: #fff;
+        color: #475569;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        text-align: center;
+        text-decoration: none;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .detail-page.detail-page-salida .detail-action-tile:hover,
+    .detail-page.detail-page-salida .detail-action-tile:focus {
+        transform: translateY(-1px);
+        border-color: rgba(var(--detail-primary-rgb), 0.22);
+        box-shadow: 0 18px 35px -28px rgba(var(--detail-primary-rgb), 0.55);
+        color: var(--detail-primary);
+    }
+
+    .detail-page.detail-page-salida .detail-action-tile i {
+        color: var(--detail-primary);
+        font-size: 1.3rem;
+    }
+
+    .detail-page.detail-page-salida .detail-action-tile span {
+        font-size: 0.78rem;
+        font-weight: 800;
+        line-height: 1.35;
+    }
+
+    .detail-page.detail-page-salida .detail-note {
+        margin-top: 0.9rem;
+        padding: 0.9rem 1rem;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 0.82rem;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 1199.98px) {
+        .detail-page.detail-page-salida .detail-info-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .detail-page.detail-page-salida .detail-hero {
+            padding: 1.4rem;
+            border-radius: 22px;
+        }
+
+        .detail-page.detail-page-salida .detail-hero h2 {
+            font-size: 1.55rem;
+        }
+
+        .detail-page.detail-page-salida .detail-info-grid,
+        .detail-page.detail-page-salida .detail-action-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .detail-page.detail-page-salida .detail-attachment-item {
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .detail-page.detail-page-salida .attachment-actions {
+            margin-left: 0;
+            width: 100%;
+        }
+
+        .selective-modal .modal-header,
+        .selective-modal .modal-body {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .selective-modal .selective-modal-summary,
+        .selective-modal .selective-modal-card {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .selective-modal .selective-modal-title-row,
+        .selective-modal .selective-modal-list-head {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .selective-modal .selective-modal-close,
+        .selective-modal .selective-modal-state {
+            align-self: flex-start;
+            justify-self: start;
+        }
+
+        .selective-modal .selective-modal-highlight-number {
+            font-size: 1.65rem;
+        }
+    }
+</style>
+<style>
+    #historialChevron {
+        transition: transform 0.3s ease;
+    }
+    #collapseHistorial.show ~ .card-header #historialChevron,
+    [aria-expanded="true"] #historialChevron {
+        transform: rotate(180deg);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 detail-page detail-page-salida">
+    <div class="detail-shell">
+        <div class="detail-hero">
+            <div class="detail-breadcrumb">
+                <i class="bi bi-send"></i>
+                <span>Correspondencia de salida</span>
+                <i class="bi bi-dot"></i>
+                <span>Detalle del despacho</span>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <h2>{{ respuesta.numero_radicado_salida|default:titulo_pagina }}</h2>
+                <span class="detail-status-pill {% if respuesta.estado == 'ENVIADA' %}text-success-emphasis bg-success-subtle border border-success-subtle{% elif respuesta.estado == 'PENDIENTE_APROBACION' %}text-warning-emphasis bg-warning-subtle border border-warning-subtle{% elif respuesta.estado == 'RECHAZADA' or respuesta.estado == 'ERROR_ENVIO' %}text-danger-emphasis bg-danger-subtle border border-danger-subtle{% else %}text-secondary-emphasis bg-secondary-subtle border border-secondary-subtle{% endif %}">
+                    {{ respuesta.get_estado_display }}
+                </span>
+            </div>
+            <p>Gestión y seguimiento de la respuesta de salida, con sus datos operativos, destinatarios, soportes y trazabilidad del envío.</p>
+            <div class="detail-hero-meta">
+                <span class="detail-meta-chip"><i class="bi bi-chat-left-text"></i>{{ respuesta.asunto|truncatechars:70 }}</span>
+                <span class="detail-meta-chip"><i class="bi bi-calendar3"></i>{{ respuesta.fecha_creacion|date:"d M Y - h:i A" }}</span>
+                <span class="detail-meta-chip"><i class="bi bi-people"></i>{{ respuesta.envio_total_destinatarios|default:0 }} destinatario{{ respuesta.envio_total_destinatarios|default:0|pluralize }}</span>
+                <span class="detail-meta-chip">
+                    <i class="bi bi-diagram-3"></i>
+                    {% if respuesta.envio_tipo == 'GRUPO' %}
+                        Grupo o categoría
+                    {% elif respuesta.envio_tipo == 'MULTIPLE_SELECTIVO' %}
+                        Múltiple selectivo
+                    {% else %}
+                        Individual
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="row g-4 detail-content-row">
+            <div class="col-12 col-xl-8">
+                <div class="card shadow-sm mb-4 detail-card-accent">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="section-title"><i class="bi bi-info-circle"></i> Información general</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="detail-info-grid">
+                            <div class="detail-info-item">
+                                <div class="detail-overline">N° Radicado</div>
+                                <div class="detail-value">{{ respuesta.numero_radicado_salida }}</div>
+                            </div>
+                            <div class="detail-info-item">
+                                <div class="detail-overline">Fecha de creación</div>
+                                <div class="detail-value">{{ respuesta.fecha_creacion|date:"d M Y - h:i A" }}</div>
+                            </div>
+                            <div class="detail-info-item">
+                                <div class="detail-overline">Estado actual</div>
+                                <div class="detail-value">
+                                    <span class="detail-inline-pill {% if respuesta.estado == 'ENVIADA' %}text-success-emphasis bg-success-subtle{% elif respuesta.estado == 'PENDIENTE_APROBACION' %}text-warning-emphasis bg-warning-subtle{% elif respuesta.estado == 'RECHAZADA' or respuesta.estado == 'ERROR_ENVIO' %}text-danger-emphasis bg-danger-subtle{% else %}text-secondary-emphasis bg-secondary-subtle{% endif %}">{{ respuesta.get_estado_display }}</span>
+                                </div>
+                            </div>
+                            <div class="detail-info-item">
+                                <div class="detail-overline">Redactado por</div>
+                                <div class="detail-value">{{ respuesta.usuario_redactor.get_full_name|default:respuesta.usuario_redactor.username }}</div>
+                            </div>
+                            <div class="detail-info-item">
+                                <div class="detail-overline">Aprobado por</div>
+                                <div class="detail-value">{% if respuesta.usuario_aprobador %}{{ respuesta.usuario_aprobador.get_full_name|default:respuesta.usuario_aprobador.username }}{% else %}Pendiente o no aplica{% endif %}</div>
+                            </div>
+                            <div class="detail-info-item">
+                                <div class="detail-overline">Fecha de aprobación</div>
+                                <div class="detail-value">{{ respuesta.fecha_aprobacion|date:"d M Y - h:i A"|default:"No registrada" }}</div>
+                            </div>
+                            <div class="detail-info-item">
+                                <div class="detail-overline">Fecha de envío</div>
+                                <div class="detail-value">{{ respuesta.fecha_envio|date:"d M Y - h:i A"|default:"Aún no registrada" }}</div>
+                            </div>
+                            <div class="detail-info-item">
+                                <div class="detail-overline">Tipo de envío</div>
+                                <div class="detail-value">
+                                    {% if respuesta.envio_tipo == 'GRUPO' %}
+                                        <span class="detail-inline-pill text-info-emphasis bg-info-subtle"><i class="bi bi-tags"></i> Grupo o categoría</span>
+                                    {% elif respuesta.envio_tipo == 'MULTIPLE_SELECTIVO' %}
+                                            <button type="button"
+                                                    class="detail-inline-pill detail-pill-button text-primary-emphasis bg-primary-subtle"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalDestinatariosMultipleSelectivo">
+                                                <i class="bi bi-people-fill"></i> Múltiple selectivo
+                                            </button>
+                                    {% else %}
+                                        <span class="detail-inline-pill text-secondary-emphasis bg-secondary-subtle"><i class="bi bi-person-fill"></i> Individual</span>
+                                    {% endif %}
+                                    {% if respuesta.envio_tipo == 'MULTIPLE_SELECTIVO' and destinatarios_salientes %}
+                                    <div class="detail-subtext">Haz clic para ver a quiénes se envió.</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="detail-info-item">
+                                <div class="detail-overline">Detalle de envío</div>
+                                <div class="detail-value">{{ respuesta.envio_detalle_snapshot|default:"Sin detalle consolidado" }}</div>
+                            </div>
+                            {% if respuesta.envio_grupo %}
+                            <div class="detail-info-item">
+                                <div class="detail-overline">Grupo o categoría</div>
+                                <div class="detail-value">
+                                    <a href="{% url 'correspondencia:categoria_detalle' respuesta.envio_grupo.id %}">{{ respuesta.envio_grupo.nombre }}</a>
+                                </div>
+                            </div>
+                            {% endif %}
+                            <div class="detail-info-item detail-info-item-wide">
+                                <div class="detail-overline">Asunto</div>
+                                <div class="detail-value">{{ respuesta.asunto|default:"Sin asunto" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if destinatarios_salientes %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="section-title"><i class="bi bi-people"></i> Destinatarios</h5>
+                        <span class="section-link">{{ destinatarios_salientes|length }} registro{{ destinatarios_salientes|length|pluralize }}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Estado</th>
+                                        <th>Fecha envío</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for destinatario in destinatarios_salientes %}
+                                    <tr>
+                                        <td>{{ destinatario.nombre_snapshot|default:destinatario.contacto.nombre_completo|default:"-" }}</td>
+                                        <td>{{ destinatario.email_snapshot }}</td>
+                                        <td>
+                                            <span class="detail-inline-pill {% if destinatario.estado == 'ENVIADO' %}text-success-emphasis bg-success-subtle{% elif destinatario.estado == 'FALLO' %}text-danger-emphasis bg-danger-subtle{% else %}text-warning-emphasis bg-warning-subtle{% endif %}">{{ destinatario.get_estado_display }}</span>
+                                        </td>
+                                        <td>{{ destinatario.fecha_envio|date:"d M Y - h:i A"|default:"-" }}</td>
+                                    </tr>
+                                    {% if destinatario.mostrar_problema_entrega and destinatario.detalle_error %}
+                                    <tr>
+                                        <td colspan="4">
+                                            <div class="detail-alert-box"><i class="bi bi-exclamation-triangle me-2"></i>{{ destinatario.detalle_error }}</div>
+                                        </td>
+                                    </tr>
+                                    {% elif destinatario.mostrar_entrega_servidor %}
+                                    <tr>
+                                        <td colspan="4">
+                                            <div class="detail-success-box">
+                                                <div><i class="bi bi-check-circle me-2"></i>{{ destinatario.entrega_resumen|default:"El servidor del destinatario aceptó el mensaje (confirmación SMTP 250)." }}</div>
+                                                {% if destinatario.entrega_detalle_tecnico %}
+                                                <div class="small mt-2 opacity-75">{{ destinatario.entrega_detalle_tecnico }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% elif destinatario.detalle_error %}
+                                    <tr>
+                                        <td colspan="4">
+                                            <div class="detail-alert-box"><i class="bi bi-exclamation-triangle me-2"></i>{{ destinatario.detalle_error }}</div>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="section-title"><i class="bi bi-chat-left-text"></i> Contenido del mensaje</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="detail-message-box">
+                            <pre>{{ respuesta.cuerpo }}</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="section-title"><i class="bi bi-paperclip"></i> Archivos adjuntos</h5>
+                        <span class="section-link">{{ adjuntos_respuesta|length }} archivo{{ adjuntos_respuesta|length|pluralize }}</span>
+                    </div>
+                    <div class="card-body">
+                        {% if adjuntos_respuesta %}
+                        <div class="detail-attachment-list">
+                            {% for adjunto in adjuntos_respuesta %}
+                            <div class="detail-attachment-item">
+                                <div class="attachment-icon bg-primary-subtle text-primary">
+                                    <i class="bi bi-file-earmark"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="detail-value">{{ adjunto.nombre_original }}</div>
+                                    <div class="detail-subtext">{{ adjunto.fecha_carga|date:"d M Y - h:i A" }}</div>
+                                </div>
+                                <div class="attachment-actions">
+                                    <a href="{{ adjunto.archivo.url }}" target="_blank" class="btn btn-outline-secondary" title="Visualizar archivo">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ adjunto.archivo.url }}" target="_blank" class="btn btn-outline-primary" title="Descargar archivo">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info mb-0">
+                            <i class="bi bi-info-circle me-2"></i>No hay archivos adjuntos asociados a esta salida.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if respuesta.motivo_rechazo %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="section-title"><i class="bi bi-exclamation-triangle"></i> Motivo de rechazo</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="detail-alert-box">{{ respuesta.motivo_rechazo }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="col-12 col-xl-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2" role="button" data-bs-toggle="collapse" data-bs-target="#collapseHistorial" aria-expanded="false" aria-controls="collapseHistorial" style="cursor:pointer;">
+                        <h5 class="section-title mb-0"><i class="bi bi-clock-history"></i> Historial</h5>
+                        <i class="bi bi-chevron-down transition-transform" id="historialChevron"></i>
+                    </div>
+                    <div class="collapse" id="collapseHistorial">
+                    <div class="card-body">
+                        {% if historial_respuesta %}
+                        <div class="detail-timeline">
+                            {% for evento in historial_respuesta %}
+                            <div class="detail-timeline-item">
+                                <span class="detail-timeline-dot {% if evento.tipo_evento == 'ENVIO_EXITOSO' or evento.tipo_evento == 'APROBACION' %}bg-success{% elif evento.tipo_evento == 'ENVIO_FALLIDO' or evento.tipo_evento == 'RECHAZO' %}bg-danger{% else %}bg-primary{% endif %}"></span>
+                                <div class="detail-timeline-title">{{ evento.get_tipo_evento_display }}</div>
+                                <div class="detail-timeline-time">{{ evento.fecha_hora|date:"d M Y - h:i A" }}</div>
+                                <div class="detail-timeline-text">Por {% if evento.usuario %}{{ evento.usuario.get_full_name|default:evento.usuario.username }}{% else %}Sistema{% endif %}</div>
+                                {% if evento.descripcion %}
+                                <div class="detail-timeline-text">{{ evento.descripcion }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="detail-note mt-0">Sin eventos registrados para esta respuesta.</div>
+                        {% endif %}
+                    </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="section-title"><i class="bi bi-lightning-charge"></i> Acciones</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="detail-action-grid">
+                            <a href="{% url 'correspondencia:bandeja_respuestas_pendientes' %}" class="detail-action-tile">
+                                <i class="bi bi-arrow-left-circle"></i>
+                                <span>Volver a respuestas</span>
+                            </a>
+                            <a href="{% url 'correspondencia:detalle_respuesta_salida_errores' respuesta.id %}" class="detail-action-tile">
+                                <i class="bi bi-bug"></i>
+                                <span>Ver errores y rebotes</span>
+                            </a>
+                            {% if respuesta.respuesta_a %}
+                            <a href="{% url 'correspondencia:detalle_correspondencia' respuesta.respuesta_a.pk %}" class="detail-action-tile">
+                                <i class="bi bi-file-earmark-text"></i>
+                                <span>Correspondencia original</span>
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div class="detail-note">Las acciones rápidas mantienen el mismo flujo operativo de la vista original, pero con una jerarquía visual más cercana a la pantalla de referencia.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if respuesta.envio_tipo == 'MULTIPLE_SELECTIVO' %}
+<div class="modal fade selective-modal" id="modalDestinatariosMultipleSelectivo" tabindex="-1" aria-labelledby="modalDestinatariosMultipleSelectivoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="selective-modal-header">
+                    <span class="selective-modal-kicker">
+                        <i class="bi bi-people-fill"></i>
+                        Envío selectivo
+                    </span>
+                    <div class="selective-modal-title-row">
+                        <div class="selective-modal-title-block">
+                            <h5 class="selective-modal-title" id="modalDestinatariosMultipleSelectivoLabel">Destinatarios del envío selectivo</h5>
+                            <p class="selective-modal-copy">Consulta rápida del listado de contactos incluidos en esta salida, con su correo registrado y el estado operativo de entrega.</p>
+                        </div>
+                        <button type="button" class="btn-close selective-modal-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="selective-modal-summary">
+                    <div class="selective-modal-highlight">
+                        <div class="selective-modal-highlight-label">Resumen del despacho</div>
+                        <div class="selective-modal-highlight-value">
+                            <span class="selective-modal-highlight-number">{{ respuesta.envio_total_destinatarios|default:destinatarios_salientes|length }}</span>
+                            <span class="selective-modal-highlight-text">destinatario{{ respuesta.envio_total_destinatarios|default:destinatarios_salientes|length|pluralize }} asociado{{ respuesta.envio_total_destinatarios|default:destinatarios_salientes|length|pluralize }}</span>
+                        </div>
+                        <p class="selective-modal-helper">Este panel mantiene visible el volumen del envío y ayuda a validar rápidamente a quiénes quedó dirigida la salida.</p>
+                    </div>
+                    <div class="selective-modal-aside">
+                        <div class="selective-modal-aside-label">Estado del envío</div>
+                        <div class="selective-modal-chip-list">
+                            <span class="selective-modal-chip">
+                                <i class="bi bi-diagram-3"></i>
+                                {{ respuesta.get_envio_tipo_display }}
+                            </span>
+                            <span class="selective-modal-chip">
+                                <i class="bi bi-send-check"></i>
+                                {{ respuesta.get_estado_display }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="selective-modal-list-shell">
+                    <div class="selective-modal-list-head">
+                        <div>
+                            <h6 class="selective-modal-list-title">Listado de destinatarios</h6>
+                            <p class="selective-modal-list-note">Se muestran los contactos capturados para esta salida múltiple selectiva.</p>
+                        </div>
+                        <span class="selective-modal-count">{{ destinatarios_salientes|length }}</span>
+                    </div>
+
+                    {% if destinatarios_salientes %}
+                    <div class="selective-modal-list">
+                        {% for destinatario in destinatarios_salientes %}
+                        <article class="selective-modal-card">
+                            <div class="selective-modal-avatar">
+                                <i class="bi bi-person-lines-fill"></i>
+                            </div>
+                            <div class="selective-modal-card-main">
+                                <div class="selective-modal-name">{{ destinatario.nombre_snapshot|default:destinatario.contacto.nombre_completo|default:"Sin nombre" }}</div>
+                                <div class="selective-modal-email-row">
+                                    <i class="bi bi-envelope"></i>
+                                    <span>{{ destinatario.email_snapshot|default:"Sin correo registrado" }}</span>
+                                </div>
+                                <div class="selective-modal-meta">
+                                    <span class="selective-modal-meta-chip">
+                                        <i class="bi bi-hash"></i>
+                                        Destinatario {{ forloop.counter }}
+                                    </span>
+                                    {% if destinatario.fecha_envio %}
+                                    <span class="selective-modal-meta-chip">
+                                        <i class="bi bi-clock-history"></i>
+                                        {{ destinatario.fecha_envio|date:"d M Y - h:i A" }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <span class="detail-inline-pill selective-modal-state {% if destinatario.estado == 'ENVIADO' %}text-success-emphasis bg-success-subtle{% elif destinatario.estado == 'FALLO' or destinatario.estado == 'REBOTE' %}text-danger-emphasis bg-danger-subtle{% else %}text-warning-emphasis bg-warning-subtle{% endif %}">
+                                {{ destinatario.get_estado_display }}
+                            </span>
+                        </article>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="selective-modal-empty">
+                        <div class="selective-modal-empty-icon">
+                            <i class="bi bi-inbox"></i>
+                        </div>
+                        <h6 class="selective-modal-empty-title">Sin destinatarios registrados</h6>
+                        <p class="selective-modal-empty-copy">No hay destinatarios cargados para este envío selectivo. Si esperabas ver contactos aquí, revisa que la salida haya guardado correctamente su detalle de envío.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

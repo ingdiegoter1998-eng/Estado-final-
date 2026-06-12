@@ -1,0 +1,392 @@
+/* ===================================
+   LISTA PENDIENTES - MEJORAS RESPONSIVAS
+   =================================== */
+
+/* Contenedor principal de la tabla */
+.table-container {
+    overflow-x: auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+}
+
+/* Tabla principal */
+#tabla-pendientes {
+    width: 100%;
+    min-width: 800px; /* Ancho mínimo para evitar compresión excesiva */
+    border-collapse: collapse;
+    background: white;
+}
+
+/* Headers de la tabla */
+#tabla-pendientes thead th {
+    background: #f8fafc;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 12px 8px;
+    font-weight: 600;
+    color: #1f2937;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Celdas del cuerpo */
+#tabla-pendientes tbody td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    font-size: 0.875rem;
+    color: #374151;
+    transition: background-color 0.15s ease;
+}
+
+/* Hover en filas */
+#tabla-pendientes tbody tr:hover td {
+    background-color: #f8fafc;
+}
+
+/* ===================================
+   COLUMNAS ESPECÍFICAS
+   =================================== */
+
+/* Columna de número radicado */
+.col-radicado {
+    width: 120px;
+    min-width: 100px;
+    font-weight: 700;
+    color: #1f2937;
+    font-size: 0.9rem;
+}
+
+/* Columna de fecha */
+.col-fecha {
+    width: 140px;
+    min-width: 120px;
+    font-size: 0.8rem;
+    color: #6b7280;
+    text-align: center;
+}
+
+/* Columna de remitente */
+.col-remitente {
+    width: 200px;
+    min-width: 150px;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+/* Columna de asunto */
+.col-asunto {
+    min-width: 250px;
+    max-width: 400px;
+    word-wrap: break-word;
+    line-height: 1.4;
+    font-weight: 500;
+}
+
+/* Columna de oficina destino */
+.col-oficina {
+    width: 180px;
+    min-width: 150px;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+/* Columna de estado */
+.col-estado {
+    width: 100px;
+    min-width: 80px;
+    text-align: center;
+}
+
+/* Columna de acciones - MEJORADA */
+.col-acciones {
+    width: 140px;
+    min-width: 120px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* ===================================
+   BOTÓN ASIGNAR USUARIO - MEJORADO
+   =================================== */
+
+.col-acciones .btn {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+    background: #10b981;
+    color: white;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+    min-height: 32px;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.col-acciones .btn:hover {
+    background: #059669;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.col-acciones .btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(16, 185, 129, 0.3);
+}
+
+/* Icono del botón */
+.col-acciones .btn i {
+    font-size: 0.7rem;
+    flex-shrink: 0;
+}
+
+/* ===================================
+   BADGES DE ESTADO
+   =================================== */
+
+.badge {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    white-space: nowrap;
+}
+
+.badge.bg-warning {
+    background: #f59e0b !important;
+    color: white !important;
+}
+
+/* ===================================
+   RESPONSIVE DESIGN
+   =================================== */
+
+/* Tablets */
+@media (max-width: 1024px) {
+    #tabla-pendientes {
+        min-width: 700px;
+    }
+    
+    .col-acciones {
+        width: 120px;
+        min-width: 100px;
+    }
+    
+    .col-acciones .btn {
+        padding: 5px 8px;
+        font-size: 0.7rem;
+        max-width: 100px;
+    }
+    
+    .col-asunto {
+        min-width: 200px;
+        max-width: 300px;
+    }
+    
+    .col-remitente {
+        width: 150px;
+        min-width: 120px;
+    }
+}
+
+/* Móviles */
+@media (max-width: 768px) {
+    .table-container {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+    
+    #tabla-pendientes {
+        min-width: 600px;
+    }
+    
+    #tabla-pendientes thead th,
+    #tabla-pendientes tbody td {
+        padding: 8px 6px;
+        font-size: 0.8rem;
+    }
+    
+    .col-acciones {
+        width: 100px;
+        min-width: 80px;
+    }
+    
+    .col-acciones .btn {
+        padding: 4px 6px;
+        font-size: 0.65rem;
+        max-width: 80px;
+        min-height: 28px;
+    }
+    
+    .col-acciones .btn i {
+        font-size: 0.6rem;
+    }
+    
+    .col-asunto {
+        min-width: 150px;
+        max-width: 200px;
+    }
+    
+    .col-remitente {
+        width: 120px;
+        min-width: 100px;
+    }
+    
+    .col-oficina {
+        width: 120px;
+        min-width: 100px;
+    }
+}
+
+/* Móviles pequeños */
+@media (max-width: 576px) {
+    #tabla-pendientes {
+        min-width: 500px;
+    }
+    
+    #tabla-pendientes thead th,
+    #tabla-pendientes tbody td {
+        padding: 6px 4px;
+        font-size: 0.75rem;
+    }
+    
+    .col-acciones {
+        width: 80px;
+        min-width: 70px;
+    }
+    
+    .col-acciones .btn {
+        padding: 3px 5px;
+        font-size: 0.6rem;
+        max-width: 70px;
+        min-height: 24px;
+    }
+    
+    .col-acciones .btn i {
+        display: none; /* Ocultar icono en pantallas muy pequeñas */
+    }
+    
+    .col-fecha {
+        width: 100px;
+        min-width: 80px;
+        font-size: 0.7rem;
+    }
+    
+    .col-radicado {
+        width: 80px;
+        min-width: 70px;
+        font-size: 0.8rem;
+    }
+}
+
+/* ===================================
+   MEJORAS ADICIONALES
+   =================================== */
+
+/* Scroll horizontal suave */
+.table-container {
+    scroll-behavior: smooth;
+}
+
+/* Indicador de scroll horizontal */
+.table-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+    transition: background 0.15s ease;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Mejoras para el texto truncado */
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Mejoras para el texto con wrap */
+.wrap-text {
+    word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.4;
+}
+
+/* Animación de entrada */
+.table-container {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Estados de hover mejorados */
+#tabla-pendientes tbody tr {
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+#tabla-pendientes tbody tr:hover {
+    background-color: #f8fafc;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Mejoras para accesibilidad */
+.col-acciones .btn:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Mejoras para el contraste */
+@media (prefers-contrast: high) {
+    #tabla-pendientes thead th {
+        border-bottom: 3px solid #1f2937;
+    }
+    
+    #tabla-pendientes tbody tr:hover td {
+        background-color: #e5e7eb;
+    }
+}

@@ -1,0 +1,702 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static humanize %}
+
+{% block title %}Detalle de Categoría - {{ categoria.nombre }}{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .category-detail-page {
+            --category-surface: #ffffff;
+            --category-surface-muted: #f8fafc;
+            --category-border: #e2e8f0;
+            --category-muted: #64748b;
+            --category-title: #0f172a;
+            --category-primary: var(--bs-primary, #0d6efd);
+            --category-shadow: 0 18px 40px -28px rgba(15, 23, 42, 0.26);
+            --category-radius: 22px;
+            --entity-accent: rgba(13, 110, 253, 0.16);
+            --entity-accent-strong: #0d6efd;
+            --entity-soft: rgba(13, 110, 253, 0.08);
+            --entity-soft-strong: #0b5ed7;
+        }
+
+        .category-detail-page .category-shell {
+            width: 95%;
+            margin: 0 auto 2rem;
+        }
+
+        .category-detail-page .category-hero {
+            background:
+                radial-gradient(circle at top right, rgba(13, 110, 253, 0.14), transparent 34%),
+                linear-gradient(135deg, #ffffff 0%, #f8fbff 48%, #f4f8ff 100%);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 28px;
+            padding: 2rem;
+            box-shadow: var(--category-shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .category-detail-page .hero-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .category-detail-page .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.85rem;
+            border-radius: 999px;
+            background: rgba(13, 110, 253, 0.1);
+            color: var(--category-primary);
+            font-weight: 700;
+            font-size: 0.82rem;
+            margin-bottom: 1rem;
+        }
+
+        .category-detail-page .category-hero h1 {
+            font-size: clamp(2rem, 3vw, 2.55rem);
+            line-height: 1.1;
+            font-weight: 800;
+            color: var(--category-title);
+            margin-bottom: 0.75rem;
+        }
+
+        .category-detail-page .category-hero p {
+            margin: 0;
+            max-width: 72ch;
+            color: var(--category-muted);
+            font-size: 1rem;
+            line-height: 1.6;
+            text-align: justify;
+            text-justify: inter-word;
+        }
+
+        .category-detail-page .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
+
+        .category-detail-page .hero-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.7rem 0.95rem;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .category-detail-page .summary-card,
+        .category-detail-page .filter-card,
+        .category-detail-page .entity-card,
+        .category-detail-page .empty-card,
+        .category-detail-page .detail-modal-card {
+            border: 1px solid var(--category-border);
+            border-radius: var(--category-radius);
+            background: var(--category-surface);
+            box-shadow: var(--category-shadow);
+        }
+
+        .category-detail-page .summary-card {
+            height: 100%;
+            padding: 1.25rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-detail-page .summary-card::before {
+            content: '';
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 4px;
+            background: linear-gradient(180deg, rgba(var(--bs-primary-rgb, 13, 110, 253), 0.9), rgba(var(--bs-info-rgb, 13, 202, 240), 0.65));
+        }
+
+        .category-detail-page .summary-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(13, 110, 253, 0.1);
+            color: var(--category-primary);
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .category-detail-page .summary-value {
+            font-size: 1.85rem;
+            line-height: 1;
+            font-weight: 800;
+            color: var(--category-title);
+            margin-bottom: 0.3rem;
+        }
+
+        .category-detail-page .summary-label {
+            color: var(--category-muted);
+            font-weight: 600;
+        }
+
+        .category-detail-page .filter-card {
+            padding: 1.4rem;
+            margin: 1.5rem 0;
+        }
+
+        .category-detail-page .section-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .category-detail-page .section-heading h2,
+        .category-detail-page .section-heading h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--category-title);
+        }
+
+        .category-detail-page .section-heading p {
+            margin: 0.2rem 0 0;
+            color: var(--category-muted);
+        }
+
+        .category-detail-page .filtros-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .category-detail-page .toggle-icon {
+            transition: transform .2s ease;
+        }
+
+        .category-detail-page .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+
+        .category-detail-page .entity-card {
+            overflow: hidden;
+            border-color: color-mix(in srgb, var(--entity-accent-strong) 20%, #e2e8f0);
+        }
+
+        .category-detail-page .entity-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            width: 100%;
+            padding: 1.2rem 1.35rem;
+            background: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--entity-accent) 40%, #ffffff) 100%);
+            border: 0;
+            text-align: left;
+        }
+
+        .category-detail-page .entity-header:hover {
+            background: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--entity-accent) 58%, #ffffff) 100%);
+        }
+
+        .category-detail-page .entity-title {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.85rem;
+            min-width: 0;
+        }
+
+        .category-detail-page .entity-title > div {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .category-detail-page .entity-icon {
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--entity-soft);
+            color: var(--entity-soft-strong);
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+
+        .category-detail-page .entity-title h3 {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--category-title);
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .category-detail-page .entity-title span {
+            color: var(--category-muted);
+            font-size: 0.9rem;
+        }
+
+        .category-detail-page .entity-badge {
+            border-radius: 999px;
+            padding: 0.5rem 0.8rem;
+            background: var(--entity-soft);
+            color: var(--entity-soft-strong);
+            font-weight: 700;
+        }
+
+        .category-detail-page .entity-toggle-chevron {
+            width: 2.4rem;
+            height: 2.4rem;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--entity-soft);
+            color: var(--entity-soft-strong);
+            transition: transform .2s ease, background-color .2s ease;
+            flex-shrink: 0;
+        }
+
+        .category-detail-page .entity-header[aria-expanded="true"] .entity-toggle-chevron {
+            transform: rotate(180deg);
+        }
+
+        .category-detail-page .entity-body {
+            padding: 0 1.35rem 1.35rem;
+        }
+
+        .category-detail-page .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 1rem;
+            align-items: stretch;
+        }
+
+        .category-detail-page .contact-card {
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            border-radius: 20px;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            padding: 1rem;
+            height: 100%;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+            display: flex;
+            flex-direction: column;
+            gap: 0.95rem;
+        }
+
+        .category-detail-page .contact-head {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.85rem;
+        }
+
+        .category-detail-page .contact-head > div {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .category-detail-page .contact-avatar {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--entity-accent), color-mix(in srgb, var(--entity-accent-strong) 18%, #ffffff));
+            color: var(--entity-soft-strong);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .category-detail-page .contact-name {
+            color: var(--category-title);
+            font-size: 1rem;
+            font-weight: 800;
+            margin-bottom: 0.2rem;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .category-detail-page .contact-role {
+            color: var(--category-muted);
+            font-size: 0.92rem;
+            line-height: 1.45;
+            text-align: justify;
+            text-justify: inter-word;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        .category-detail-page .contact-meta {
+            display: grid;
+            gap: 0.65rem;
+        }
+
+        .category-detail-page .meta-row {
+            display: flex;
+            gap: 0.7rem;
+            align-items: flex-start;
+            color: #334155;
+            line-height: 1.45;
+        }
+
+        .category-detail-page .meta-row i {
+            color: var(--entity-soft-strong);
+            margin-top: 0.15rem;
+        }
+
+        .category-detail-page .meta-row span,
+        .category-detail-page .meta-row a {
+            flex: 1 1 auto;
+            min-width: 0;
+            text-align: justify;
+            text-justify: inter-word;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .category-detail-page .meta-row a:hover {
+            color: var(--entity-soft-strong);
+        }
+
+        .category-detail-page .contact-actions {
+            margin-top: auto;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .category-detail-page .contact-actions .btn {
+            border-radius: 14px;
+            font-weight: 700;
+        }
+
+        .category-detail-page .empty-card {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        @media (max-width: 991.98px) {
+            .category-detail-page .category-hero {
+                padding: 1.5rem;
+                border-radius: 24px;
+            }
+
+            .category-detail-page .hero-top {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .category-detail-page .contact-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .category-detail-page .filter-actions {
+                width: 100%;
+            }
+
+            .category-detail-page .filter-actions .btn {
+                flex: 1 1 auto;
+            }
+
+            .category-detail-page .entity-header,
+            .category-detail-page .section-heading {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .category-detail-page .contact-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        @media (min-width: 992px) and (max-width: 1399.98px) {
+            .category-detail-page .contact-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="category-detail-page">
+        <div class="category-shell">
+            <section class="category-hero">
+                <div class="hero-top">
+                    <div>
+                        <span class="hero-eyebrow"><i class="bi bi-tags"></i> Detalle de categoría</span>
+                        <h1>{{ categoria.nombre }}</h1>
+                        <p>{{ categoria.descripcion|default:"Consulta los contactos asociados a esta categoría y utiliza los filtros para encontrar destinatarios de forma rápida y clara." }}</p>
+                        <div class="hero-meta">
+                            <span class="hero-chip"><i class="bi bi-building"></i> {{ categoria.oficina_propietaria.nombre }}</span>
+                            <span class="hero-chip"><i class="bi bi-people"></i> {{ total_contactos|intcomma }} contacto{{ total_contactos|pluralize }}</span>
+                            <span class="hero-chip"><i class="bi bi-envelope"></i> {{ contactos_con_email|intcomma }} con correo</span>
+                            <span class="hero-chip"><i class="bi bi-diagram-3"></i> {{ entidades_unicas|intcomma }} entidade{{ entidades_unicas|pluralize:"s" }}</span>
+                        </div>
+                    </div>
+                    <a href="{% url 'correspondencia:grupos_agenda_index' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Volver a categorías
+                    </a>
+                </div>
+            </section>
+
+            <div class="row g-4 mb-1">
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="summary-card">
+                        <div class="summary-icon"><i class="bi bi-people-fill"></i></div>
+                        <div class="summary-value">{{ total_contactos|intcomma }}</div>
+                        <div class="summary-label">Total de contactos</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="summary-card">
+                        <div class="summary-icon"><i class="bi bi-envelope-check-fill"></i></div>
+                        <div class="summary-value">{{ contactos_con_email|intcomma }}</div>
+                        <div class="summary-label">Con correo registrado</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="summary-card">
+                        <div class="summary-icon"><i class="bi bi-telephone-fill"></i></div>
+                        <div class="summary-value">{{ contactos_con_telefono|intcomma }}</div>
+                        <div class="summary-label">Con teléfono registrado</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6 col-xl-3">
+                    <div class="summary-card">
+                        <div class="summary-icon"><i class="bi bi-buildings-fill"></i></div>
+                        <div class="summary-value">{{ entidades_unicas|intcomma }}</div>
+                        <div class="summary-label">Entidades visibles</div>
+                    </div>
+                </div>
+            </div>
+
+            <section class="filter-card" id="filtros-panel-categoria">
+                <div class="section-heading filtros-toggle">
+                    <div>
+                        <h2><i class="bi bi-funnel-fill me-2"></i>Filtros de visualización</h2>
+                        <p>Busca contactos por nombre, entidad, correo o disponibilidad de teléfono.</p>
+                    </div>
+                    <i class="bi bi-chevron-down toggle-icon"></i>
+                </div>
+                <div class="filtros-body">
+                    <form method="GET" class="row g-3">
+                        <div class="col-12 col-lg-5">
+                            <label for="search_term" class="form-label">Búsqueda</label>
+                            <input type="text" class="form-control" id="search_term" name="search_term" value="{{ filtro_search_term }}" placeholder="Nombre, correo o entidad...">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <label for="entidad" class="form-label">Entidad</label>
+                            <select id="entidad" name="entidad" class="form-select">
+                                <option value="">Todas las entidades</option>
+                                {% for entidad in entidades_disponibles %}
+                                    <option value="{{ entidad.id }}" {% if filtro_entidad == entidad.id|stringformat:"s" %}selected{% endif %}>{{ entidad.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label for="tiene_email" class="form-label">Correo</label>
+                            <select id="tiene_email" name="tiene_email" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="true" {% if filtro_tiene_email == 'true' %}selected{% endif %}>Con correo</option>
+                                <option value="false" {% if filtro_tiene_email == 'false' %}selected{% endif %}>Sin correo</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2">
+                            <label for="tiene_telefono" class="form-label">Teléfono</label>
+                            <select id="tiene_telefono" name="tiene_telefono" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="true" {% if filtro_tiene_telefono == 'true' %}selected{% endif %}>Con teléfono</option>
+                                <option value="false" {% if filtro_tiene_telefono == 'false' %}selected{% endif %}>Sin teléfono</option>
+                            </select>
+                        </div>
+                        <div class="col-12 d-flex flex-wrap gap-2 filter-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search me-2"></i>Aplicar filtros
+                            </button>
+                            <a href="{% url 'correspondencia:categoria_detalle' categoria.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-counterclockwise me-2"></i>Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            {% if contactos %}
+                <section>
+                    <article class="entity-card theme-ocean">
+                        <button class="entity-header" type="button" data-bs-toggle="collapse" data-bs-target="#categoryContacts" aria-expanded="true" aria-controls="categoryContacts">
+                            <div class="entity-title">
+                                <span class="entity-icon"><i class="bi bi-people-fill"></i></span>
+                                <div>
+                                    <h3>Contactos asociados a {{ categoria.nombre }}</h3>
+                                    <span>Explora la categoría en tarjetas individuales bajo la misma línea visual de la agenda global.</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 ms-auto">
+                                <span class="entity-badge">{{ total_contactos|intcomma }} contacto{{ total_contactos|pluralize }}</span>
+                                <span class="entity-toggle-chevron"><i class="bi bi-chevron-down"></i></span>
+                            </div>
+                        </button>
+
+                        <div id="categoryContacts" class="collapse show">
+                            <div class="entity-body">
+                                <div class="contact-grid">
+                                    {% for contacto in contactos %}
+                                        <div class="contact-card">
+                                            <div class="contact-head">
+                                                <div class="contact-avatar">{{ contacto.nombres|default:'C'|slice:':1' }}{{ contacto.apellidos|default:''|slice:':1' }}</div>
+                                                <div>
+                                                    <div class="contact-name">{{ contacto.nombre_completo|default:'Sin nombre registrado' }}</div>
+                                                    <div class="contact-role">{{ contacto.cargo|default:'Cargo no registrado' }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="contact-meta">
+                                                <div class="meta-row">
+                                                    <i class="bi bi-buildings"></i>
+                                                    <span>{{ contacto.entidad_externa.nombre|default:'Sin entidad registrada' }}</span>
+                                                </div>
+                                                <div class="meta-row">
+                                                    <i class="bi bi-envelope"></i>
+                                                    {% if contacto.correo_electronico %}
+                                                        <a href="mailto:{{ contacto.correo_electronico }}">{{ contacto.correo_electronico }}</a>
+                                                    {% else %}
+                                                        <span class="text-muted">Sin correo registrado</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="meta-row">
+                                                    <i class="bi bi-telephone"></i>
+                                                    {% if contacto.telefono_contacto %}
+                                                        <a href="tel:{{ contacto.telefono_contacto }}">{{ contacto.telefono_contacto }}</a>
+                                                    {% else %}
+                                                        <span class="text-muted">Sin teléfono registrado</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="contact-actions">
+                                                <button class="btn btn-outline-primary btn-sm"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#modalDetalleContacto"
+                                                        data-contacto-nombre="{{ contacto.nombre_completo }}"
+                                                        data-contacto-email="{{ contacto.correo_electronico|default:'' }}"
+                                                        data-contacto-telefono="{{ contacto.telefono_contacto|default:'' }}"
+                                                        data-contacto-cargo="{{ contacto.cargo|default:'' }}"
+                                                        data-contacto-entidad="{{ contacto.entidad_externa.nombre|default:'' }}">
+                                                    <i class="bi bi-eye me-1"></i>Ver detalle
+                                                </button>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </section>
+            {% else %}
+                <div class="empty-card">
+                    <h3 class="mb-2"><i class="bi bi-search me-2"></i>Sin coincidencias</h3>
+                    <p class="text-muted mb-0">No hay contactos en esta categoría con los filtros aplicados.</p>
+                </div>
+            {% endif %}
+
+            <div class="modal fade" id="modalDetalleContacto" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content" style="border: none; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25); overflow: hidden;">
+                        <div class="modal-header d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%); border-bottom: 1px solid #dbeafe; padding: 1.25rem 1.5rem;">
+                            <h5 class="modal-title d-flex align-items-center gap-2 m-0" style="font-weight: 700; color: #1d4ed8; font-size: 1.1rem;">
+                                <div class="bg-primary text-white d-flex align-items-center justify-content-center rounded-circle shadow-sm" style="width: 36px; height: 36px;">
+                                    <i class="bi bi-person-circle fs-5"></i>
+                                </div>
+                                Detalle del contacto
+                            </h5>
+                            <button type="button" class="btn-close shadow-sm bg-white border" data-bs-dismiss="modal" aria-label="Close" style="border-radius: 50%; opacity: 1;"></button>
+                        </div>
+                        <div class="modal-body p-4 bg-light">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="detail-modal-card p-3 h-100">
+                                        <h6 class="text-primary mb-3 d-flex align-items-center gap-2"><i class="bi bi-person"></i>Información personal</h6>
+                                        <div class="mb-2"><strong>Nombre:</strong> <span id="modal-nombre" class="ms-2"></span></div>
+                                        <div class="mb-2"><strong>Cargo:</strong> <span id="modal-cargo" class="ms-2"></span></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-modal-card p-3 h-100">
+                                        <h6 class="text-primary mb-3 d-flex align-items-center gap-2"><i class="bi bi-buildings"></i>Entidad</h6>
+                                        <div class="mb-2"><strong>Entidad:</strong> <span id="modal-entidad" class="ms-2"></span></div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="detail-modal-card p-3 h-100">
+                                        <h6 class="text-primary mb-3 d-flex align-items-center gap-2"><i class="bi bi-envelope"></i>Contacto</h6>
+                                        <div class="mb-2"><strong>Email:</strong> <span id="modal-email" class="ms-2"></span></div>
+                                        <div class="mb-2"><strong>Teléfono:</strong> <span id="modal-telefono" class="ms-2"></span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light border-top" style="padding: 1rem 1.5rem;">
+                            <button type="button" class="btn btn-light border px-4 rounded-pill fw-medium text-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const panel = document.getElementById('filtros-panel-categoria');
+    const header = panel?.querySelector('.filtros-toggle');
+    const body = panel?.querySelector('.filtros-body');
+    const icon = panel?.querySelector('.toggle-icon');
+    const storageKey = 'filtros_categoria_collapsed';
+
+    if (header && body && icon) {
+        try {
+            const isCollapsed = localStorage.getItem(storageKey) === '1';
+            if (isCollapsed) {
+                body.classList.add('d-none');
+                icon.classList.add('rotated');
+            }
+        } catch (e) {}
+
+        header.addEventListener('click', function(event) {
+            if (event.target.closest('button, a, input, select, label')) return;
+            body.classList.toggle('d-none');
+            icon.classList.toggle('rotated');
+            try { localStorage.setItem(storageKey, body.classList.contains('d-none') ? '1' : '0'); } catch (e) {}
+        });
+    }
+
+    const modalDetalleContacto = document.getElementById('modalDetalleContacto');
+    if (modalDetalleContacto) {
+        modalDetalleContacto.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            document.getElementById('modal-nombre').textContent = button.getAttribute('data-contacto-nombre') || 'No especificado';
+            document.getElementById('modal-cargo').textContent = button.getAttribute('data-contacto-cargo') || 'No especificado';
+            document.getElementById('modal-entidad').textContent = button.getAttribute('data-contacto-entidad') || 'No especificado';
+            document.getElementById('modal-email').textContent = button.getAttribute('data-contacto-email') || 'No especificado';
+            document.getElementById('modal-telefono').textContent = button.getAttribute('data-contacto-telefono') || 'No especificado';
+        });
+    }
+});
+</script>
+{% endblock %}

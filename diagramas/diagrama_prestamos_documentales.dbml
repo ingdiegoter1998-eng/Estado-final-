@@ -1,0 +1,209 @@
+// ============================================================================
+// DIAGRAMA - MODULO DE PRESTAMOS DOCUMENTALES
+// Hospital del Sarare E.S.E.
+// Generado: Enero 2026
+// ============================================================================
+// Para usar en https://dbdiagram.io
+// ============================================================================
+
+// ============================================================================
+// TABLAS BASE (Referenciadas)
+// ============================================================================
+
+Table auth_user {
+  id integer [primary key]
+  username varchar [unique, not null]
+  first_name varchar
+  last_name varchar
+  email varchar
+  is_active boolean
+}
+
+Table documentos_oficinaproductora {
+  id integer [primary key]
+  nombre varchar [not null]
+  codigo varchar
+  codigo_trd varchar [unique]
+}
+
+Table documentos_seriedocumental {
+  id integer [primary key]
+  codigo varchar [not null]
+  nombre varchar [not null]
+  codigo_trd varchar [unique]
+}
+
+Table documentos_subseriedocumental {
+  id integer [primary key]
+  codigo varchar [not null]
+  nombre varchar [not null]
+  serie_id integer [not null]
+}
+
+Ref: documentos_subseriedocumental.serie_id > documentos_seriedocumental.id
+
+Table documentos_fuid {
+  id integer [primary key]
+  fecha_creacion timestamp [not null]
+  creado_por_id integer
+  notas varchar
+}
+
+Ref: documentos_fuid.creado_por_id > auth_user.id
+
+Table documentos_registrodearchivo {
+  id integer [primary key]
+  numero_orden integer [not null]
+  codigo_serie_id integer [not null]
+  codigo_subserie_id integer
+  unidad_documental varchar [not null]
+  caja integer
+  carpeta integer
+  ubicacion varchar
+  creado_por_id integer
+}
+
+Ref: documentos_registrodearchivo.codigo_serie_id > documentos_seriedocumental.id
+Ref: documentos_registrodearchivo.codigo_subserie_id > documentos_subseriedocumental.id
+Ref: documentos_registrodearchivo.creado_por_id > auth_user.id
+
+// ============================================================================
+// MODULO PRESTAMOS DOCUMENTALES
+// ============================================================================
+
+Table documentos_prestamodocumental {
+  id integer [primary key]
+  
+  // --- Relaciones con documento ---
+  registro_id integer [note: 'Registro de archivo solicitado']
+  fuid_id integer [note: 'FUID asociado (opcional)']
+  
+  // --- Solicitante ---
+  solicitante_id integer [not null, note: 'Usuario que solicita']
+  oficina_solicitante_id integer [note: 'Oficina del solicitante']
+  subproceso_solicitante varchar
+  
+  // --- Información del documento ---
+  codigo_trd varchar
+  serie_id integer
+  subserie_id integer
+  descripcion_documento text [note: 'Descripcion serie/subserie y fecha']
+  
+  // --- Tipo y Estado ---
+  tipo_prestamo varchar [not null, note: 'FISICO o VIRTUAL']
+  estado varchar [not null, note: 'SOLICITADO, EN_PROCESO, ENTREGADO, PRESTAMO_ACTIVO, DEVUELTO, REINTEGRADO, RECHAZADO, RECHAZADO_USUARIO, VENCIDO']
+  
+  // --- Fechas del ciclo de vida ---
+  fecha_solicitud timestamp [not null]
+  fecha_aprobacion timestamp
+  fecha_entrega timestamp
+  fecha_vencimiento date [note: '10 dias HC, 20 dias otros']
+  fecha_devolucion timestamp
+  fecha_reintegracion timestamp
+  
+  // --- Aprobacion ---
+  aprobado_por_id integer [note: 'Usuario que aprobo']
+  procesado_por_id integer [note: 'Usuario de Archivo que proceso']
+  
+  // --- Vo.Bo. Jefe ---
+  vobo_jefe_nombre varchar [default: 'Eliana Gelves']
+  vobo_jefe_cargo varchar
+  vobo_jefe_fecha date
+  
+  // --- Documentos adjuntos ---
+  documento_escaneado varchar [note: 'PDF escaneado']
+  documento_virtual varchar [note: 'PDF para prestamo virtual']
+  
+  // --- Rechazo ---
+  motivo_rechazo text
+  motivo_rechazo_usuario text
+  documento_rechazo varchar
+  
+  // --- Devolucion ---
+  documento_devuelto boolean [default: false]
+  documento_danado boolean [default: false]
+  observaciones_dano text
+  
+  // --- Confirmacion usuario ---
+  confirmado_por_usuario boolean [default: false]
+  fecha_confirmacion timestamp
+  
+  notas text
+}
+
+Ref: documentos_prestamodocumental.registro_id > documentos_registrodearchivo.id
+Ref: documentos_prestamodocumental.fuid_id > documentos_fuid.id
+Ref: documentos_prestamodocumental.solicitante_id > auth_user.id
+Ref: documentos_prestamodocumental.oficina_solicitante_id > documentos_oficinaproductora.id
+Ref: documentos_prestamodocumental.serie_id > documentos_seriedocumental.id
+Ref: documentos_prestamodocumental.subserie_id > documentos_subseriedocumental.id
+Ref: documentos_prestamodocumental.aprobado_por_id > auth_user.id
+Ref: documentos_prestamodocumental.procesado_por_id > auth_user.id
+
+// ============================================================================
+// DOCUMENTOS ESCANEADOS (Multiples por prestamo)
+// ============================================================================
+
+Table documentos_documentoescaneadoprestamo {
+  id integer [primary key]
+  prestamo_id integer [not null]
+  archivo varchar [not null, note: 'PDF, Word o Excel']
+  uploaded_at timestamp [not null]
+  nombre_archivo_original varchar
+  confirmado boolean [default: false]
+  fecha_confirmacion timestamp
+  uploaded_by_id integer
+}
+
+Ref: documentos_documentoescaneadoprestamo.prestamo_id > documentos_prestamodocumental.id
+Ref: documentos_documentoescaneadoprestamo.uploaded_by_id > auth_user.id
+
+// ============================================================================
+// NOTIFICACIONES DE AVISO (Retrasos)
+// ============================================================================
+
+Table documentos_notificacionavisoprestamo {
+  id integer [primary key]
+  prestamo_id integer [not null]
+  documento_oficio varchar [not null, note: 'Oficio de notificacion']
+  observaciones text
+  fecha_notificacion timestamp [not null]
+  notificado_por_id integer
+  oficina_notificada_id integer
+}
+
+Ref: documentos_notificacionavisoprestamo.prestamo_id > documentos_prestamodocumental.id
+Ref: documentos_notificacionavisoprestamo.notificado_por_id > auth_user.id
+Ref: documentos_notificacionavisoprestamo.oficina_notificada_id > documentos_oficinaproductora.id
+
+// ============================================================================
+// HISTORIAL DE PRESTAMOS (Trazabilidad)
+// ============================================================================
+
+Table documentos_historialprestamo {
+  id integer [primary key]
+  prestamo_id integer [not null]
+  usuario_id integer
+  evento varchar [not null, note: 'Tipo de evento: SOLICITADO, APROBADO, ENTREGADO, etc.']
+  descripcion text
+  fecha timestamp [not null]
+}
+
+Ref: documentos_historialprestamo.prestamo_id > documentos_prestamodocumental.id
+Ref: documentos_historialprestamo.usuario_id > auth_user.id
+
+// ============================================================================
+// FLUJO DE ESTADOS
+// ============================================================================
+// 
+// SOLICITADO ──────► EN_PROCESO ──────► ENTREGADO ──────► PRESTAMO_ACTIVO
+//     │                   │                                      │
+//     │                   │                                      ▼
+//     ▼                   ▼                               DEVUELTO ──► REINTEGRADO
+// RECHAZADO         RECHAZADO                                │
+//                                                            ▼
+//                                               RECHAZADO_USUARIO
+//
+// Si pasa fecha_vencimiento: PRESTAMO_ACTIVO ──► VENCIDO
+//
+// ============================================================================

@@ -1,0 +1,436 @@
+{% load static %}
+{% load custom_filters %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Préstamos - {{ area_gestion_label }}</title>
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'css/prestamos.css' %}">
+</head>
+<body class="prestamo-body">
+<div class="prestamo-content-wrapper">
+    {% include 'partials/sidebar_nav.html' %}
+    <div class="prestamo-main-content">
+<div class="prestamo-shell">
+    <header class="prestamo-hero">
+        <div>
+            <p class="prestamo-eyebrow">{{ area_gestion_label }}</p>
+            <h1>Control integral de préstamos</h1>
+            <p class="prestamo-hero-text">
+                Monitorea solicitudes, prioriza vencimientos y da respuesta rápida a las oficinas usuarias.
+            </p>
+        </div>
+        <div class="prestamo-hero-actions">
+            <a href="{% url 'panel' %}" class="prestamo-btn prestamo-btn-secondary">
+                <i class="bi bi-journal-text"></i> Ir al panel general
+            </a>
+        </div>
+    </header>
+
+    <section class="prestamo-report-filters">
+        <div class="prestamo-report-filters-header">
+            <div>
+                <p class="prestamo-eyebrow">Reporte</p>
+                <h2>Descarga filtrada</h2>
+            </div>
+            <p class="prestamo-report-filters-text">
+                Genera el reporte por fechas, serie documental y oficina solicitante.
+            </p>
+        </div>
+        <form method="get" action="{% url 'exportar_prestamos_excel_mensual' %}" class="prestamo-report-filter-grid">
+            <div class="prestamo-form-group">
+                <label for="reporte_fecha_desde">Fecha inicial</label>
+                <input type="date" id="reporte_fecha_desde" name="fecha_desde" class="prestamo-form-control" value="{{ filtro_fecha_desde|default:'' }}">
+            </div>
+            <div class="prestamo-form-group">
+                <label for="reporte_fecha_hasta">Fecha final</label>
+                <input type="date" id="reporte_fecha_hasta" name="fecha_hasta" class="prestamo-form-control" value="{{ filtro_fecha_hasta|default:'' }}">
+            </div>
+            <div class="prestamo-form-group">
+                <label for="reporte_serie">Serie documental</label>
+                <select id="reporte_serie" name="serie" class="prestamo-form-control">
+                    <option value="">Todas las series</option>
+                    {% for serie in series %}
+                        <option value="{{ serie.id }}" {% if filtro_serie == serie.id|stringformat:"s" %}selected{% endif %}>{{ serie.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="prestamo-form-group">
+                <label for="reporte_oficina">Oficina solicitante</label>
+                <select id="reporte_oficina" name="oficina" class="prestamo-form-control">
+                    <option value="">Todas las oficinas</option>
+                    {% for oficina in oficinas %}
+                        <option value="{{ oficina.id }}" {% if filtro_oficina == oficina.id|stringformat:"s" %}selected{% endif %}>{{ oficina.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="prestamo-form-group prestamo-report-filter-actions">
+                <label for="reporte_download">Reporte mensual</label>
+                <button type="submit" id="reporte_download" class="prestamo-btn prestamo-btn-report-download">
+                    <span class="prestamo-report-download-icon" aria-hidden="true">
+                        <i class="bi bi-file-earmark-spreadsheet"></i>
+                    </span>
+                    <span class="prestamo-report-download-label">Descargar reporte mensual</span>
+                </button>
+            </div>
+        </form>
+    </section>
+
+    {# Cards grandes para filtrar por tipo de archivo #}
+    {% if puede_cambiar_area %}
+    <section class="prestamo-category-cards">
+        <a href="{% url 'gestion_prestamos' %}?tipo_archivo=historia_clinica" class="prestamo-category-card prestamo-category-card--historia">
+            <div class="prestamo-category-card-icon">
+                <i class="bi bi-file-medical"></i>
+            </div>
+            <div class="prestamo-category-card-content">
+                <h2>Historias Clínicas</h2>
+                <p class="prestamo-category-card-description">Préstamos relacionados con historias clínicas</p>
+                <div class="prestamo-category-card-count">{{ total_historia_clinica }} préstamos</div>
+            </div>
+            <div class="prestamo-category-card-arrow">
+                <i class="bi bi-arrow-right-circle"></i>
+            </div>
+        </a>
+        
+        <a href="{% url 'gestion_prestamos' %}?tipo_archivo=archivo_central" class="prestamo-category-card prestamo-category-card--archivo">
+            <div class="prestamo-category-card-icon">
+                <i class="bi bi-archive"></i>
+            </div>
+            <div class="prestamo-category-card-content">
+                <h2>Gestión Documental</h2>
+                <p class="prestamo-category-card-description">Préstamos de todas las demás series documentales</p>
+                <div class="prestamo-category-card-count">{{ total_archivo_central }} préstamos</div>
+            </div>
+            <div class="prestamo-category-card-arrow">
+                <i class="bi bi-arrow-right-circle"></i>
+            </div>
+        </a>
+    </section>
+    {% else %}
+    <div class="prestamo-alert prestamo-alert-info prestamo-mb-2">
+        <i class="bi bi-shield-lock"></i>
+        <strong>Vista restringida por oficina:</strong>
+        este tablero muestra solo préstamos gestionados por <strong>{{ area_gestion_label }}</strong>.
+    </div>
+    {% endif %}
+
+    <section class="prestamo-stat-grid">
+        <article class="prestamo-stat-card">
+            <span class="prestamo-stat-label">Solicitados</span>
+            <span class="prestamo-stat-value">{{ kpis.solicitados }}</span>
+        </article>
+        <article class="prestamo-stat-card">
+            <span class="prestamo-stat-label">Entregados</span>
+            <span class="prestamo-stat-value">{{ kpis.entregados }}</span>
+        </article>
+        <article class="prestamo-stat-card">
+            <span class="prestamo-stat-label">Activos</span>
+            <span class="prestamo-stat-value">{{ kpis.activos }}</span>
+        </article>
+        <article class="prestamo-stat-card">
+            <span class="prestamo-stat-label">Devolución solicitada</span>
+            <span class="prestamo-stat-value">{{ kpis.devolucion_solicitada }}</span>
+        </article>
+        <article class="prestamo-stat-card">
+            <span class="prestamo-stat-label">Pendientes reintegración</span>
+            <span class="prestamo-stat-value">{{ kpis.pendientes_reintegracion }}</span>
+        </article>
+        <article class="prestamo-stat-card prestamo-stat-card--alert">
+            <span class="prestamo-stat-label">Vencidos</span>
+            <span class="prestamo-stat-value">{{ kpis.vencidos }}</span>
+        </article>
+    </section>
+
+    {# Mostrar indicador si hay filtro activo de tipo de archivo #}
+    {% if filtro_tipo_archivo %}
+    <div class="prestamo-alert prestamo-alert-info prestamo-mb-2">
+        <i class="bi bi-funnel-fill"></i> 
+        <strong>Filtro activo:</strong> 
+        {% if filtro_tipo_archivo == 'historia_clinica' %}
+            Mostrando solo préstamos de <strong>Historias Clínicas</strong>
+        {% elif filtro_tipo_archivo == 'archivo_central' %}
+            Mostrando solo préstamos de <strong>Gestión Documental</strong>
+        {% endif %}
+        {% if puede_cambiar_area %}
+        <a href="{% url 'gestion_prestamos' %}" class="prestamo-btn prestamo-btn-sm prestamo-btn-secondary" style="margin-left:10px;display:inline-block">
+            <i class="bi bi-x-circle"></i> Limpiar filtro
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if alertas_operativas %}
+    <div class="prestamo-alert prestamo-alert-warning prestamo-mb-2">
+        <i class="bi bi-exclamation-circle"></i>
+        <div>
+            {% for alerta in alertas_operativas %}
+            <div>{{ alerta }}</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <section class="prestamo-filters-modern">
+        <form method="get" class="prestamo-filter-grid">
+            {# Mantener los filtros en el formulario #}
+            {% if filtro_tipo_archivo %}
+                <input type="hidden" name="tipo_archivo" value="{{ filtro_tipo_archivo }}">
+            {% endif %}
+            {% if filtro_oficina %}
+                <input type="hidden" name="oficina" value="{{ filtro_oficina }}">
+            {% endif %}
+            <div class="prestamo-form-group">
+                <label for="estado">Estado</label>
+                <select name="estado" id="estado" class="prestamo-form-control">
+                    <option value="">Todos</option>
+                    {% for estado in estado_board %}
+                        <option value="{{ estado.codigo }}" {% if filtro_estado == estado.codigo %}selected{% endif %}>{{ estado.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="prestamo-form-group">
+                <label for="tipo">Tipo</label>
+                <select name="tipo" id="tipo" class="prestamo-form-control">
+                    <option value="">Todos</option>
+                    <option value="FISICO" {% if filtro_tipo == 'FISICO' %}selected{% endif %}>Físicos</option>
+                    <option value="VIRTUAL" {% if filtro_tipo == 'VIRTUAL' %}selected{% endif %}>Digitales</option>
+                </select>
+            </div>
+            <div class="prestamo-form-group">
+                <label for="alerta">Alertas rápidas</label>
+                <select name="alerta" id="alerta" class="prestamo-form-control">
+                    <option value="">Sin filtro</option>
+                    <option value="devolucion_solicitada" {% if filtro_alerta == 'devolucion_solicitada' %}selected{% endif %}>Devolución solicitada</option>
+                    <option value="entregados_pendientes_confirmacion" {% if filtro_alerta == 'entregados_pendientes_confirmacion' %}selected{% endif %}>Entregados sin confirmar</option>
+                    <option value="pendientes_reintegracion" {% if filtro_alerta == 'pendientes_reintegracion' %}selected{% endif %}>Pendientes de reintegración</option>
+                    <option value="vencidos" {% if filtro_alerta == 'vencidos' %}selected{% endif %}>Posibles vencidos</option>
+                </select>
+            </div>
+            <div class="prestamo-form-group">
+                <label for="oficina">Oficina</label>
+                <select name="oficina" id="oficina" class="prestamo-form-control">
+                    <option value="">Todas las oficinas</option>
+                    {% for oficina in oficinas %}
+                        <option value="{{ oficina.id }}" {% if filtro_oficina == oficina.id|stringformat:"s" %}selected{% endif %}>{{ oficina.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="prestamo-form-group">
+                <label for="year">Año</label>
+                <input type="number" min="2024" max="2100" name="year" id="year" class="prestamo-form-control" value="{{ filtro_year|default:filtro_year_default }}">
+            </div>
+            <div class="prestamo-form-group">
+                <label for="month">Mes</label>
+                <input type="number" min="1" max="12" name="month" id="month" class="prestamo-form-control" value="{{ filtro_month|default:filtro_month_default }}">
+            </div>
+            <div class="prestamo-form-group prestamo-form-group--wide">
+                <label for="q">Buscar</label>
+                <div class="prestamo-input-icon">
+                    <i class="bi bi-search"></i>
+                    <input type="text" class="prestamo-form-control" name="q" id="q" placeholder="Solicitante, oficina, TRD, palabras clave..." value="{{ busqueda|default:'' }}">
+                </div>
+            </div>
+            <div class="prestamo-filter-actions">
+                <button class="prestamo-btn prestamo-btn-primary" type="submit">
+                    <i class="bi bi-funnel"></i> Filtrar
+                </button>
+                <a href="{% url 'gestion_prestamos' %}{% if not puede_cambiar_area and filtro_tipo_archivo %}?tipo_archivo={{ filtro_tipo_archivo }}{% endif %}" class="prestamo-btn prestamo-btn-secondary">Limpiar</a>
+            </div>
+        </form>
+    </section>
+
+    <div class="prestamo-layout prestamo-layout--admin">
+        <section class="prestamo-card prestamo-card--main">
+            <div class="prestamo-card-header prestamo-card-header--subtle">
+                <strong>Solicitudes encontradas</strong>
+                <span>{{ prestamos.paginator.count }} registros</span>
+            </div>
+            <div class="prestamo-table-wrapper">
+                {% if prestamos %}
+                <table class="prestamo-table prestamo-table--modern">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Solicitante / Oficina</th>
+                            <th>Documento</th>
+                            <th>Tipo</th>
+                            <th>Estado</th>
+                            <th>Fechas clave</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for prestamo in prestamos %}
+                        <tr>
+                            <td>#{{ prestamo.id }}</td>
+                            <td>
+                                <strong>{{ prestamo.solicitante.get_full_name|default:prestamo.solicitante.username }}</strong>
+                                <div class="prestamo-table-subtext">
+                                    {{ prestamo.oficina_solicitante.nombre|default:"Sin oficina" }}
+                                </div>
+                                <div class="prestamo-table-subtext">
+                                    Atiende: {{ prestamo.oficina_responsable.nombre|default:area_gestion_label }}
+                                </div>
+                                {% if prestamo.estado == 'DEVOLUCION_SOLICITADA' %}
+                                <div class="prestamo-table-subtext prestamo-table-subtext--urgent">
+                                    Archivo debe recibir este documento.
+                                </div>
+                                {% elif prestamo.estado == 'ENTREGADO' %}
+                                <div class="prestamo-table-subtext prestamo-table-subtext--info">
+                                    Pendiente de confirmación por el usuario.
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ prestamo.descripcion_documento|default:"Sin descripción" }}</strong>
+                            </td>
+                            <td>
+                                <span class="prestamo-chip {% if prestamo.tipo_prestamo == 'VIRTUAL' %}prestamo-chip--virtual{% else %}prestamo-chip--fisico{% endif %}">
+                                    {% if prestamo.tipo_prestamo == 'VIRTUAL' %}Digital{% else %}{{ prestamo.get_tipo_prestamo_display }}{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="prestamo-chip prestamo-chip--status prestamo-chip--status-{{ prestamo.estado|lower }}">
+                                    {{ prestamo.get_estado_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="prestamo-table-dates">
+                                    <span><strong>Solicitado:</strong> {{ prestamo.fecha_solicitud|date:"d/m/Y" }}</span>
+                                    {% if prestamo.fecha_vencimiento %}
+                                        {% with info_dias=prestamo.fecha_vencimiento|dias_restantes_vencimiento %}
+                                            <span><strong>Vence:</strong> {{ prestamo.fecha_vencimiento|date:"d/m/Y" }} 
+                                                {% if info_dias %}
+                                                    <span class="prestamo-dias-restantes {{ info_dias.clase }}">({{ info_dias.texto }})</span>
+                                                {% endif %}
+                                            </span>
+                                        {% endwith %}
+                                    {% endif %}
+                                    {% if prestamo.fecha_devolucion %}
+                                        <span><strong>Devuelto:</strong> {{ prestamo.fecha_devolucion|date:"d/m/Y H:i" }}</span>
+                                    {% endif %}
+                                    {% if prestamo.fecha_reintegracion %}
+                                        <span class="text-success"><strong>Reintegrado:</strong> {{ prestamo.fecha_reintegracion|date:"d/m/Y H:i" }}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="prestamo-table-actions">
+                                    <a href="{% url 'detalle_prestamo' prestamo.id %}" class="prestamo-btn prestamo-btn-outline prestamo-btn-sm">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a class="prestamo-btn {% if prestamo.estado == 'DEVOLUCION_SOLICITADA' %}prestamo-btn-warning{% else %}prestamo-btn-primary{% endif %} prestamo-btn-sm" href="{% url 'procesar_prestamo' prestamo.id %}">
+                                        <i class="bi {% if prestamo.estado == 'DEVOLUCION_SOLICITADA' %}bi-box-arrow-in-down{% else %}bi-gear{% endif %}"></i>
+                                        {% if prestamo.estado == 'DEVOLUCION_SOLICITADA' %}Recibir devolución{% else %}Gestionar{% endif %}
+                                    </a>
+                                    {% if prestamo.estado == 'PRESTAMO_ACTIVO' or prestamo.estado == 'VENCIDO' or prestamo.estado == 'DEVOLUCION_SOLICITADA' %}
+                                    <button type="button" class="prestamo-btn prestamo-btn-warning prestamo-btn-sm" onclick="mostrarModalNotificacion({{ prestamo.id }})">
+                                        <i class="bi bi-bell"></i> Notificar
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="prestamo-empty">
+                    <div class="prestamo-empty-icon"><i class="bi bi-inbox"></i></div>
+                    <div class="prestamo-empty-text">No hay registros con los filtros seleccionados.</div>
+                </div>
+                {% endif %}
+            </div>
+            {% if prestamos.has_other_pages %}
+            <div class="prestamo-card-footer">
+                <div class="prestamo-pagination">
+                    {% if prestamos.has_previous %}
+                        <a href="?page={{ prestamos.previous_page_number }}&estado={{ filtro_estado }}&tipo={{ filtro_tipo }}&alerta={{ filtro_alerta }}&oficina={{ filtro_oficina }}&tipo_archivo={{ filtro_tipo_archivo }}&year={{ filtro_year }}&month={{ filtro_month }}&q={{ busqueda }}">&laquo; Anterior</a>
+                    {% endif %}
+                    <span class="prestamo-active">Página {{ prestamos.number }} de {{ prestamos.paginator.num_pages }}</span>
+                    {% if prestamos.has_next %}
+                        <a href="?page={{ prestamos.next_page_number }}&estado={{ filtro_estado }}&tipo={{ filtro_tipo }}&alerta={{ filtro_alerta }}&oficina={{ filtro_oficina }}&tipo_archivo={{ filtro_tipo_archivo }}&year={{ filtro_year }}&month={{ filtro_month }}&q={{ busqueda }}">Siguiente &raquo;</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </section>
+    </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/correspondencia/vendor/js/bootstrap.bundle.min.js"></script>
+<script>
+let prestamoIdActual = null;
+
+function mostrarModalNotificacion(prestamoId) {
+    prestamoIdActual = prestamoId;
+    const modal = document.getElementById('modalNotificacion');
+    if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('formNotificacion').action = "{% url 'enviar_notificacion_aviso' 0 %}".replace('/0/', '/' + prestamoId + '/');
+    }
+}
+
+function cerrarModalNotificacion() {
+    const modal = document.getElementById('modalNotificacion');
+    if (modal) {
+        modal.style.display = 'none';
+        document.getElementById('formNotificacion').reset();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('modalNotificacion');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                cerrarModalNotificacion();
+            }
+        });
+    }
+});
+</script>
+
+{# Modal de notificación de aviso #}
+<div id="modalNotificacion" class="prestamo-modal" style="display: none;">
+    <div class="prestamo-modal-content">
+        <div class="prestamo-modal-header">
+            <h3><i class="bi bi-bell-fill"></i> Enviar notificación de aviso</h3>
+            <button type="button" class="prestamo-modal-close" onclick="cerrarModalNotificacion()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <form id="formNotificacion" method="post" action="" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="prestamo-modal-body">
+                <p>Adjunta el documento oficio que se enviará a la oficina para notificar sobre el retraso en el préstamo.</p>
+                <div class="prestamo-form-group">
+                    <label for="documento_oficio">Documento oficio <span class="text-danger">*</span></label>
+                    <input type="file" name="documento_oficio" id="documento_oficio" class="prestamo-form-control" accept=".pdf,.doc,.docx" required>
+                    <small class="prestamo-form-help">Formato: PDF, Word (máx. 10 MB)</small>
+                </div>
+                <div class="prestamo-form-group">
+                    <label for="observaciones">Observaciones (opcional)</label>
+                    <textarea name="observaciones" id="observaciones" class="prestamo-form-control" rows="3" placeholder="Observaciones adicionales sobre la notificación"></textarea>
+                </div>
+            </div>
+            <div class="prestamo-modal-footer">
+                <button type="button" class="prestamo-btn prestamo-btn-secondary" onclick="cerrarModalNotificacion()">
+                    <i class="bi bi-x-circle"></i> Cancelar
+                </button>
+                <button type="submit" class="prestamo-btn prestamo-btn-warning">
+                    <i class="bi bi-send"></i> Enviar notificación
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

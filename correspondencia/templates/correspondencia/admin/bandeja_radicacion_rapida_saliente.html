@@ -1,0 +1,439 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load humanize %}
+{% load static %}
+
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'correspondencia/css/historial_compacto.css' %}">
+<style>
+    .filtros-modernos {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 0.5rem;
+        border: 1px solid #dee2e6;
+    }
+    .filtros-header { padding: 0.75rem 1rem; border-bottom: 1px solid #dee2e6; }
+    .filtros-content { padding: 1rem; }
+    .filtros-seccion { margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px dashed #dee2e6; }
+    .filtros-seccion:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .filtros-seccion-titulo { font-weight: 600; color: #495057; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+    .filtros-acciones { padding-top: 1rem; border-top: 1px solid #dee2e6; }
+    .filtros-activos-modernos { margin-top: 1rem; padding: 0.75rem; background: #e7f3ff; border-radius: 0.375rem; }
+    .filtros-activos-header { font-weight: 600; color: #0d6efd; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+    .table-sm td, .table-sm th { padding: 0.5rem 0.75rem; font-size: 0.875rem; }
+    .table-responsive { overflow-x: auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="filtros-modernos mb-4">
+        <div class="filtros-header">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <i class="bi bi-lightning-fill text-warning me-2"></i>
+                    <strong>Bandeja de Radicación Rápida</strong>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{% url 'correspondencia:bandeja_radicacion_rapida' %}" class="btn {% if bandeja_activa == 'entrantes' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                            <i class="bi bi-box-arrow-in-down me-1"></i>Entrantes
+                        </a>
+                        <a href="{% url 'correspondencia:bandeja_radicacion_rapida_saliente' %}" class="btn {% if bandeja_activa == 'salientes' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                            <i class="bi bi-box-arrow-up me-1"></i>Salientes
+                        </a>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-outline-primary btn-sm {% if not filtros_activos %}collapsed{% endif %}" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse" aria-expanded="{% if filtros_activos %}true{% else %}false{% endif %}" aria-controls="filtrosCollapse">
+                    <i class="bi bi-funnel-fill me-1"></i>Filtros
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="collapse {% if filtros_activos %}show{% endif %}" id="filtrosCollapse">
+            <div class="filtros-content">
+                <form method="get" action="" id="radicacion-rapida-saliente-filter-form">
+                    <div class="filtros-seccion">
+                        <div class="filtros-seccion-titulo">
+                            <i class="bi bi-search text-info"></i>
+                            <span>Búsqueda y filtros</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-lg-3">
+                                <label for="id_search_term" class="form-label"><i class="bi bi-text-paragraph me-1"></i>Buscar</label>
+                                <input type="text" name="search_term" placeholder="Radicado, asunto, contenido..." class="form-control" id="id_search_term" value="{{ search_term }}">
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_oficina_emisora" class="form-label"><i class="bi bi-building me-1"></i>Oficina Emisora</label>
+                                <input type="text" name="oficina_emisora" placeholder="Buscar oficina..." class="form-control" list="oficinas-list" id="id_oficina_emisora" value="{{ oficina_emisora }}">
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_asunto" class="form-label"><i class="bi bi-chat-text me-1"></i>Asunto</label>
+                                <input type="text" name="asunto" placeholder="Buscar en asunto..." class="form-control" id="id_asunto" value="{{ asunto }}">
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_destinatario" class="form-label"><i class="bi bi-person me-1"></i>Destinatario</label>
+                                <input type="text" name="destinatario" placeholder="Nombre o entidad..." class="form-control" id="id_destinatario" value="{{ destinatario }}">
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_estado" class="form-label"><i class="bi bi-flag me-1"></i>Estado</label>
+                                <select name="estado" class="form-select" id="id_estado">
+                                    <option value="">Todos</option>
+                                    {% for value, label in estado_choices %}
+                                        <option value="{{ value }}" {% if estado == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_fecha_inicio" class="form-label"><i class="bi bi-calendar-date me-1"></i>Desde</label>
+                                <input type="date" name="fecha_inicio" class="form-control" id="id_fecha_inicio" value="{{ fecha_inicio }}">
+                            </div>
+                            <div class="col-lg-3">
+                                <label for="id_fecha_fin" class="form-label"><i class="bi bi-calendar-date me-1"></i>Hasta</label>
+                                <input type="date" name="fecha_fin" class="form-control" id="id_fecha_fin" value="{{ fecha_fin }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="filtros-acciones">
+                        <div class="row g-3">
+                            <div class="col-lg-6">
+                                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-2"></i>Aplicar Filtros</button>
+                            </div>
+                            <div class="col-lg-6">
+                                <button type="submit" name="reset" value="Limpiar Filtros" class="btn btn-outline-secondary w-100"><i class="bi bi-arrow-clockwise me-2"></i>Limpiar Filtros</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <datalist id="oficinas-list">
+                    {% for oficina in oficinas_list %}<option value="{{ oficina }}">{% endfor %}
+                </datalist>
+                {% if filtros_activos %}
+                    <div class="filtros-activos-modernos">
+                        <div class="filtros-activos-header"><i class="bi bi-tags-fill text-info"></i> <span>Filtros Activos</span></div>
+                        <div class="filtros-activos-content">
+                            {% for key, data in filtros_activos.items %}
+                                <span class="badge bg-info text-dark me-2 mb-2"><i class="bi bi-check-circle me-1"></i>{{ data.label }}: {{ data.value }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card card-primary card-outline">
+        <div class="card-header py-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-lightning-fill text-warning me-2"></i>
+                    <strong>Correspondencia Saliente (Radicación Rápida)</strong>
+                </div>
+                <span class="badge bg-primary">Total: {{ page_obj.paginator.count }} registro{{ page_obj.paginator.count|pluralize }}</span>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-striped table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 110px;">Radicado</th>
+                            <th style="width: 95px;">Fecha</th>
+                            <th>Asunto</th>
+                            <th style="width: 120px;">Oficina Emisora</th>
+                            <th style="width: 110px;">Vinculado a</th>
+                            <th style="width: 140px;">Destinatario</th>
+                            <th style="width: 130px;">Funcionario envía</th>
+                            <th style="width: 100px;">Redactor</th>
+                            <th style="width: 90px;">Estado</th>
+                            <th style="width: 100px;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in page_obj %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'correspondencia:detalle_respuesta_salida' item.pk %}" class="text-decoration-none fw-semibold">{{ item.numero_radicado_salida }}</a>
+                            </td>
+                            <td title="{{ item.fecha_creacion|date:'d/m/Y H:i:s' }}">{{ item.fecha_creacion|naturaltime }}</td>
+                            <td title="{{ item.asunto }}">{{ item.asunto|truncatechars:50 }}</td>
+                            <td>{{ item.oficina_emisora.nombre|default:"-"|truncatechars:18 }}</td>
+                            <td>
+                                {% if item.respuesta_a %}
+                                    <a href="{% url 'correspondencia:detalle_correspondencia' item.respuesta_a.pk %}" class="text-decoration-none" title="{{ item.respuesta_a.numero_radicado }}">
+                                        <i class="bi bi-link-45deg"></i> {{ item.respuesta_a.numero_radicado|truncatechars:18 }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td title="{% if item.destinatario_contacto %}{{ item.destinatario_contacto.nombre_completo }}{% if item.destinatario_contacto.entidad_externa %} ({{ item.destinatario_contacto.entidad_externa.nombre }}){% endif %}{% endif %}">
+                                {% if item.destinatario_contacto %}{{ item.destinatario_contacto.nombre_completo|truncatechars:22 }}{% else %}<span class="text-muted">-</span>{% endif %}
+                            </td>
+                            <td title="{{ item.funcionario_envia }}">{{ item.funcionario_envia|default:"-"|truncatechars:20 }}</td>
+                            <td>{% if item.usuario_redactor %}{{ item.usuario_redactor.get_full_name|default:item.usuario_redactor.username|truncatechars:15 }}{% else %}-{% endif %}</td>
+                            <td>
+                                {% if item.estado == 'ENVIADA' %}
+                                    <span class="badge bg-success">{{ item.get_estado_display }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ item.get_estado_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-nowrap">
+                                <a href="{% url 'correspondencia:detalle_respuesta_salida' item.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalle"><i class="bi bi-eye"></i></a>
+                                <button type="button" class="btn btn-sm btn-outline-warning btn-editar-saliente"
+                                        data-pk="{{ item.pk }}"
+                                        data-url-datos="{% url 'correspondencia:api_radicacion_rapida_saliente_data' pk=item.pk %}"
+                                        data-url-editar="{% url 'correspondencia:editar_radicacion_rapida_saliente' pk=item.pk %}"
+                                        title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center fst-italic text-muted py-4">
+                                <i class="bi bi-inbox me-2"></i>No hay registros que coincidan con los filtros aplicados.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer clearfix">
+            {% if page_obj.has_other_pages %}
+                {% include "includes/paginacion.html" with page_obj=page_obj registros_por_pagina=registros_por_pagina %}
+            {% endif %}
+        </div>
+    </div>
+
+    {# Modal reutilizable para creación/edición (debe estar dentro del block para que se renderice) #}
+    {% include 'correspondencia/partials/modals/modal_radicacion_rapida_saliente.html' %}
+{% endblock content %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="{% static 'correspondencia/js/modals/modal-minimizable.js' %}"></script>
+<script>
+$(document).ready(function() {
+    $('[data-bs-toggle="collapse"]').on('click', function() {
+        var icon = $(this).find('i.bi-chevron-down, i.bi-chevron-up');
+        if ($(this).attr('aria-expanded') === 'true') {
+            icon.removeClass('bi-chevron-up').addClass('bi-chevron-down');
+        } else {
+            icon.removeClass('bi-chevron-down').addClass('bi-chevron-up');
+        }
+    });
+
+    // ====== LÓGICA DE EDICIÓN VÍA MODAL ======
+    var modalEl = document.getElementById('modalRadicacionRapidaSaliente');
+    var modal = new bootstrap.Modal(modalEl);
+    var $form = $('#form-radicacion-rapida-saliente');
+    var editandoPk = null;
+
+    // Textos originales para modo creación
+    var tituloOriginal = $('#modalRadicacionRapidaSalienteLabel').html();
+    var alertaOriginal = $('#alert-rapida-saliente').html();
+    var btnTextoOriginal = $('#btn-submit-rapida-saliente').html();
+
+    // Abrir modal en modo edición
+    $(document).on('click', '.btn-editar-saliente', function() {
+        var $btn = $(this);
+        var pk = $btn.data('pk');
+        var urlDatos = $btn.data('url-datos');
+        var urlEditar = $btn.data('url-editar');
+
+        $btn.prop('disabled', true).html('<i class="bi bi-hourglass-split"></i>');
+
+        $.ajax({
+            url: urlDatos,
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                if (!data.success) {
+                    alert(data.error || 'Error al cargar datos');
+                    return;
+                }
+
+                editandoPk = pk;
+
+                // Cambiar modal a modo edición
+                $('#modalRadicacionRapidaSalienteLabel').html(
+                    '<i class="bi bi-pencil-square me-2"></i>Editar Radicación - ' + data.numero_radicado
+                );
+                $('#alert-rapida-saliente').html(
+                    '<i class="bi bi-pencil-fill me-2"></i><strong>Modo edición:</strong> Modificando radicación <strong>' + data.numero_radicado + '</strong>'
+                );
+                $('#btn-submit-rapida-saliente').html(
+                    '<i class="bi bi-check-lg me-1"></i>Guardar Cambios'
+                );
+
+                // Poblar campos del formulario
+                var f = data.fields;
+                var prefix = 'rapida_sal';
+                $form.find('#id_' + prefix + '-asunto').val(f.asunto);
+                $form.find('#id_' + prefix + '-cuerpo').val(f.cuerpo);
+                $form.find('#id_' + prefix + '-destinatario_texto').val(f.destinatario_texto);
+                $form.find('#id_' + prefix + '-funcionario_envia').val(f.funcionario_envia || '');
+
+                // Selects
+                var $destContacto = $form.find('#id_' + prefix + '-destinatario_contacto');
+                var $oficina = $form.find('#id_' + prefix + '-oficina_emisora');
+
+                $destContacto.val(f.destinatario_contacto);
+                $oficina.val(f.oficina_emisora);
+
+                // Actualizar Select2 si existe
+                if ($destContacto.hasClass('select2-hidden-accessible')) {
+                    $destContacto.trigger('change.select2');
+                }
+                if ($oficina.hasClass('select2-hidden-accessible')) {
+                    $oficina.trigger('change.select2');
+                }
+
+                // Checkbox fue_respondida
+                var $fueRespondida = $form.find('#id_' + prefix + '-fue_respondida');
+                if ($fueRespondida.length) {
+                    $fueRespondida.prop('checked', !!f.fue_respondida);
+                }
+
+                // Radicado de entrada vinculado (solo lectura)
+                if (data.radicado_entrada) {
+                    $('#radicado-entrada-correspondiente').val(data.radicado_entrada);
+                    $('#campo-radicado-entrada-saliente').removeClass('d-none');
+                } else {
+                    $('#radicado-entrada-correspondiente').val('');
+                    $('#campo-radicado-entrada-saliente').addClass('d-none');
+                }
+
+                // Evidencia de respuesta actual
+                if (f.evidencia_url) {
+                    $('#link-evidencia-actual').attr('href', f.evidencia_url).text(f.evidencia_nombre || 'Archivo');
+                    $('#evidencia-actual-saliente').removeClass('d-none');
+                } else {
+                    $('#link-evidencia-actual').attr('href', '#').text('');
+                    $('#evidencia-actual-saliente').addClass('d-none');
+                }
+
+                // Guardar URL de edición
+                $form.data('edit-url', urlEditar);
+
+                modal.show();
+            },
+            error: function() {
+                alert('Error al obtener datos de la radicación.');
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="bi bi-pencil"></i>');
+            }
+        });
+    });
+
+    // Submit del formulario vía AJAX
+    $form.on('submit', function(e) {
+        e.preventDefault();
+
+        if (!editandoPk) return;
+
+        var editUrl = $form.data('edit-url');
+        var $submitBtn = $('#btn-submit-rapida-saliente');
+        $submitBtn.prop('disabled', true).html('<i class="bi bi-hourglass-split me-1"></i>Guardando...');
+
+        // Limpiar errores previos
+        $form.find('.invalid-feedback.ajax-error').remove();
+        $form.find('.alert.ajax-error').remove();
+        $form.find('.is-invalid').removeClass('is-invalid');
+
+        var formData = new FormData($form[0]);
+
+        $.ajax({
+            url: editUrl,
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            headers: {
+                'X-CSRFToken': $form.find('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(data) {
+                if (data.success) {
+                    modal.hide();
+                    location.reload();
+                } else if (data.errors) {
+                    var prefix = 'rapida_sal';
+                    $.each(data.errors, function(field, msgs) {
+                        if (field === '__all__') return; // handled below
+                        var fieldId = '#id_' + prefix + '-' + field;
+                        var $field = $form.find(fieldId);
+                        if ($field.length) {
+                            $field.addClass('is-invalid');
+                            $field.after('<div class="invalid-feedback d-block ajax-error">' + msgs.join(', ') + '</div>');
+                        }
+                    });
+                    if (data.errors.__all__) {
+                        $form.find('.modal-body').prepend(
+                            '<div class="alert alert-danger ajax-error">' + data.errors.__all__.join('<br>') + '</div>'
+                        );
+                    }
+                }
+            },
+            error: function(xhr) {
+                console.error('Error al guardar saliente:', xhr.status, xhr.responseText);
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.error) {
+                        $form.find('.modal-body').prepend(
+                            '<div class="alert alert-danger ajax-error"><i class="bi bi-exclamation-triangle me-2"></i>' + data.error + '</div>'
+                        );
+                    } else if (data.errors) {
+                        var prefix = 'rapida_sal';
+                        $.each(data.errors, function(field, msgs) {
+                            if (field === '__all__') return; // handled below
+                            var fieldId = '#id_' + prefix + '-' + field;
+                            var $field = $form.find(fieldId);
+                            if ($field.length) {
+                                $field.addClass('is-invalid');
+                                $field.after('<div class="invalid-feedback d-block ajax-error">' + msgs.join(', ') + '</div>');
+                            }
+                        });
+                        if (data.errors.__all__) {
+                            $form.find('.modal-body').prepend(
+                                '<div class="alert alert-danger ajax-error"><i class="bi bi-exclamation-triangle me-2"></i>' + data.errors.__all__.join('<br>') + '</div>'
+                            );
+                        }
+                    }
+                } catch(e) {
+                    $form.find('.modal-body').prepend(
+                        '<div class="alert alert-danger ajax-error"><i class="bi bi-exclamation-triangle me-2"></i>Error al guardar los cambios. Revise la conexión e intente nuevamente.</div>'
+                    );
+                }
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false).html('<i class="bi bi-check-lg me-1"></i>Guardar Cambios');
+            }
+        });
+    });
+
+    // Restaurar modal al cerrarse
+    $(modalEl).on('hidden.bs.modal', function() {
+        if (editandoPk) {
+            editandoPk = null;
+            $('#modalRadicacionRapidaSalienteLabel').html(tituloOriginal);
+            $('#alert-rapida-saliente').html(alertaOriginal);
+            $('#btn-submit-rapida-saliente').html(btnTextoOriginal);
+            $form[0].reset();
+            $form.data('edit-url', '');
+            $form.find('.invalid-feedback.ajax-error').remove();
+            $form.find('.alert.ajax-error').remove();
+            $form.find('.is-invalid').removeClass('is-invalid');
+            $('#radicado-entrada-correspondiente').val('');
+            $('#campo-radicado-entrada-saliente').addClass('d-none');
+            $('#link-evidencia-actual').attr('href', '#').text('');
+            $('#evidencia-actual-saliente').addClass('d-none');
+            // Reset Select2
+            $form.find('select.select2-hidden-accessible').trigger('change.select2');
+        }
+    });
+});
+</script>
+{% endblock %}

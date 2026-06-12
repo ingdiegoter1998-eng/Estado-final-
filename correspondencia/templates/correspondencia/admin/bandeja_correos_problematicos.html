@@ -1,0 +1,116 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+
+{% block title %}Bandeja de Correos Problemáticos{% endblock %}
+{% block page_title %}Bandeja de Correos Problemáticos{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'correspondencia:bandeja_correos_pendientes' %}" class="btn btn-outline-primary me-2">
+  <i class="bi bi-inbox me-1"></i> Ver bandeja normal
+</a>
+<a href="{% url 'correspondencia:control_sincronizacion_correos' %}" class="btn btn-outline-secondary">
+  <i class="bi bi-activity me-1"></i> Control de sincronización
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+  <div class="col-md-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase mb-1">Pendientes</div>
+        <div class="fs-3 fw-bold text-warning">{{ pendientes_count }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 col-xl-3">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase mb-1">Resueltos</div>
+        <div class="fs-3 fw-bold text-success">{{ resueltos_count }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-lg-5">
+        <label for="id_q" class="form-label">Buscar</label>
+        <input type="text" class="form-control" id="id_q" name="q" value="{{ filtro_q }}" placeholder="Remitente, asunto, motivo o Message-ID">
+      </div>
+      <div class="col-lg-2">
+        <label for="id_estado" class="form-label">Estado</label>
+        <select class="form-select" id="id_estado" name="estado">
+          <option value="">Todos</option>
+          <option value="pendiente" {% if filtro_estado == 'pendiente' %}selected{% endif %}>Pendientes</option>
+          <option value="resuelto" {% if filtro_estado == 'resuelto' %}selected{% endif %}>Resueltos</option>
+        </select>
+      </div>
+      <div class="col-lg-2">
+        <label for="id_desde" class="form-label">Desde</label>
+        <input type="date" class="form-control" id="id_desde" name="desde" value="{{ filtro_desde }}">
+      </div>
+      <div class="col-lg-2">
+        <label for="id_hasta" class="form-label">Hasta</label>
+        <input type="date" class="form-control" id="id_hasta" name="hasta" value="{{ filtro_hasta }}">
+      </div>
+      <div class="col-lg-1 d-grid">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card shadow-sm">
+  <div class="card-header">
+    <strong>Correos problemáticos</strong>
+    <div class="small text-muted">Estos correos sí fueron detectados por IMAP, pero quedaron fuera del flujo normal. Aquí permanecen visibles para tratamiento manual.</div>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Recepción</th>
+            <th>Remitente</th>
+            <th>Asunto</th>
+            <th>Motivo</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for correo in correos %}
+          <tr>
+            <td>{{ correo.fecha_recibida_gmail|default:correo.fecha_lectura_imap|date:"Y-m-d H:i" }}</td>
+            <td>{{ correo.remitente }}</td>
+            <td title="{{ correo.asunto }}">{{ correo.asunto|truncatechars:90 }}</td>
+            <td>
+              <span class="badge bg-warning text-dark">{{ correo.motivo_problema }}</span>
+              <div class="small text-muted mt-1">{{ correo.detalle_problema|truncatechars:120 }}</div>
+            </td>
+            <td>
+              {% if correo.resuelto %}
+                <span class="badge bg-success">Resuelto</span>
+              {% else %}
+                <span class="badge bg-danger">Pendiente</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{% url 'correspondencia:detalle_correo_problematico' correo.id %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" class="text-center py-4 text-muted">No hay correos problemáticos registrados.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

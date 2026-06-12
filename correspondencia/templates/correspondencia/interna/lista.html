@@ -1,0 +1,165 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static humanize crispy_forms_tags %}
+
+{% block title %}Comunicaciones Internas{% endblock %}
+{% block page_title %}Comunicaciones Internas (Oficios){% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">
+            <i class="bi bi-file-earmark-text me-2"></i>Comunicaciones Internas
+        </h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalComunicacionInterna">
+            <i class="bi bi-plus-circle me-2"></i>Nueva Comunicación
+        </button>
+    </div>
+
+    <!-- Búsqueda -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-10">
+                    <input type="text" name="q" class="form-control" 
+                           placeholder="Buscar por radicado o asunto..." 
+                           value="{{ request.GET.q }}">
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search me-2"></i>Buscar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tabla de Comunicaciones -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            {% if comunicaciones %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Radicado</th>
+                                <th>Fecha Documento</th>
+                                <th>Asunto</th>
+                                <th>De</th>
+                                <th>Para</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for com in comunicaciones %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ com.radicado|default:"BORRADOR" }}</strong>
+                                    </td>
+                                    <td>{{ com.fecha_documento|date:"d/m/Y" }}</td>
+                                    <td>{{ com.asunto|truncatewords:10 }}</td>
+                                    <td>{{ com.remitente_oficina.nombre }}</td>
+                                    <td>
+                                        {% if com.es_a_toda_entidad or com.tipo_distribucion == 'ENTIDAD' %}
+                                            <span class="badge bg-primary">
+                                                <i class="bi bi-people-fill me-1"></i>Toda la Entidad
+                                            </span>
+                                        {% elif com.tipo_distribucion == 'PROCESO' %}
+                                            <span class="badge bg-info">
+                                                <i class="bi bi-diagram-3-fill me-1"></i>{{ com.destinatario_proceso.nombre|default:"Proceso" }}
+                                            </span>
+                                        {% elif com.destinatarios_multiples.exists %}
+                                            {% for dest in com.destinatarios_multiples.all|slice:":2" %}
+                                                {% if dest.tipo == 'OFICINA' %}
+                                                    <span class="badge bg-info mb-1">
+                                                        <i class="bi bi-building-fill me-1"></i>{{ dest.oficina.nombre|truncatewords:3 }}
+                                                    </span>
+                                                {% elif dest.tipo == 'USUARIO' %}
+                                                    <span class="badge bg-primary mb-1">
+                                                        <i class="bi bi-person-fill me-1"></i>{{ dest.usuario.first_name|default:dest.usuario.username }}
+                                                    </span>
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% with total=com.destinatarios_multiples.count %}
+                                                {% if total > 2 %}
+                                                    <span class="badge bg-secondary">+{{ total|add:"-2" }}</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% elif com.destinatario_oficina %}
+                                            {{ com.destinatario_oficina.nombre }}
+                                            {% if com.destinatario_usuario %}
+                                                <br><small class="text-muted">{{ com.destinatario_usuario.get_full_name }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if com.estado == 'ENVIADA' %}success{% elif com.estado == 'BORRADOR' %}secondary{% elif com.estado == 'PENDIENTE_APROBACION' %}warning{% else %}danger{% endif %}">
+                                            {{ com.get_estado_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'correspondencia:interna_detalle' com.pk %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        {% if com.archivo_generado %}
+                                            <a href="/calendario/documento/{{ com.pk }}" 
+                                               target="_blank"
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="Previsualizar PDF">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'correspondencia:interna_descargar' com.pk %}" 
+                                               class="btn btn-sm btn-outline-success"
+                                               title="Descargar PDF">
+                                                <i class="bi bi-download"></i>
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                {% if is_paginated %}
+                    <nav aria-label="Paginación">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Primera</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Anterior</a>
+                                </li>
+                            {% endif %}
+                            <li class="page-item active">
+                                <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                            </li>
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Siguiente</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">Última</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>No hay comunicaciones internas registradas.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Incluir el modal de comunicación interna -->
+{% include 'correspondencia/partials/modals/modal_comunicacion_interna.html' %}
+{% endblock %}
+

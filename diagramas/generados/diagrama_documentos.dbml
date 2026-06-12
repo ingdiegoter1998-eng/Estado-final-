@@ -1,0 +1,325 @@
+// Diagrama de Base de Datos - Módulo DOCUMENTOS
+// Sistema de Gestión Documental y Correspondencia
+// Hospital del Sarare
+// Generado automáticamente
+
+Project documentos_module {
+  database_type: 'PostgreSQL'
+  Note: 'Módulo DOCUMENTOS'
+}
+
+// SerieDocumental
+Table documentos_seriedocumental {
+  id bigint [pk, increment]
+  codigo varchar(50) [not null]
+  nombre varchar(255) [not null]
+}
+
+// SubserieDocumental
+Table documentos_subseriedocumental {
+  id bigint [pk, increment]
+  codigo varchar(50) [not null]
+  nombre varchar(255) [not null]
+  serie integer [not null]
+}
+
+// EntidadProductora
+Table documentos_entidadproductora {
+  id bigint [pk, increment]
+  nombre varchar(255) [unique, not null]
+}
+
+// MacroProceso
+Table documentos_macroproceso {
+  id bigint [pk, increment]
+  numero integer [unique, not null]
+  nombre varchar(255) [not null]
+}
+
+// Proceso
+Table documentos_proceso {
+  id bigint [pk, increment]
+  numero integer [not null]
+  nombre varchar(255) [not null]
+  sigla varchar(20) [not null]
+  macroproceso integer [not null]
+}
+
+// UnidadAdministrativa
+Table documentos_unidadadministrativa {
+  id bigint [pk, increment]
+  nombre varchar(255) [not null]
+  entidad_productora integer [not null]
+}
+
+// OficinaProductora
+Table documentos_oficinaproductora {
+  id bigint [pk, increment]
+  nombre varchar(255) [not null]
+  codigo varchar(50)
+  unidad_administrativa integer [not null]
+  proceso integer [not null]
+}
+
+// Objeto
+Table documentos_objeto {
+  id bigint [pk, increment]
+  nombre varchar(255) [unique, not null]
+}
+
+// FUID
+Table documentos_fuid {
+  id bigint [pk, increment]
+  entidad_productora integer
+  unidad_administrativa integer
+  oficina_productora integer
+  objeto integer
+  fecha_creacion timestamp [not null]
+  creado_por integer
+  notas varchar(245)
+  elaborado_por_nombre varchar(255)
+  elaborado_por_cargo varchar(255)
+  elaborado_por_lugar varchar(255)
+  elaborado_por_fecha date
+  entregado_por_nombre varchar(255)
+  entregado_por_cargo varchar(255)
+  entregado_por_lugar varchar(255)
+  entregado_por_fecha date
+  recibido_por_nombre varchar(255)
+  recibido_por_cargo varchar(255)
+  recibido_por_lugar varchar(255)
+  recibido_por_fecha date
+}
+
+// RegistroDeArchivo
+Table documentos_registrodearchivo {
+  id bigint [pk, increment]
+  Estado_archivo boolean [not null]
+  numero_orden integer [not null]
+  codigo varchar(50)
+  codigo_serie integer [not null]
+  codigo_subserie integer
+  unidad_documental varchar(255) [not null]
+  fecha_archivo date
+  fecha_inicial date
+  fecha_final date
+  soporte_fisico boolean [not null]
+  soporte_electronico boolean [not null]
+  caja integer
+  carpeta integer
+  tomo_legajo_libro varchar(50)
+  numero_folios integer
+  tipo varchar(100)
+  cantidad integer
+  ubicacion varchar(255)
+  cantidad_documentos_electronicos integer
+  tamano_documentos_electronicos varchar(50)
+  identificador_documento varchar(150)
+  notas text
+  creado_por integer
+  fecha_creacion timestamp [not null]
+}
+
+// Documento
+Table documentos_documento {
+  id bigint [pk, increment]
+  registro integer [not null]
+  archivo varchar(500) [not null]
+  uploaded_at timestamp [not null]
+}
+
+// PermisoUsuarioSerie
+Table documentos_permisousuarioserie {
+  id bigint [pk, increment]
+  usuario integer [not null]
+  serie integer [not null]
+  permiso_crear boolean [not null]
+  permiso_editar boolean [not null]
+  permiso_consultar boolean [not null]
+  permiso_eliminar boolean [not null]
+}
+
+// TipoDocumento
+Table documentos_tipodocumento {
+  id bigint [pk, increment]
+  nombre varchar(50) [unique, not null]
+}
+
+// Nacionalidad
+Table documentos_nacionalidad {
+  id bigint [pk, increment]
+  nombre varchar(100) [unique, not null]
+}
+
+// FichaPaciente
+Table documentos_fichapaciente {
+  consecutivo integer [pk, increment]
+  primer_nombre varchar(50) [not null]
+  segundo_nombre varchar(50)
+  primer_apellido varchar(50) [not null]
+  segundo_apellido varchar(50)
+  num_identificacion varchar(50)
+  tipo_identificacion integer
+  num_identificacion_secundario varchar(50)
+  tipo_identificacion_secundario integer
+  fecha_nacimiento date
+  primer_nombre_padre varchar(50)
+  segundo_nombre_padre varchar(50)
+  primer_apellido_padre varchar(50)
+  segundo_apellido_padre varchar(50)
+  Numero_historia_clinica bigint [unique, not null]
+  caja varchar(20) [not null]
+  carpeta varchar(20) [not null]
+  gabeta integer
+  sexo varchar(10) [not null]
+  activo boolean [not null]
+  estado_de_migracion boolean [not null]
+  Fecha_de_visita_de_la_tarjeta date
+  ultimo_registro_de_visita_en_la_base_de_datos date
+  año_de_registro integer
+  nacionalidad integer
+}
+
+// PerfilUsuario
+Table documentos_perfilusuario {
+  id bigint [pk, increment]
+  user integer [unique, not null]
+  oficina integer [not null]
+  cargo varchar(150)
+  tipo_documento varchar(3) [not null]
+  numero_documento varchar(20) [unique]
+  fecha_nacimiento date
+  direccion varchar(200)
+  telefono varchar(20)
+  firma_digital varchar(500)
+  fecha_firma_creada timestamp
+  fecha_registro timestamp
+  solicita_lider boolean [not null]
+}
+
+// PrestamoDocumental
+Table documentos_prestamodocumental {
+  id bigint [pk, increment]
+  registro integer
+  fuid integer
+  solicitante integer [not null]
+  oficina_solicitante integer
+  subproceso_solicitante varchar(255)
+  codigo_trd varchar(50)
+  serie integer
+  subserie integer
+  descripcion_documento text
+  tipo_prestamo varchar(10) [not null]
+  estado varchar(20) [not null]
+  fecha_solicitud timestamp [not null]
+  fecha_aprobacion timestamp
+  fecha_entrega timestamp
+  fecha_vencimiento date
+  fecha_devolucion timestamp
+  fecha_reintegracion timestamp
+  aprobado_por integer
+  procesado_por integer
+  vobo_jefe_nombre varchar(255)
+  vobo_jefe_cargo varchar(255)
+  vobo_jefe_fecha date
+  documento_escaneado varchar(500)
+  documento_virtual varchar(500)
+  motivo_rechazo text
+  motivo_rechazo_usuario text
+  documento_rechazo varchar(500)
+  documento_devuelto boolean [not null]
+  documento_danado boolean [not null]
+  observaciones_dano text
+  confirmado_por_usuario boolean [not null]
+  fecha_confirmacion timestamp
+  notas text
+}
+
+// DocumentoEscaneadoPrestamo
+Table documentos_documentoescaneadoprestamo {
+  id bigint [pk, increment]
+  prestamo integer [not null]
+  archivo varchar(500) [not null]
+  uploaded_at timestamp [not null]
+  nombre_archivo_original varchar(255)
+  confirmado boolean [not null]
+  fecha_confirmacion timestamp
+  uploaded_by integer
+}
+
+// NotificacionAvisoPrestamo
+Table documentos_notificacionavisoprestamo {
+  id bigint [pk, increment]
+  prestamo integer [not null]
+  documento_oficio varchar(500) [not null]
+  observaciones text
+  fecha_notificacion timestamp [not null]
+  notificado_por integer
+  oficina_notificada integer
+}
+
+// HistorialPrestamo
+Table documentos_historialprestamo {
+  id bigint [pk, increment]
+  prestamo integer [not null]
+  usuario integer
+  evento varchar(100) [not null]
+  descripcion text
+  fecha timestamp [not null]
+}
+
+// ========== RELACIONES ==========
+
+Ref: documentos_subseriedocumental.serie > documentos_seriedocumental.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: documentos_proceso.macroproceso > documentos_macroproceso.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: documentos_unidadadministrativa.entidad_productora > documentos_entidadproductora.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: documentos_oficinaproductora.unidad_administrativa > documentos_unidadadministrativa.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: documentos_oficinaproductora.proceso > documentos_proceso.id [note: "<function PROTECT at 0x0000019090F049A0"]
+Ref: documentos_fuid.entidad_productora > documentos_entidadproductora.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: documentos_fuid.unidad_administrativa > documentos_unidadadministrativa.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: documentos_fuid.oficina_productora > documentos_oficinaproductora.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: documentos_fuid.objeto > documentos_objeto.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: documentos_registrodearchivo.codigo_serie > documentos_seriedocumental.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: documentos_registrodearchivo.codigo_subserie > documentos_subseriedocumental.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: documentos_documento.registro > documentos_registrodearchivo.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: documentos_permisousuarioserie.serie > documentos_seriedocumental.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: documentos_fichapaciente.tipo_identificacion > documentos_tipodocumento.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: documentos_fichapaciente.tipo_identificacion_secundario > documentos_tipodocumento.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: documentos_fichapaciente.nacionalidad > documentos_nacionalidad.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: documentos_perfilusuario.oficina > documentos_oficinaproductora.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: documentos_prestamodocumental.registro > documentos_registrodearchivo.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: documentos_prestamodocumental.fuid > documentos_fuid.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: documentos_prestamodocumental.oficina_solicitante > documentos_oficinaproductora.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: documentos_prestamodocumental.serie > documentos_seriedocumental.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: documentos_prestamodocumental.subserie > documentos_subseriedocumental.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: documentos_documentoescaneadoprestamo.prestamo > documentos_prestamodocumental.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: documentos_notificacionavisoprestamo.prestamo > documentos_prestamodocumental.id [note: "<function CASCADE at 0x0000019090EA9080"]
+Ref: documentos_notificacionavisoprestamo.oficina_notificada > documentos_oficinaproductora.id [note: "<function SET_NULL at 0x0000019090F04B80"]
+Ref: documentos_historialprestamo.prestamo > documentos_prestamodocumental.id [note: "<function CASCADE at 0x0000019090EA9080"]
+
+// ========== RELACIONES MANY-TO-MANY ==========
+
+Ref: documentos_fuid.id <> documentos_registrodearchivo.id // registros
+
+TableGroup documentos {
+  documentos_seriedocumental
+  documentos_subseriedocumental
+  documentos_entidadproductora
+  documentos_macroproceso
+  documentos_proceso
+  documentos_unidadadministrativa
+  documentos_oficinaproductora
+  documentos_objeto
+  documentos_fuid
+  documentos_registrodearchivo
+  documentos_documento
+  documentos_permisousuarioserie
+  documentos_tipodocumento
+  documentos_nacionalidad
+  documentos_fichapaciente
+  documentos_perfilusuario
+  documentos_prestamodocumental
+  documentos_documentoescaneadoprestamo
+  documentos_notificacionavisoprestamo
+  documentos_historialprestamo
+}

@@ -1,0 +1,729 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ urgencia.radicado }} - Detalle Urgencia{% endblock %}
+{% block page_title %}{{ urgencia.radicado }}{% endblock %}
+
+{% block extra_styles %}
+<style>
+/* Timeline Vertical */
+.timeline {
+    position: relative;
+    padding: 0;
+    list-style: none;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 18px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, #007bff 0%, #28a745 100%);
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 50px;
+    padding-bottom: 25px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 10px;
+    top: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px;
+    border-left: 3px solid #dee2e6;
+}
+
+.timeline-header {
+    margin-bottom: 5px;
+}
+
+.timeline-body {
+    font-size: 0.85rem;
+}
+
+/* Sticky Sidebar */
+.sticky-sidebar {
+    position: sticky;
+    top: 20px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+}
+
+/* Cronómetro Digital */
+.cronometro-digital {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    border-radius: 12px;
+    padding: 40px 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3), inset 0 1px 3px rgba(255,255,255,0.1);
+    min-height: 350px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.cronometro-display {
+    font-family: 'Orbitron', 'Share Tech Mono', 'Space Mono', 'Courier New', 'Consolas', monospace !important;
+    font-size: 9rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.12em !important;
+    color: #dc3545 !important;
+    text-shadow: 0 0 18px currentColor, 0 4px 10px rgba(0,0,0,0.6) !important;
+    line-height: 1 !important;
+    margin: 20px 0 !important;
+}
+
+/* Adjuntos Cards */
+.adjunto-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 3px solid #007bff;
+}
+
+.adjunto-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.adjunto-icon {
+    font-size: 2rem;
+    color: #007bff;
+}
+
+/* Grid de Metadatos */
+.meta-card {
+    border-left: 3px solid #dee2e6;
+    transition: border-color 0.3s;
+}
+
+.meta-card:hover {
+    border-left-color: #007bff;
+}
+
+.meta-icon {
+    font-size: 1.5rem;
+    opacity: 0.7;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% if urgencia %}
+<div class="container-fluid mt-3">
+    <!-- Header Compacto Unificado -->
+    <div class="d-flex justify-content-between align-items-center mb-4 p-3 bg-white rounded-3 shadow-sm">
+        <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-fire text-danger" style="font-size: 2rem;"></i>
+            <div>
+                <h2 class="mb-0 text-primary">{{ urgencia.radicado }}</h2>
+                <small class="text-muted">{{ urgencia.fecha_radicacion|date:"d/m/Y H:i" }}</small>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <span class="badge bg-{% if urgencia.estado == 'RESPONDIDA' %}success{% elif urgencia.estado == 'VENCIDA' %}danger{% elif urgencia.estado == 'EN_PROCESO' %}info{% else %}warning{% endif %} text-white" style="font-size: 0.95rem; padding: 0.5rem 1rem;">
+                {{ urgencia.get_estado_display }}
+            </span>
+            <span class="badge bg-{% if urgencia.prioridad == 'CRITICA' %}danger{% else %}warning{% endif %}" style="font-size: 0.95rem; padding: 0.5rem 1rem;">
+                {{ urgencia.get_prioridad_display }}
+            </span>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- COLUMNA PRINCIPAL (70%) -->
+        <div class="col-lg-8">
+            <!-- Grid de Metadatos Compacto -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card meta-card shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-envelope meta-icon text-primary me-3"></i>
+                                <div>
+                                    <small class="text-muted d-block">Remitente</small>
+                                    <strong class="d-block text-break" style="max-width: 100%;" title="{{ urgencia.correo_entrante.remitente }}">
+                                        {{ urgencia.correo_entrante.remitente|default:"No especificado"|truncatechars:80 }}
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card meta-card shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-building meta-icon text-success me-3"></i>
+                                <div>
+                                    <small class="text-muted d-block">Oficina Destino</small>
+                                    <strong class="text-truncate d-block" style="max-width: 200px;" title="{{ urgencia.oficina_destino.nombre }}">
+                                        {{ urgencia.oficina_destino.nombre|default:"N/A"|truncatechars:25 }}
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card meta-card shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-person-check meta-icon text-info me-3"></i>
+                                <div>
+                                    <small class="text-muted d-block">Radicado por</small>
+                                    <strong class="text-truncate d-block" style="max-width: 200px;">
+                                        {{ urgencia.usuario_radica.get_full_name|default:urgencia.usuario_radica.username|default:"Sistema"|truncatechars:25 }}
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Asunto del Correo -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body bg-light">
+                    <div class="d-flex align-items-start">
+                        <i class="bi bi-chat-left-text text-primary me-3" style="font-size: 1.5rem;"></i>
+                        <div>
+                            <small class="text-muted d-block mb-1">Asunto</small>
+                            <h5 class="mb-0">{{ urgencia.correo_entrante.asunto }}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Motivo de Urgencia -->
+            <div class="card shadow-sm mb-4 border-warning">
+                <div class="card-header bg-warning bg-opacity-10">
+                    <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>
+                    <strong>Motivo de Urgencia</strong>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ urgencia.motivo_urgencia|linebreaks }}</p>
+                    {% if urgencia.observaciones %}
+                    <hr class="my-3">
+                    <small class="text-muted d-block mb-2"><strong>Observaciones:</strong></small>
+                    <p class="mb-0 text-muted">{{ urgencia.observaciones|linebreaks }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Información Documental Compacta -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <small class="text-muted"><i class="bi bi-folder me-1"></i> Serie Documental</small>
+                            <p class="mb-0"><strong>{{ urgencia.serie.nombre|default:"N/A" }}</strong></p>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted"><i class="bi bi-folder2-open me-1"></i> Subserie Documental</small>
+                            <p class="mb-0"><strong>{{ urgencia.subserie.nombre|default:"N/A" }}</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Archivos Adjuntos Rediseñados -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary bg-opacity-10 text-white">
+                    <i class="bi bi-paperclip me-2 text-white"></i>
+                    <strong class="text-white">Archivos Adjuntos del Correo</strong>
+                    {% if urgencia.correo_entrante.adjuntos.all %}
+                        <span class="badge bg-white text-primary ms-2">{{ urgencia.correo_entrante.adjuntos.count }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if urgencia.correo_entrante.adjuntos.all %}
+                    <div class="row g-3">
+                        {% for adj in urgencia.correo_entrante.adjuntos.all %}
+                        <div class="col-md-6">
+                            <div class="card adjunto-card shadow-sm h-100">
+                                <div class="card-body p-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-file-earmark-pdf adjunto-icon me-3"></i>
+                                        <div class="flex-grow-1 overflow-hidden">
+                                            <a href="{{ adj.archivo.url }}" target="_blank" class="text-decoration-none text-dark d-block fw-bold text-truncate" title="{{ adj.nombre_original|default:adj.archivo.name }}">
+                                                {{ adj.nombre_original|default:adj.archivo.name|truncatechars:35 }}
+                                            </a>
+                                            <small class="text-muted">
+                                                {{ adj.archivo.size|filesizeformat }} • {{ adj.fecha_carga|date:"d/m/Y" }}
+                                            </small>
+                                        </div>
+                                        <a href="{{ adj.archivo.url }}" target="_blank" class="btn btn-sm btn-outline-primary ms-2">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-inbox" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                        <p class="mb-0 mt-2">No hay archivos adjuntos</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Contenido del Correo -->
+            {% if urgencia.correo_entrante.cuerpo_html or urgencia.correo_entrante.cuerpo_texto %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-envelope-open me-2"></i><strong>Contenido del Correo</strong>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalContenidoCorreo">
+                        <i class="bi bi-arrows-fullscreen me-1"></i>Expandir
+                    </button>
+                </div>
+                <div class="card-body">
+                    {% if urgencia.correo_entrante.cuerpo_html %}
+                        <div class="border rounded-3 p-3 bg-white" style="max-height: 400px; overflow-y: auto;">
+                             {{ urgencia.correo_entrante.cuerpo_html|safe }}
+                        </div>
+                    {% elif urgencia.correo_entrante.cuerpo_texto %}
+                         <pre class="border rounded-3 p-3 bg-white mb-0" style="white-space: pre-wrap; word-wrap: break-word; max-height: 400px; overflow-y: auto;">{{ urgencia.correo_entrante.cuerpo_texto }}</pre>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Respuesta -->
+            {% if urgencia.estado == 'RESPONDIDA' and urgencia.respuesta %}
+            <div id="respuestaDetalle" class="card shadow-sm mb-4 border-success">
+                <div class="card-header bg-success bg-opacity-10">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    <strong>Respuesta Enviada</strong>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <small class="text-muted"><i class="bi bi-person me-1"></i> Respondido por</small>
+                            <p class="mb-0"><strong>{{ urgencia.usuario_responde.get_full_name|default:urgencia.usuario_responde.username }}</strong></p>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted"><i class="bi bi-calendar-check me-1"></i> Fecha de Respuesta</small>
+                            <p class="mb-0"><strong>{{ urgencia.fecha_respuesta|date:"d/m/Y H:i" }}</strong></p>
+                        </div>
+                    </div>
+                    <hr class="my-3">
+                    <small class="text-muted d-block mb-2"><strong>Contenido:</strong></small>
+                    <div class="border rounded-3 p-3 bg-light">
+                        {{ urgencia.respuesta|linebreaks }}
+                    </div>
+
+                    {% if urgencia.adjuntos_respuesta.all %}
+                    <hr class="my-3">
+                    <small class="text-muted d-block mb-3"><strong><i class="bi bi-paperclip me-1"></i> Archivos Adjuntos en la Respuesta</strong></small>
+                    <div class="row g-2">
+                        {% for adj in urgencia.adjuntos_respuesta.all %}
+                        <div class="col-md-6">
+                            <div class="card shadow-sm">
+                                <div class="card-body p-2">
+                                    <a href="{{ adj.archivo.url }}" target="_blank" class="text-decoration-none text-dark d-flex align-items-center">
+                                        <i class="bi bi-file-earmark-check text-success me-2"></i>
+                                        <div class="flex-grow-1">
+                                            <small class="d-block text-truncate">{{ adj.nombre_original|default:adj.archivo.name|truncatechars:40 }}</small>
+                                            <small class="text-muted">{{ adj.tamaño_bytes|filesizeformat }}</small>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- COLUMNA LATERAL (30% - STICKY) -->
+        <div class="col-lg-4">
+            <div class="sticky-sidebar">
+                <!-- Cronómetro Digital Rediseñado -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body p-0">
+                        <div class="cronometro-digital" style="padding: 20px 15px; min-height: 180px;">
+                            <div class="text-center">
+                                <small class="text-white-50 d-block mb-1" style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.15em; font-weight: 600;">
+                                    <i class="bi bi-alarm me-2"></i>Tiempo Restante
+                                </small>
+                                <div class="cronometro-display" id="cronometroGrande" style="font-size: 4.5rem !important; margin: 10px 0 !important;">--:--:--</div>
+                                <small class="text-white-50 d-block mt-1" style="font-size: 0.8rem; font-weight: 500;">
+                                    <i class="bi bi-calendar-event me-1"></i>Límite: {{ urgencia.fecha_limite|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                        </div>
+                            
+                    </div>
+                </div>
+
+                <!-- Acciones Rápidas -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-info bg-opacity-10">
+                        <i class="bi bi-lightning-fill text-info me-2"></i><strong>Acciones</strong>
+                    </div>
+                    <div class="card-body">
+                        {% if urgencia.estado == 'PENDIENTE' %}
+                        <form method="post" action="{% url 'correspondencia:tomar_urgencia' urgencia.pk %}" class="mb-2">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-hand-index-thumb me-2"></i>Tomar Urgencia
+                            </button>
+                        </form>
+                        <small class="text-muted d-block text-center">Se asignará automáticamente</small>
+                        {% endif %}
+
+                        {% if puede_responder and urgencia.estado == 'EN_PROCESO' %}
+                        <button type="button" class="btn btn-success w-100 mb-2" data-bs-toggle="modal" data-bs-target="#modalResponderUrgencia">
+                            <i class="bi bi-reply-fill me-2"></i>Responder
+                        </button>
+                        {% endif %}
+
+                        {% if urgencia.estado == 'RESPONDIDA' %}
+                            {% with respuesta_salida=urgencia.respuestas_salientes.first %}
+                            {% if respuesta_salida and respuesta_salida.pk %}
+                            <a href="{% url 'correspondencia:detalle_respuesta_salida' respuesta_salida.pk %}" class="btn btn-outline-success w-100 mb-2">
+                                <i class="bi bi-check2-circle me-2"></i>Ver detalle de la respuesta
+                            </a>
+                            {% else %}
+                            <button type="button" class="btn btn-outline-success w-100 mb-2" disabled title="Respuesta en preparación">
+                                <i class="bi bi-check2-circle me-2"></i>Ver detalle de la respuesta
+                            </button>
+                            {% endif %}
+                            {% endwith %}
+                        {% endif %}
+
+                        <a href="{% url 'correspondencia:buzon_urgencias' %}" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-arrow-left me-2"></i>Volver al Buzón
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Responsable -->
+                {% if urgencia.usuario_asignado %}
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-success bg-opacity-10">
+                        <i class="bi bi-person-check-fill text-success me-2"></i><strong>Responsable</strong>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                                <i class="bi bi-person-circle text-success" style="font-size: 2.5rem;"></i>
+                            </div>
+                        </div>
+                        <h6 class="mb-1">{{ urgencia.usuario_asignado.get_full_name|default:urgencia.usuario_asignado.username }}</h6>
+                        <small class="text-muted d-block mb-2">{{ urgencia.usuario_asignado.email }}</small>
+                        <hr class="my-2">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar-check me-1"></i>
+                            Desde: {{ urgencia.fecha_asignacion|date:"d/m/Y H:i" }}
+                        </small>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Timeline Vertical -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-secondary bg-opacity-10">
+                        <i class="bi bi-clock-history me-2"></i><strong>Historial</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            <!-- Radicación -->
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-primary"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-header">
+                                        <span class="badge bg-primary" style="font-size: 0.7rem;">Radicación</span>
+                                    </div>
+                                    <div class="timeline-body">
+                                        <small class="text-muted d-block">{{ urgencia.fecha_radicacion|date:"d/m/Y H:i" }}</small>
+                                        <small class="text-muted">{{ urgencia.usuario_radica.get_full_name|default:"Sistema"|truncatechars:20 }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Asignación -->
+                            {% if urgencia.fecha_asignacion %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-info"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-header">
+                                        <span class="badge bg-info" style="font-size: 0.7rem;">Asignación</span>
+                                    </div>
+                                    <div class="timeline-body">
+                                        <small class="text-muted d-block">{{ urgencia.fecha_asignacion|date:"d/m/Y H:i" }}</small>
+                                        <small class="text-muted">{{ urgencia.usuario_asignado.get_full_name|default:"Usuario"|truncatechars:20 }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Respuesta -->
+                            {% if urgencia.fecha_respuesta %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <div class="timeline-header">
+                                        <span class="badge bg-success" style="font-size: 0.7rem;">Respuesta</span>
+                                    </div>
+                                    <div class="timeline-body">
+                                        <small class="text-muted d-block">{{ urgencia.fecha_respuesta|date:"d/m/Y H:i" }}</small>
+                                        <small class="text-muted">{{ urgencia.usuario_responde.get_full_name|default:"Usuario"|truncatechars:20 }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de respuesta completo (usando el mismo que correspondencia) -->
+{% include 'correspondencia/partials/modals/modal_responder_correspondencia.html' %}
+
+<!-- Modal para Contenido del Correo Expandido -->
+<div class="modal fade" id="modalContenidoCorreo" tabindex="-1" aria-labelledby="modalContenidoCorreoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalContenidoCorreoLabel">
+                    <i class="bi bi-envelope-open-fill me-2"></i>Contenido Completo del Correo
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" style="background: #f8f9fa;">
+                <!-- Información del correo -->
+                <div class="card shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <small class="text-muted d-block mb-1"><i class="bi bi-person-circle me-1"></i><strong>De:</strong></small>
+                                <p class="mb-0">{{ urgencia.correo_entrante.remitente }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted d-block mb-1"><i class="bi bi-calendar-event me-1"></i><strong>Fecha:</strong></small>
+                                <p class="mb-0">{{ urgencia.fecha_radicacion|date:"d/m/Y H:i:s" }}</p>
+                            </div>
+                            <div class="col-12">
+                                <small class="text-muted d-block mb-1"><i class="bi bi-chat-left-text me-1"></i><strong>Asunto:</strong></small>
+                                <p class="mb-0 fw-bold">{{ urgencia.correo_entrante.asunto }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Contenido del correo -->
+                <div class="card shadow-sm">
+                    <div class="card-body bg-white">
+                        {% if urgencia.correo_entrante.cuerpo_html %}
+                            <div class="p-3">
+                                {{ urgencia.correo_entrante.cuerpo_html|safe }}
+                            </div>
+                        {% elif urgencia.correo_entrante.cuerpo_texto %}
+                            <pre class="p-3 mb-0" style="white-space: pre-wrap; word-wrap: break-word; font-size: 0.95rem;">{{ urgencia.correo_entrante.cuerpo_texto }}</pre>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{% static 'correspondencia/js/modals/core-modals.js' %}"></script>
+<script src="{% static 'correspondencia/js/modals/blocked-recipients.js' %}"></script>
+<script src="{% static 'correspondencia/js/modals/responder-correspondencia.js' %}"></script>
+<script>
+// Configurar el modal para urgencias
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('formResponderCorrespondencia');
+    if (form) {
+        // Configurar para POST normal (no AJAX)
+        const endpoint = "{% url 'correspondencia:responder_urgencia' urgencia.pk %}";
+        form.setAttribute('action', endpoint);
+        form.removeAttribute('data-responder-endpoint');
+        
+        // Interceptar el submit para hacer POST normal en lugar de AJAX
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Validar que haya al menos un destinatario
+            const hiddenInputs = form.querySelectorAll('input[name="destinatarios_contacto"], input[name="destinatarios_email"]');
+            if (hiddenInputs.length === 0) {
+                alert('Debe seleccionar al menos un destinatario.');
+                return false;
+            }
+            
+            // Enviar el formulario de forma normal
+            form.submit();
+        }, true); // Usar capture para ejecutar antes que otros handlers
+        
+        // Cambiar título del modal
+        const modalTitle = document.querySelector('#{{ modal_id }}Label');
+        if (modalTitle) {
+            modalTitle.innerHTML = '<i class="bi bi-fire me-2 text-danger"></i>Responder Urgencia';
+        }
+        
+        // Cambiar el texto del alert info
+        const alertInfo = form.querySelector('.alert-info');
+        if (alertInfo) {
+            alertInfo.innerHTML = '<i class="bi bi-info-circle me-2"></i><strong>Respondiendo a urgencia:</strong> {{ urgencia.radicado }} - {{ urgencia.correo_entrante.asunto|truncatechars:100 }}';
+        }
+        
+        // Cambiar el valor del asunto predeterminado
+        const asuntoInput = document.getElementById('asunto_respuesta');
+        if (asuntoInput) {
+            asuntoInput.value = 'RE: {{ urgencia.correo_entrante.asunto|escapejs }}';
+        }
+        
+        // Cambiar la card del remitente original para mostrar info del correo urgente
+        const remitenteCard = form.querySelector('.card.border-secondary .card-body');
+        if (remitenteCard) {
+            remitenteCard.innerHTML = `
+                <small>
+                    <strong>{{ urgencia.correo_entrante.remitente }}</strong><br>
+                    <span class="text-muted">{{ urgencia.correo_entrante.remitente }}</span>
+                </small>
+            `;
+        }
+    }
+    
+    // Cronómetro regresivo para urgencias
+    (function() {
+        const estadoUrgencia = "{{ urgencia.estado }}";
+        const cronometroGrande = document.getElementById('cronometroGrande');
+        
+        // Si ya está respondida, mostrar estado fijo y no iniciar contador
+        if (estadoUrgencia === 'RESPONDIDA') {
+            if (cronometroGrande) {
+                cronometroGrande.textContent = '✓ RESUELTA';
+                cronometroGrande.style.color = '#28a745';
+                cronometroGrande.style.fontSize = '3rem';
+                cronometroGrande.style.textShadow = 'none';
+            }
+            return; // No iniciar el intervalo
+        }
+        
+        // Si está vencida, mostrar estado fijo
+        if (estadoUrgencia === 'VENCIDA') {
+            if (cronometroGrande) {
+                cronometroGrande.textContent = '¡VENCIDA!';
+                cronometroGrande.style.color = '#6c757d';
+            }
+            return; // No iniciar el intervalo
+        }
+        
+        const fechaLimite = new Date("{{ urgencia.fecha_limite|date:'Y-m-d H:i:s' }}".replace(/-/g, '/'));
+        const horasLimite = {{ urgencia.horas_limite }};
+        const radicacion = new Date("{{ urgencia.fecha_radicacion|date:'Y-m-d H:i:s' }}".replace(/-/g, '/'));
+        
+        const barraProgreso = document.getElementById('barraProgreso');
+        const porcentajeProgreso = document.getElementById('porcentajeProgreso');
+        const horasUsadas = document.getElementById('horasUsadas');
+        const horasRestantes = document.getElementById('horasRestantes');
+        
+        function actualizarTodo() {
+            const ahora = new Date();
+            let diff = Math.floor((fechaLimite - ahora) / 1000);
+            
+            // Calcular tiempo total transcurrido en milisegundos
+            const tiempoTranscurrido = ahora - radicacion;
+            const tiempoTotal = fechaLimite - radicacion;
+            
+            // Calcular porcentaje usado
+            let porcentajeUsado = Math.max(0, Math.min(100, Math.floor((tiempoTranscurrido / tiempoTotal) * 100)));
+            
+            // Actualizar barra de progreso
+            if (barraProgreso) {
+                barraProgreso.style.width = porcentajeUsado + '%';
+                if (porcentajeProgreso) {
+                    porcentajeProgreso.textContent = porcentajeUsado + '%';
+                }
+            }
+            
+            if (diff < 0) {
+                // Vencida
+                if (cronometroGrande) {
+                    cronometroGrande.textContent = '¡VENCIDA!';
+                    cronometroGrande.style.color = '#6c757d';
+                }
+                if (barraProgreso) {
+                    barraProgreso.classList.remove('bg-success', 'bg-warning', 'bg-danger');
+                    barraProgreso.classList.add('bg-dark');
+                }
+                return;
+            }
+            
+            // Formatear tiempo restante
+            const dias = Math.floor(diff / 86400);
+            const horas = Math.floor((diff % 86400) / 3600);
+            const minutos = Math.floor((diff % 3600) / 60);
+            const segundos = diff % 60;
+            
+            let textoTiempo = '';
+            if (dias > 0) {
+                textoTiempo = dias + 'd ' + horas.toString().padStart(2, '0') + ':' + 
+                             minutos.toString().padStart(2, '0') + ':' + 
+                             segundos.toString().padStart(2, '0');
+            } else {
+                textoTiempo = horas.toString().padStart(2, '0') + ':' + 
+                             minutos.toString().padStart(2, '0') + ':' + 
+                             segundos.toString().padStart(2, '0');
+            }
+            
+            // Actualizar cronómetro grande
+            if (cronometroGrande) {
+                cronometroGrande.textContent = textoTiempo;
+                
+                // Forzar color rojo para máxima visibilidad
+                cronometroGrande.style.color = '#dc3545';
+            }
+            
+            // Actualizar horas restantes
+            const horasRestantesVal = (diff / 3600).toFixed(1);
+            if (horasRestantes) {
+                horasRestantes.textContent = horasRestantesVal;
+            }
+        }
+        
+        actualizarTodo();
+        setInterval(actualizarTodo, 1000);
+    })();
+});
+</script>
+{% endblock %}

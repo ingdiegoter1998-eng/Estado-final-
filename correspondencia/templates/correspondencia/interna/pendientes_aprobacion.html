@@ -1,0 +1,161 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static humanize %}
+
+{% block title %}Pendientes de Aprobación{% endblock %}
+{% block page_title %}{{ titulo_pagina|default:'Pendientes de Aprobación' }}{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'correspondencia/css/comunicacion-interna-bandejas.css' %}">
+    <style>
+        .interna-pendientes-page {
+            --tray-accent: #f59e0b;
+            --tray-accent-strong: #b45309;
+            --tray-hero-start: #fff7ed;
+            --tray-hero-end: #ffffff;
+            --tray-kpi-bg: rgba(245, 158, 11, 0.12);
+        }
+
+        .interna-pendientes-page .internal-tray-shell {
+            width: 95%;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="internal-tray-page interna-pendientes-page">
+    <div class="internal-tray-shell">
+        <section class="tray-hero-card">
+            <div class="tray-hero-copy">
+                <span class="tray-kicker"><i class="bi bi-clock-history"></i>Revisión líder</span>
+                <div>
+                    <h1 class="tray-hero-title">{{ titulo_pagina|default:'Pendientes de Aprobación' }}</h1>
+                    <p class="tray-hero-subtitle">Esta bandeja concentra las comunicaciones internas de tu oficina que requieren revisión, aprobación o devolución antes del envío final.</p>
+                </div>
+                <div class="tray-meta-row">
+                    <span class="tray-meta-pill"><i class="bi bi-shield-check"></i>Solo líderes de oficina</span>
+                    <span class="tray-meta-pill"><i class="bi bi-exclamation-circle"></i>Flujo previo a radicación definitiva</span>
+                </div>
+                <div class="tray-hero-actions">
+                    <a href="{% url 'correspondencia:interna_bienvenida' %}" class="tray-btn-secondary"><i class="bi bi-arrow-left"></i>Volver a internas</a>
+                </div>
+            </div>
+            <div class="tray-hero-aside">
+                <div class="tray-stat-grid">
+                    <div class="tray-stat-card">
+                        <span>Total visible</span>
+                        <strong>{% if is_paginated %}{{ page_obj.paginator.count|intcomma }}{% else %}{{ comunicaciones|length|intcomma }}{% endif %}</strong>
+                        <small>Comunicaciones pendientes para decisión en tu oficina.</small>
+                    </div>
+                    <div class="tray-stat-card">
+                        <span>Página actual</span>
+                        <strong>{% if page_obj %}{{ page_obj.number }}{% else %}1{% endif %}</strong>
+                        <small>Entra al flujo de aprobación cuando corresponda.</small>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="tray-nav-card">
+            <div class="tray-nav-list">
+                <a href="{% url 'correspondencia:interna_recibidas' %}" class="tray-nav-link"><i class="bi bi-inbox-fill"></i>Recibidas</a>
+                <a href="{% url 'correspondencia:interna_enviadas' %}" class="tray-nav-link"><i class="bi bi-send-fill"></i>Enviadas</a>
+                <a href="{% url 'correspondencia:interna_pendientes' %}" class="tray-nav-link is-active"><i class="bi bi-clock-history"></i>Pendientes</a>
+            </div>
+        </section>
+
+        <section class="tray-info-band">
+            <div class="tray-info-copy">
+                <strong>Enfoque de la bandeja</strong>
+                <p>Se muestran únicamente las comunicaciones de tu oficina con estado pendiente de aprobación. No se añadieron filtros nuevos para evitar parámetros no soportados por el backend.</p>
+            </div>
+            <span class="tray-page-chip"><i class="bi bi-hourglass-split"></i>Aprobación previa al envío</span>
+        </section>
+
+        {% if comunicaciones %}
+        <section class="tray-table-card">
+            <div class="tray-table-head">
+                <div>
+                    <h2>Documentos pendientes por revisar</h2>
+                    <p>Prioriza el asunto, valida el remitente proyectista y entra al flujo de revisión con un clic.</p>
+                </div>
+                <span class="tray-page-chip"><i class="bi bi-clipboard-check"></i>{% if is_paginated %}{{ page_obj.paginator.count|intcomma }} registros{% else %}{{ comunicaciones|length|intcomma }} registros{% endif %}</span>
+            </div>
+            <div class="tray-table-body">
+                <div class="table-responsive tray-table-wrap">
+                    <table class="table tray-table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Creación</th>
+                                <th>Asunto</th>
+                                <th>Proyectado por</th>
+                                <th>Destino</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for com in comunicaciones %}
+                            <tr class="row-emphasis">
+                                <td>
+                                    <div class="radicado-stack">
+                                        <span class="radicado-pill"><i class="bi bi-calendar3"></i>{{ com.fecha_creacion|date:'d/m/Y' }}</span>
+                                        <span class="muted-copy">{{ com.fecha_creacion|date:'h:i A' }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="subject-stack">
+                                        <span class="subject-title">{{ com.asunto|default:'Sin asunto'|truncatechars:120 }}</span>
+                                        <span class="subcopy">Pendiente de aprobación antes del envío.</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="person-stack">
+                                        <span class="person-name">{{ com.remitente_nombre|default:'Sin remitente' }}</span>
+                                        {% if com.remitente_cargo %}
+                                        <span class="subcopy">{{ com.remitente_cargo }}</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="destination-stack">
+                                        <span class="destination-title">{{ com.destinatario_oficina.nombre|default:'Sin oficina destino' }}</span>
+                                        <span class="status-pill is-warning"><i class="bi bi-hourglass-split"></i>Pendiente de aprobación</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="action-stack">
+                                        <a href="{% url 'correspondencia:interna_detalle' com.pk %}" class="action-btn is-primary" title="Ver detalle"><i class="bi bi-eye"></i></a>
+                                        <a href="{% url 'correspondencia:interna_aprobar' com.pk %}" class="action-btn is-success" title="Aprobar o rechazar"><i class="bi bi-check-circle"></i>Revisar</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+        {% else %}
+        <section class="tray-empty-card">
+            <div class="tray-empty-icon"><i class="bi bi-clipboard-check"></i></div>
+            <h2>No hay comunicaciones pendientes</h2>
+            <p>Tu oficina no tiene comunicaciones internas esperando aprobación en este momento.</p>
+        </section>
+        {% endif %}
+
+        {% if is_paginated %}
+        <nav aria-label="Paginación">
+            <ul class="pagination pagination-modern justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

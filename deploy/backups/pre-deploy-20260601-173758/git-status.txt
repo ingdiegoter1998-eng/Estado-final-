@@ -1,0 +1,86 @@
+ M .gitignore
+ M README.md
+ M correspondencia/api_monitoreo.py
+ M correspondencia/aprobacion_envio.py
+ M correspondencia/context_processors.py
+ M correspondencia/email_backends.py
+ M correspondencia/email_sync_control.py
+ M correspondencia/management/commands/procesar_emails_seguro.py
+ M correspondencia/management/commands/procesar_rebotes.py
+ M correspondencia/models.py
+ M correspondencia/static/correspondencia/css/base_correspondencia_usuario.css
+ M correspondencia/static/correspondencia/css/modern-layout.css
+ M correspondencia/static/correspondencia/css/notificaciones.css
+ M correspondencia/static/correspondencia/js/modern-layout.js
+ M correspondencia/static/correspondencia/js/notificaciones.js
+ M correspondencia/tasks.py
+ M correspondencia/templates/correspondencia/admin/lista_pendientes.html
+ M correspondencia/templates/correspondencia/bases/base_correspondencia.html
+ M correspondencia/templates/correspondencia/bases/base_correspondencia_usuario.html
+ M correspondencia/templates/correspondencia/partials/header_usuario.html
+ M correspondencia/templates/correspondencia/partials/sidebar_usuario.html
+ M correspondencia/templates/correspondencia/usuario/dashboard_usuario.html
+ M correspondencia/urls.py
+ M correspondencia/utils/email_ingestion.py
+ M correspondencia/views.py
+ M deploy/systemd/correspondencia-celery-beat.service
+ M deploy/systemd/correspondencia-celery-worker.service
+ M deploy/systemd/correspondencia.service
+ M documentacion/LIMPIEZA_BASE_DATOS.md
+ M documentos/static/css/prestamos.css
+ M documentos/templates/partials/sidebar_nav.html
+ M documentos/templates/prestamos/gestion_list.html
+ M documentos/templates/welcome.html
+ M documentos/views.py
+ M hospital_document_management/settings.py
+ M monitoreo-nextjs/app/api/monitoreo/[...path]/route.ts
+ M monitoreo-nextjs/app/chat/page.tsx
+ M monitoreo-nextjs/app/globals.css
+ M monitoreo-nextjs/app/page.tsx
+ M monitoreo-nextjs/components/dashboard/imap-section.tsx
+ M monitoreo-nextjs/components/dashboard/rebotes-global-modal.tsx
+ M monitoreo-nextjs/hooks/use-monitoreo.ts
+ M monitoreo-nextjs/middleware.ts
+ M monitoreo-nextjs/next.config.mjs
+ M monitoreo-nextjs/tsconfig.tsbuildinfo
+ M package.json
+ M playwright.config.ts
+?? correspondencia/integrations/
+?? correspondencia/management/commands/gmail_history_sync.py
+?? correspondencia/management/commands/gmail_oauth_desktop_start.py
+?? correspondencia/management/commands/gmail_oauth_exchange.py
+?? correspondencia/management/commands/gmail_oauth_start.py
+?? correspondencia/management/commands/gmail_operational_status.py
+?? correspondencia/management/commands/gmail_pipeline_tick.py
+?? correspondencia/management/commands/gmail_pubsub_pull.py
+?? correspondencia/management/commands/gmail_watch_start.py
+?? correspondencia/management/commands/postmark_bounce_test.py
+?? correspondencia/management/commands/postmark_webhook_status.py
+?? correspondencia/migrations/0074_postmark_webhooks.py
+?? correspondencia/migrations/0075_estado_sincronizacion_gmail_watch_fields.py
+?? correspondencia/static/correspondencia/css/seguimiento_entrega.css
+?? correspondencia/templates/correspondencia/admin/detalle_evidencia_envio.html
+?? correspondencia/templates/correspondencia/admin/panel_seguimiento_entrega.html
+?? correspondencia/templates/correspondencia/partials/notifications_dropdown.html
+?? correspondencia/tests/e2e/asignacion.spec.ts
+?? correspondencia/tests/e2e/auth.setup.ts
+?? correspondencia/tests/e2e/notificaciones.spec.ts
+?? correspondencia/tests/e2e/pendientes.spec.ts
+?? correspondencia/utils/email_provider.py
+?? correspondencia/utils/email_sync_helpers.py
+?? correspondencia/utils/evidencia_envio.py
+?? correspondencia/utils/gmail_pipeline.py
+?? correspondencia/utils/postmark_webhooks.py
+?? correspondencia/views_postmark_webhook.py
+?? correspondencia/views_seguimiento_entrega.py
+?? deploy/backups/
+?? deploy/scripts/MARCO_EVIDENCIA_ENTREGA_CORREO.md
+?? deploy/scripts/USER_ACTION_GMAIL_PUBSUB.md
+?? deploy/scripts/USER_ACTION_POSTMARK.md
+?? deploy/scripts/safe_deploy.sh
+?? deploy/secrets/
+?? documentacion/AUDITORIA_APAGADO_IMAP_SMTP.md
+?? documentacion/POBLADO_DESARROLLO_SQLITE.md
+?? hospital_document_management/settings_local.example.py
+?? monitoreo-nextjs/components/dashboard/email-sync-control-board.tsx
+?? monitoreo-nextjs/components/dashboard/email-sync-section.tsx

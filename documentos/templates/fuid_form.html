@@ -1,0 +1,590 @@
+{% load custom_filters %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de FUID</title>
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script src="/static/correspondencia/vendor/js/anime.min.js"></script>
+    <style>
+    * {
+        font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+        background: #f5f7fa;
+        color: #2c3e50;
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* Layout con sidebar */
+    .fuid-layout {
+        display: flex;
+        min-height: 100vh;
+        align-items: flex-start;
+    }
+    
+    .fuid-content {
+        flex: 1;
+        min-width: 0;
+        background: #f5f7fa;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .fuid-main {
+        flex: 1;
+        padding: 1rem 1.5rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+    }
+    
+    /* Navbar mejorado */
+    .fuid-navbar {
+        background: white;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        padding: 1rem 2rem;
+        margin-bottom: 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    
+    .fuid-navbar-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .fuid-navbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #003366;
+        text-decoration: none;
+    }
+    
+    .fuid-navbar-brand i {
+        font-size: 1.8rem;
+        color: #0077cc;
+    }
+    
+    .fuid-navbar-user {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .fuid-navbar-greeting {
+        color: #5a6c7d;
+        font-size: 0.95rem;
+    }
+    
+    .fuid-navbar-logout {
+        background: #f0f0f0;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        color: #003366;
+        text-decoration: none;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    
+    .fuid-navbar-logout:hover {
+        background: #e0e0e0;
+        color: #005599;
+    }
+    
+    /* Hero section */
+    .fuid-form-hero {
+        background: linear-gradient(135deg, #003366 0%, #005599 50%, #0077cc 100%);
+        border-radius: 10px;
+        box-shadow: 0 4px 16px rgba(0, 51, 102, 0.2);
+        margin: 1rem 0 1.5rem;
+        padding: 1.25rem 1.5rem;
+        color: white;
+    }
+    
+    .fuid-form-hero h1 {
+        font-size: 1.4rem;
+        font-weight: 800;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    /* Cards mejoradas */
+    .fuid-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: 1px solid #e1e8ed;
+    }
+    
+    .fuid-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        border-color: #cbd5e0;
+    }
+    
+    .fuid-card-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-bottom: 2px solid #e1e8ed;
+        padding: 0.75rem 1rem;
+    }
+    
+    .fuid-card-header h5 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #003366;
+    }
+    
+    .fuid-card-body {
+        padding: 1rem;
+    }
+    
+    /* Formularios mejorados */
+    .form-label {
+        font-weight: 600;
+        color: #003366;
+        margin-bottom: 0.35rem;
+        font-size: 0.8rem;
+    }
+    
+    .form-control, .form-select {
+        border: 2px solid #e1e8ed;
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #0077cc;
+        box-shadow: 0 0 0 3px rgba(0, 119, 204, 0.1);
+        outline: none;
+    }
+    
+    /* Títulos de sección */
+    .section-subtitle {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #003366;
+        margin: 1rem 0 0.75rem;
+        padding-bottom: 0.4rem;
+        border-bottom: 2px solid #e1e8ed;
+    }
+    
+    /* Tablas mejoradas */
+    .registros-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .registros-table thead th {
+        background: #f8f9fa;
+        color: #003366;
+        font-weight: 600;
+        padding: 1rem;
+        border-bottom: 2px solid #e1e8ed;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .registros-table tbody td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .registros-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    /* Botones mejorados */
+    .btn-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        color: white;
+    }
+    
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+        color: white;
+    }
+    
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        color: white;
+    }
+    
+    .gap-3 {
+        gap: 1rem;
+    }
+    
+    /* Container de registros */
+    .registros-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem;
+        margin-top: 1rem;
+    }
+    
+    .registros-container h5 {
+        color: #003366;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+
+    </style>
+</head>
+<body>
+<div class="fuid-layout">
+    {% include 'partials/sidebar_nav.html' %}
+    <div class="fuid-content">
+        <!-- Navbar Mejorado -->
+        <nav class="fuid-navbar">
+            <div class="fuid-navbar-content">
+                <div class="fuid-navbar-brand">
+                    <i class="bi bi-folder-plus-fill"></i>
+                    <span>Gestión de FUID</span>
+                </div>
+                <div class="fuid-navbar-user">
+                    {% if request.user.is_authenticated %}
+                        <span class="fuid-navbar-greeting">
+                            <i class="bi bi-person-circle me-1"></i>
+                            {{ request.user.get_full_name|default:request.user.username }}
+                        </span>
+                        <form method="post" action="{% url 'logout' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="fuid-navbar-logout">
+                                <i class="bi bi-box-arrow-right me-1"></i>Cerrar sesión
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'login' %}" class="fuid-navbar-logout">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+
+        <!-- Contenido Principal -->
+        <main class="fuid-main">
+            <!-- Hero Section -->
+            <div class="fuid-form-hero">
+                <h1><i class="bi bi-folder-plus me-2"></i>{{ view.action|default:"Crear" }} FUID</h1>
+            </div>
+
+            <div id="user-data"
+                data-oficina="{{ request.user.perfil.oficina.id }}"
+                data-unidad="{{ request.user.perfil.oficina.unidad_administrativa.id }}"
+                data-entidad="{{ request.user.perfil.oficina.unidad_administrativa.entidad_productora.id }}">
+            </div>
+
+            <div class="fuid-card">
+                <div class="fuid-card-header">
+                    <h5><i class="bi bi-info-circle me-2"></i>Datos del FUID</h5>
+                </div>
+                <div class="fuid-card-body">
+                    <form method="post" id="fuidForm">
+                        {% csrf_token %}
+                        {{ form.errors }}
+
+                        <div class="row mb-2">
+                            <div class="col-md-3">
+                                <label for="{{ form.entidad_productora.id_for_label }}" class="form-label fw-semibold">Entidad Productora</label>
+                                {{ form.entidad_productora|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.unidad_administrativa.id_for_label }}" class="form-label fw-semibold">Unidad Administrativa</label>
+                                {{ form.unidad_administrativa|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.oficina_productora.id_for_label }}" class="form-label fw-semibold">Oficina Productora</label>
+                                {{ form.oficina_productora|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.objeto.id_for_label }}" class="form-label fw-semibold">Objeto</label>
+                                {{ form.objeto|add_class:"form-control" }}
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-12">
+                                <label for="{{ form.notas.id_for_label }}" class="form-label fw-semibold">Notas</label>
+                                {{ form.notas|add_class:"form-control" }}
+                            </div>
+                        </div>
+
+                        <h5 class="section-subtitle"><i class="bi bi-person-check me-2"></i>Elaborado Por</h5>
+                        <div class="row mb-2">
+                            <div class="col-md-3">
+                                <label for="{{ form.elaborado_por_nombre.id_for_label }}" class="form-label fw-semibold">Nombre</label>
+                                {{ form.elaborado_por_nombre|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.elaborado_por_cargo.id_for_label }}" class="form-label fw-semibold">Cargo</label>
+                                {{ form.elaborado_por_cargo|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.elaborado_por_lugar.id_for_label }}" class="form-label fw-semibold">Lugar</label>
+                                {{ form.elaborado_por_lugar|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.elaborado_por_fecha.id_for_label }}" class="form-label fw-semibold">Fecha</label>
+                                {{ form.elaborado_por_fecha|add_class:"form-control" }}
+                            </div>
+                        </div>
+
+                        <h5 class="section-subtitle"><i class="bi bi-person-up me-2"></i>Entregado Por</h5>
+                        <div class="row mb-2">
+                            <div class="col-md-3">
+                                <label for="{{ form.entregado_por_nombre.id_for_label }}" class="form-label fw-semibold">Nombre</label>
+                                {{ form.entregado_por_nombre|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.entregado_por_cargo.id_for_label }}" class="form-label fw-semibold">Cargo</label>
+                                {{ form.entregado_por_cargo|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.entregado_por_lugar.id_for_label }}" class="form-label fw-semibold">Lugar</label>
+                                {{ form.entregado_por_lugar|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.entregado_por_fecha.id_for_label }}" class="form-label fw-semibold">Fecha</label>
+                                {{ form.entregado_por_fecha|add_class:"form-control" }}
+                            </div>
+                        </div>
+
+                        <h5 class="section-subtitle"><i class="bi bi-person-down me-2"></i>Recibido Por</h5>
+                        <div class="row mb-2">
+                            <div class="col-md-3">
+                                <label for="{{ form.recibido_por_nombre.id_for_label }}" class="form-label fw-semibold">Nombre</label>
+                                {{ form.recibido_por_nombre|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.recibido_por_cargo.id_for_label }}" class="form-label fw-semibold">Cargo</label>
+                                {{ form.recibido_por_cargo|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.recibido_por_lugar.id_for_label }}" class="form-label fw-semibold">Lugar</label>
+                                {{ form.recibido_por_lugar|add_class:"form-control" }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="{{ form.recibido_por_fecha.id_for_label }}" class="form-label fw-semibold">Fecha</label>
+                                {{ form.recibido_por_fecha|add_class:"form-control" }}
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción - VISIBLES -->
+                        <div class="d-flex justify-content-end gap-3 mt-4 pt-3 border-top" style="display: flex !important; visibility: visible !important; opacity: 1 !important;">
+                            <a href="{% url 'fuid_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success" style="display: inline-block !important; visibility: visible !important; opacity: 1 !important;">
+                                <i class="bi bi-save me-2"></i>Guardar FUID
+                            </button>
+                        </div>
+
+                        <!-- registros asociados -->
+                                        <!-- Botón para abrir la sección de registros -->
+                                        <!-- <button class="btn btn-primary w-100 mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#registros-section">
+                                            📂 Mostrar/Ocultar Registros (solo disponible en edición)
+                                        </button> -->
+
+                                        <div id="registros-section" class="collapse">
+                                            <!-- Filtros -->
+
+            <!-- CAMPO DE BÚSQUEDA DE REGISTROS OPTIMIZADO -->
+            <div class="fuid-card mt-4">
+                <div class="fuid-card-header">
+                    <h5 class="mb-0"><i class="bi bi-search me-2"></i>Búsqueda de Registros</h5>
+                </div>
+                <div class="fuid-card-body">
+                    <p class="text-muted small mb-3">
+                        <i class="bi bi-info-circle"></i> Busca registros por referencia, asunto u otros datos. Escribe al menos 2 caracteres para ver resultados.
+                    </p>
+                    {{ form.registros_busqueda }}
+                    
+                    <!-- Input oculto para almacenar los IDs seleccionados -->
+                    {{ form.registros }}
+                    
+                    <div id="registros-seleccionados-preview" class="mt-3">
+                        <h6 class="text-muted">Registros seleccionados:</h6>
+                        <div id="registros-lista" class="d-flex flex-wrap gap-2">
+                            <!-- Se rellena dinámicamente con JS -->
+                        </div>
+                    </div>
+
+                    <!-- Loader para búsqueda -->
+                    <div id="registros-loader" class="spinner-border spinner-border-sm mt-3" style="display:none;" role="status">
+                        <span class="visually-hidden">Buscando...</span>
+                    </div>
+                    
+                    <!-- Dropdown de resultados -->
+                    <div id="registros-resultados" class="list-group mt-2" style="max-height: 300px; overflow-y: auto; display:none;">
+                        <!-- Se rellena dinámicamente con JS -->
+                    </div>
+                </div>
+            </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+    <!-- javascript -->
+    <script src="/static/correspondencia/vendor/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('registros_busqueda');
+            const resultsContainer = document.getElementById('registros-resultados');
+            const loader = document.getElementById('registros-loader');
+            const registrosField = document.getElementById('id_registros');  // Campo oculto
+            const registrosList = document.getElementById('registros-lista');
+            
+            let searchTimeout;
+            let selectedRegistros = new Set();
+            
+            // Cargar registros iniciales si estamos editando
+            const initialValue = searchInput.value;
+            if (initialValue) {
+                const ids = initialValue.split(',').filter(id => id.trim());
+                ids.forEach(id => selectedRegistros.add(id.trim()));
+                updatePreview();
+            }
+            
+            // Evento de búsqueda con debounce
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                const query = searchInput.value.trim();
+                
+                if (query.length < 2) {
+                    resultsContainer.style.display = 'none';
+                    return;
+                }
+                
+                loader.style.display = 'block';
+                resultsContainer.style.display = 'none';
+                
+                searchTimeout = setTimeout(() => {
+                    fetch(`/registros/api/buscar-registros/?q=${encodeURIComponent(query)}&limit=20`)
+                        .then(response => response.json())
+                        .then(data => {
+                            loader.style.display = 'none';
+                            
+                            if (data.results.length === 0) {
+                                resultsContainer.innerHTML = '<div class="list-group-item">No se encontraron registros</div>';
+                            } else {
+                                resultsContainer.innerHTML = data.results.map(r => `
+                                    <button type="button" class="list-group-item list-group-item-action registro-resultado" data-id="${r.id}">
+                                        <div class="d-flex justify-content-between">
+                                            <strong>${r.referencia}</strong>
+                                            <small class="text-muted">#${r.id}</small>
+                                        </div>
+                                        <small>${r.asunto}</small>
+                                    </button>
+                                `).join('');
+                                
+                                // Agregar listeners a los resultados
+                                document.querySelectorAll('.registro-resultado').forEach(btn => {
+                                    btn.addEventListener('click', (e) => {
+                                        e.preventDefault();
+                                        const id = btn.getAttribute('data-id');
+                                        const referencia = btn.querySelector('strong').textContent;
+                                        
+                                        if (!selectedRegistros.has(id)) {
+                                            selectedRegistros.add(id);
+                                            updatePreview();
+                                        }
+                                        
+                                        // Limpiar búsqueda
+                                        searchInput.value = '';
+                                        resultsContainer.style.display = 'none';
+                                    });
+                                });
+                            }
+                            
+                            resultsContainer.style.display = 'block';
+                        })
+                        .catch(err => {
+                            loader.style.display = 'none';
+                            resultsContainer.innerHTML = '<div class="list-group-item text-danger">Error en la búsqueda</div>';
+                            resultsContainer.style.display = 'block';
+                            console.error(err);
+                        });
+                }, 300);  // Debounce de 300ms
+            });
+            
+            // Actualizar el campo oculto y preview
+            function updatePreview() {
+                const ids = Array.from(selectedRegistros);
+                registrosField.value = ids.join(',');
+                
+                if (ids.length === 0) {
+                    registrosList.innerHTML = '<span class="text-muted">Ninguno</span>';
+                    return;
+                }
+                
+                registrosList.innerHTML = ids.map(id => `
+                    <div class="badge bg-primary">
+                        Registro #${id}
+                        <button type="button" class="btn-close btn-close-white btn-sm ms-1" data-id="${id}" style="cursor: pointer;"></button>
+                    </div>
+                `).join('');
+                
+                // Agregar listeners para eliminar
+                document.querySelectorAll('[data-id] .btn-close').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.parentElement.getAttribute('data-id');
+                        selectedRegistros.delete(id);
+                        updatePreview();
+                    });
+                });
+            }
+            
+            // Cerrar dropdown cuando se hace click fuera
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#registros_busqueda') && !e.target.closest('#registros-resultados')) {
+                    resultsContainer.style.display = 'none';
+                }
+            });
+        });
+    </script>
+        

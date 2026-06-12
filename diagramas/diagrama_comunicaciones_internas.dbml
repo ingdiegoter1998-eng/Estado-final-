@@ -1,0 +1,216 @@
+// ============================================================================
+// DIAGRAMA - MODULO DE COMUNICACIONES INTERNAS (OFICIOS)
+// Hospital del Sarare E.S.E.
+// Generado: Enero 2026
+// ============================================================================
+// Para usar en https://dbdiagram.io
+// ============================================================================
+
+// ============================================================================
+// TABLAS BASE (Referenciadas)
+// ============================================================================
+
+Table auth_user {
+  id integer [primary key]
+  username varchar [unique, not null]
+  first_name varchar
+  last_name varchar
+  email varchar
+  is_active boolean
+}
+
+Table documentos_proceso {
+  id integer [primary key]
+  numero integer [not null]
+  nombre varchar [not null]
+  sigla varchar [not null, note: 'Ej: DIR, THS, SIG']
+}
+
+Table documentos_oficinaproductora {
+  id integer [primary key]
+  nombre varchar [not null]
+  codigo varchar
+  codigo_trd varchar [unique]
+  proceso_id integer [not null]
+}
+
+Ref: documentos_oficinaproductora.proceso_id > documentos_proceso.id
+
+// ============================================================================
+// COMUNICACION INTERNA (OFICIO)
+// ============================================================================
+
+Table correspondencia_comunicacioninterna {
+  id integer [primary key]
+  
+  // --- Identificacion ---
+  radicado varchar [unique, note: 'Formato: SIGLA-XX-XXX (ej: DIR-01-001)']
+  trd varchar [note: 'Codigo TRD']
+  fecha_creacion timestamp [not null]
+  
+  // --- Datos del documento ---
+  ciudad varchar [default: 'Saravena']
+  fecha_documento date [not null, note: 'Fecha que aparece en el documento']
+  
+  // --- Tipo de distribucion ---
+  tipo_distribucion varchar [note: 'USUARIO, OFICINA, PROCESO, ENTIDAD']
+  es_a_toda_entidad boolean [default: false, note: 'DEPRECADO: usar tipo_distribucion=ENTIDAD']
+  
+  // --- Remitente (Snapshots) ---
+  remitente_usuario_id integer [not null]
+  remitente_nombre varchar [not null, note: 'Snapshot nombre']
+  remitente_cargo varchar [note: 'Snapshot cargo']
+  remitente_oficina_id integer [not null]
+  
+  // --- Destinatario ---
+  destinatario_oficina_id integer [note: 'Oficina destino (si aplica)']
+  destinatario_usuario_id integer [note: 'Usuario especifico (opcional)']
+  destinatario_proceso_id integer [note: 'Proceso destino (si tipo=PROCESO)']
+  
+  // --- Contenido ---
+  asunto varchar [not null]
+  cuerpo text [not null]
+  
+  // --- Archivos ---
+  archivo_generado varchar [note: 'Documento Word generado']
+  archivo_firmado varchar [note: 'PDF firmado digitalmente']
+  fecha_firma timestamp
+  
+  // --- Revision y Aprobacion ---
+  revisado_por_id integer [note: 'Lider que reviso']
+  revisado_nombre varchar [note: 'Snapshot nombre revisor']
+  revisado_cargo varchar [note: 'Snapshot cargo revisor']
+  fecha_revision timestamp
+  motivo_rechazo text
+  
+  // --- Respuesta (auto-referencia) ---
+  comunicacion_origen_id integer [unique, note: 'Comunicacion a la que responde']
+  
+  // --- Distribucion ---
+  fecha_distribucion timestamp
+  
+  // --- Estado ---
+  estado varchar [not null, note: 'BORRADOR, PENDIENTE_APROBACION, RECHAZADA, APROBADA, DISTRIBUIDA, RESPONDIDA, ANULADA']
+}
+
+Ref: correspondencia_comunicacioninterna.remitente_usuario_id > auth_user.id
+Ref: correspondencia_comunicacioninterna.remitente_oficina_id > documentos_oficinaproductora.id
+Ref: correspondencia_comunicacioninterna.destinatario_oficina_id > documentos_oficinaproductora.id
+Ref: correspondencia_comunicacioninterna.destinatario_usuario_id > auth_user.id
+Ref: correspondencia_comunicacioninterna.destinatario_proceso_id > documentos_proceso.id
+Ref: correspondencia_comunicacioninterna.revisado_por_id > auth_user.id
+Ref: correspondencia_comunicacioninterna.comunicacion_origen_id - correspondencia_comunicacioninterna.id
+
+// ============================================================================
+// DESTINATARIOS MULTIPLES
+// ============================================================================
+
+Table correspondencia_comunicacioninternadestinatario {
+  id integer [primary key]
+  comunicacion_id integer [not null]
+  tipo varchar [not null, note: 'USUARIO u OFICINA']
+  usuario_id integer [note: 'Si tipo=USUARIO']
+  oficina_id integer [note: 'Si tipo=OFICINA']
+}
+
+Ref: correspondencia_comunicacioninternadestinatario.comunicacion_id > correspondencia_comunicacioninterna.id
+Ref: correspondencia_comunicacioninternadestinatario.usuario_id > auth_user.id
+Ref: correspondencia_comunicacioninternadestinatario.oficina_id > documentos_oficinaproductora.id
+
+// ============================================================================
+// DISTRIBUCION (Quien recibio la comunicacion)
+// ============================================================================
+
+Table correspondencia_comunicacioninternadistribucion {
+  id integer [primary key]
+  comunicacion_id integer [not null]
+  usuario_id integer [not null, note: 'Usuario que recibio']
+  fecha_distribucion timestamp [not null]
+  leido boolean [default: false]
+  fecha_lectura timestamp
+}
+
+Ref: correspondencia_comunicacioninternadistribucion.comunicacion_id > correspondencia_comunicacioninterna.id
+Ref: correspondencia_comunicacioninternadistribucion.usuario_id > auth_user.id
+
+// ============================================================================
+// HISTORIAL (Trazabilidad completa)
+// ============================================================================
+
+Table correspondencia_historialcomunicacioninterna {
+  id integer [primary key]
+  comunicacion_id integer [not null]
+  evento varchar [not null, note: 'CREADA, EDITADA, ENVIADA_APROBACION, APROBADA, RECHAZADA, FIRMA_SUBIDA, DISTRIBUIDA, LEIDA, RESPUESTA_CREADA, ANULADA']
+  fecha timestamp [not null]
+  usuario_id integer
+  descripcion text
+}
+
+Ref: correspondencia_historialcomunicacioninterna.comunicacion_id > correspondencia_comunicacioninterna.id
+Ref: correspondencia_historialcomunicacioninterna.usuario_id > auth_user.id
+
+// ============================================================================
+// ANEXOS (Archivos adjuntos)
+// ============================================================================
+
+Table correspondencia_anexocomunicacioninterna {
+  id integer [primary key]
+  comunicacion_id integer [not null]
+  archivo varchar [not null, note: 'PDF, Word o Excel - Max 2MB']
+  nombre_original varchar
+  fecha_carga timestamp [not null]
+  subido_por_id integer
+}
+
+Ref: correspondencia_anexocomunicacioninterna.comunicacion_id > correspondencia_comunicacioninterna.id
+Ref: correspondencia_anexocomunicacioninterna.subido_por_id > auth_user.id
+
+// ============================================================================
+// NOTIFICACIONES (Alertas al usuario)
+// ============================================================================
+
+Table correspondencia_notificacion {
+  id integer [primary key]
+  usuario_id integer [not null]
+  tipo varchar [not null, note: 'comunicacion_interna, aprobacion_pendiente, etc.']
+  titulo varchar [not null]
+  mensaje text [not null]
+  comunicacion_interna_id integer
+  leida boolean [default: false]
+  fecha_creacion timestamp [not null]
+  fecha_lectura timestamp
+  url varchar
+}
+
+Ref: correspondencia_notificacion.usuario_id > auth_user.id
+Ref: correspondencia_notificacion.comunicacion_interna_id > correspondencia_comunicacioninterna.id
+
+// ============================================================================
+// FLUJO DE ESTADOS
+// ============================================================================
+//
+//                    ┌─────────────────────────────────────────┐
+//                    │                                         │
+//                    ▼                                         │
+// BORRADOR ──► PENDIENTE_APROBACION ──► APROBADA ──► DISTRIBUIDA ──► RESPONDIDA
+//                    │                      │
+//                    ▼                      ▼
+//                RECHAZADA           (Si requiere firma)
+//                    │                      │
+//                    │               Subir archivo_firmado
+//                    │                      │
+//                    ▼                      ▼
+//              (Fin del flujo)        DISTRIBUIDA
+//
+// En cualquier momento: ──► ANULADA
+//
+// ============================================================================
+// TIPOS DE DISTRIBUCION
+// ============================================================================
+//
+// USUARIO  : Va a un usuario especifico
+// OFICINA  : Va a todos los usuarios de una oficina (requiere firma)
+// PROCESO  : Va a todas las oficinas de un proceso (requiere firma, no responde)
+// ENTIDAD  : Va a todos los usuarios del sistema (requiere firma)
+//
+// ============================================================================

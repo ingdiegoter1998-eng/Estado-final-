@@ -1,0 +1,23 @@
+[Unit]
+Description=Next.js Calendario de Planillas
+After=network.target correspondencia.service
+Wants=correspondencia.service
+
+[Service]
+User=devdiego
+Group=www-data
+WorkingDirectory=/home/devdiego/Correspondencia-diciembre-1.0/calendario-informes-nextjs
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+Environment="PATH=/usr/bin:/usr/local/bin"
+
+ExecStart=/usr/bin/npx next start -p 3000
+
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=correspondencia-nextjs
+
+[Install]
+WantedBy=multi-user.target

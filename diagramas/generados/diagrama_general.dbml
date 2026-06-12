@@ -1,0 +1,147 @@
+// Diagrama General - Relaciones Principales
+// Sistema de Gestión Documental y Correspondencia
+// Hospital del Sarare
+// Vista simplificada de modelos clave
+
+Project hospital_gestion_documental_general {
+  database_type: 'PostgreSQL'
+  Note: 'Vista general de relaciones entre módulos'
+}
+
+// documentos.SerieDocumental
+Table documentos_seriedocumental {
+  id bigint [pk, increment]
+  codigo varchar(50) [not null]
+  nombre varchar(255) [not null]
+}
+
+// documentos.SubserieDocumental
+Table documentos_subseriedocumental {
+  id bigint [pk, increment]
+  codigo varchar(50) [not null]
+  nombre varchar(255) [not null]
+  serie integer [not null]
+}
+
+// documentos.Proceso
+Table documentos_proceso {
+  id bigint [pk, increment]
+  nombre varchar(255) [not null]
+  macroproceso integer [not null]
+}
+
+// documentos.OficinaProductora
+Table documentos_oficinaproductora {
+  id bigint [pk, increment]
+  nombre varchar(255) [not null]
+  codigo varchar(50)
+  unidad_administrativa integer [not null]
+  proceso integer [not null]
+}
+
+// documentos.FUID
+Table documentos_fuid {
+  id bigint [pk, increment]
+  entidad_productora integer
+  unidad_administrativa integer
+  oficina_productora integer
+  objeto integer
+  fecha_creacion timestamp [not null]
+}
+
+// documentos.RegistroDeArchivo
+Table documentos_registrodearchivo {
+  id bigint [pk, increment]
+  codigo varchar(50)
+  codigo_serie integer [not null]
+  codigo_subserie integer
+  fecha_creacion timestamp [not null]
+}
+
+// documentos.PrestamoDocumental
+Table documentos_prestamodocumental {
+  id bigint [pk, increment]
+  registro integer
+  fuid integer
+  oficina_solicitante integer
+  serie integer
+  subserie integer
+  estado varchar(20) [not null]
+}
+
+// correspondencia.EntidadExterna
+Table correspondencia_entidadexterna {
+  id bigint [pk, increment]
+  nombre varchar(255) [unique, not null]
+}
+
+// correspondencia.Contacto
+Table correspondencia_contacto {
+  id bigint [pk, increment]
+  entidad_externa integer [not null]
+}
+
+// correspondencia.Correspondencia
+Table correspondencia_correspondencia {
+  id bigint [pk, increment]
+  numero_radicado varchar(50) [unique, not null]
+  remitente integer
+  asunto text [not null]
+  serie integer
+  subserie integer
+  tramite_aplicado integer
+  estado varchar(50) [not null]
+  oficina_destino integer [not null]
+}
+
+// correspondencia.CorrespondenciaSalida
+Table correspondencia_correspondenciasalida {
+  id bigint [pk, increment]
+  respuesta_a integer
+  fecha_creacion timestamp [not null]
+  oficina_emisora integer
+  destinatario_contacto integer [not null]
+  asunto varchar(255) [not null]
+  estado varchar(50) [not null]
+  envio_grupo integer
+}
+
+// correspondencia.ComunicacionInterna
+Table correspondencia_comunicacioninterna {
+  id bigint [pk, increment]
+  radicado varchar(50) [unique]
+  fecha_creacion timestamp [not null]
+  tipo_distribucion varchar(20)
+  remitente_oficina integer [not null]
+  destinatario_oficina integer
+  destinatario_proceso integer
+  asunto varchar(255) [not null]
+  comunicacion_origen integer
+  estado varchar(25) [not null]
+}
+
+// ========== RELACIONES PRINCIPALES ==========
+
+Ref: correspondencia_correspondencia.oficina_destino_id > documentos_oficinaproductora.id
+Ref: correspondencia_comunicacioninterna.remitente_oficina_id > documentos_oficinaproductora.id
+Ref: documentos_registrodearchivo.oficina_id > documentos_oficinaproductora.id
+Ref: correspondencia_correspondencia.serie_id > documentos_seriedocumental.id
+Ref: correspondencia_correspondencia.subserie_id > documentos_subseriedocumental.id
+
+TableGroup documentos {
+  documentos_seriedocumental
+  documentos_subseriedocumental
+  documentos_proceso
+  documentos_oficinaproductora
+  documentos_fuid
+  documentos_registrodearchivo
+  documentos_prestamodocumental
+}
+
+TableGroup correspondencia {
+  correspondencia_entidadexterna
+  correspondencia_contacto
+  correspondencia_correspondencia
+  correspondencia_correspondenciasalida
+  correspondencia_comunicacioninterna
+}

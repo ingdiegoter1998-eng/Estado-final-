@@ -1,0 +1,529 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load humanize %}
+{% load crispy_forms_tags %}
+{% load static %}
+{% load auth_extras %}
+
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'correspondencia/css/historial_compacto.css' %}">
+<style>
+    /* Estilos adicionales para filtros compactos */
+    .card-header .btn-outline-info {
+        border-width: 1px;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* Mejorar apariencia de Select2 en filtros compactos */
+    .select2-container--bootstrap-5 .select2-selection {
+        min-height: 38px;
+        border-radius: 0.375rem;
+    }
+    
+    /* Hacer la tabla más compacta */
+    .table-sm td, .table-sm th {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    /* Asunto: una sola línea, espacio exacto para 40 caracteres (sin saltos de línea) */
+    .col-asunto {
+        white-space: nowrap;
+        width: 43ch;
+        min-width: 43ch;
+        max-width: 43ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    /* Responsive para pantallas pequeñas */
+    @media (max-width: 768px) {
+        .col-lg-1 {
+            flex: 0 0 auto;
+            width: auto;
+        }
+        
+        .d-flex.gap-1 {
+            flex-direction: column;
+            gap: 0.5rem !important;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    {% if request.user|puede_gestion_operativa %}
+    {# Sección de Informes (oculta para ventanilla) #}
+    <div class="card card-outline card-success mb-4">
+        <div class="card-header py-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-file-earmark-spreadsheet text-success me-2"></i>
+                    <strong>Informes de Correspondencia</strong>
+                </div>
+                <a href="{% url 'correspondencia:calendario_informes' %}" class="btn btn-success btn-sm">
+                    <i class="bi bi-calendar3 me-1"></i>Ver Calendario de Planillas
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {# Nueva Sección de Filtros Rediseñada #}
+    <div class="filtros-modernos mb-4">
+        <div class="filtros-header">
+            <div class="filtros-controls">
+                <i class="bi bi-funnel-fill text-primary me-2"></i>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse" aria-expanded="{% if filtros_activos.values|join:'' != '' %}true{% else %}false{% endif %}" aria-controls="filtrosCollapse">
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="collapse {% if filtros_activos.values|join:'' != '' %}show{% endif %}" id="filtrosCollapse">
+            <div class="filtros-content">
+                <form method="get" action="" id="historial-filter-form">
+                    {# Primera fila - Búsqueda principal #}
+                    <div class="filtros-seccion">
+                        <div class="filtros-seccion-titulo">
+                            <i class="bi bi-search text-info"></i>
+                            <span>Búsqueda Principal</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-lg-3">
+                                <div class="form-group">
+                                    <label for="id_search_term" class="form-label">
+                                        <i class="bi bi-text-paragraph me-1"></i>Buscar
+                                    </label>
+                                    <input type="text" name="search_term" placeholder="Asunto, radicado..." class="form-control" id="id_search_term">
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group">
+                                    <label for="id_tipo" class="form-label">
+                                        <i class="bi bi-arrow-left-right me-1"></i>Tipo
+                                    </label>
+                                    <select name="tipo" class="form-select" id="id_tipo">
+                                        <option value="" selected="">Entrada y Salida</option>
+                                        <option value="Entrada">Solo Entrada</option>
+                                        <option value="Salida">Solo Salida</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group">
+                                    <label for="id_remitente" class="form-label">
+                                        <i class="bi bi-person-fill me-1"></i>De (Remitente)
+                                    </label>
+                                    <input type="text" name="remitente" placeholder="Buscar remitente..." class="form-control" id="id_remitente">
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group">
+                                    <label for="id_destinatario" class="form-label">
+                                        <i class="bi bi-person-check me-1"></i>Para (Destinatario)
+                                    </label>
+                                    <input type="text" name="destinatario" placeholder="Buscar destinatario..." class="form-control" id="id_destinatario">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Segunda fila - Clasificación documental #}
+                    <div class="filtros-seccion">
+                        <div class="filtros-seccion-titulo">
+                            <i class="bi bi-folder2-open text-warning"></i>
+                            <span>Clasificación Documental</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-lg-4">
+                                <div class="form-group">
+                                    <label for="id_oficina" class="form-label">
+                                        <i class="bi bi-building me-1"></i>Oficina
+                                    </label>
+                                    <input type="text" name="oficina" placeholder="Buscar oficina..." class="form-control" list="oficinas-list" id="id_oficina">
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="form-group">
+                                    <label for="id_serie" class="form-label">
+                                        <i class="bi bi-collection me-1"></i>Serie
+                                    </label>
+                                    <input type="text" name="serie" placeholder="Buscar serie..." class="form-control" list="series-list" id="id_serie">
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="form-group">
+                                    <label for="id_subserie" class="form-label">
+                                        <i class="bi bi-collection-fill me-1"></i>Subserie
+                                    </label>
+                                    <input type="text" name="subserie" placeholder="Buscar subserie..." class="form-control" list="subseries-list" id="id_subserie">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Tercera fila - Estados y Vencimiento #}
+                    <div class="filtros-seccion">
+                        <div class="filtros-seccion-titulo">
+                            <i class="bi bi-calendar-check text-success"></i>
+                            <span>Estados y Vencimiento</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-lg-3">
+                                <div class="form-group">
+                                    <label for="id_estado_entrada" class="form-label">
+                                        <i class="bi bi-arrow-down-circle me-1"></i>Estado Entrada
+                                    </label>
+                                    <select name="estado_entrada" class="form-select" id="id_estado_entrada">
+                                        <option value="" selected="">Todos los estados</option>
+                                        <option value="RADICADA">Radicada</option>
+                                        <option value="ASIGNADA_USUARIO">Asignada a Usuario</option>
+                                        <option value="LEIDA">Leída por Oficina</option>
+                                        <option value="RESPONDIDA">Respondida</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group">
+                                    <label for="id_estado_salida" class="form-label">
+                                        <i class="bi bi-arrow-up-circle me-1"></i>Estado Salida
+                                    </label>
+                                    <select name="estado_salida" class="form-select" id="id_estado_salida">
+                                        <option value="" selected="">Todos los estados</option>
+                                        <option value="BORRADOR">Borrador</option>
+                                        <option value="PENDIENTE_APROBACION">Pendiente Aprobación</option>
+                                        <option value="APROBADA">Aprobada</option>
+                                        <option value="RECHAZADA">Rechazada</option>
+                                        <option value="ENVIADA">Enviada</option>
+                                        <option value="ERROR_ENVIO">Error de Envío</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group">
+                                    <label for="id_estado_vencimiento" class="form-label">
+                                        <i class="bi bi-clock-history me-1"></i>Vencimiento
+                                    </label>
+                                    <select name="estado_vencimiento" class="form-select" id="id_estado_vencimiento">
+                                        <option value="" selected="">Todos</option>
+                                        <option value="VENCIDO">🔴 Vencido</option>
+                                        <option value="HOY">⚠️ Vence Hoy</option>
+                                        <option value="PROXIMO">🟡 Próximo (1-2 días)</option>
+                                        <option value="POR_VENCER">🔵 Por vencer (3-5 días)</option>
+                                        <option value="A_TIEMPO">🟢 A tiempo (+5 días)</option>
+                                        <option value="RESPONDIDA">✅ Ya respondida</option>
+                                        <option value="NO_REQUIERE">⚫ No requiere respuesta</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div class="text-muted small">Filtra por estado de vencimiento</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {# Cuarta fila - Fechas #}
+                    <div class="filtros-seccion">
+                        <div class="filtros-seccion-titulo">
+                            <i class="bi bi-calendar-range text-primary"></i>
+                            <span>Rango de Fechas</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-lg-3">
+                                <div class="form-group">
+                                    <label for="id_fecha_inicio" class="form-label">
+                                        <i class="bi bi-calendar-date me-1"></i>Desde
+                                    </label>
+                                    <input type="date" name="fecha_inicio" class="form-control" id="id_fecha_inicio">
+                                </div>
+                            </div>
+                            <div class="col-lg-3">
+                                <div class="form-group">
+                                    <label for="id_fecha_fin" class="form-label">
+                                        <i class="bi bi-calendar-date me-1"></i>Hasta
+                                    </label>
+                                    <input type="date" name="fecha_fin" class="form-control" id="id_fecha_fin">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Cuarta fila - Botones de acción #}
+                    <div class="filtros-acciones">
+                        <div class="row g-3">
+                            <div class="col-lg-6">
+                                <button type="submit" name="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-search me-2"></i>Aplicar Filtros
+                                </button>
+                            </div>
+                            <div class="col-lg-6">
+                                <button type="submit" name="reset" value="Limpiar Filtros" class="btn btn-outline-secondary w-100">
+                                    <i class="bi bi-arrow-clockwise me-2"></i>Limpiar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                
+                {# Datalists para autocompletado #}
+                <datalist id="oficinas-list">
+                    {% for oficina in oficinas_list %}
+                        <option value="{{ oficina }}">
+                    {% endfor %}
+                </datalist>
+                <datalist id="series-list">
+                    {% for serie in series_list %}
+                        <option value="{{ serie }}">
+                    {% endfor %}
+                </datalist>
+                <datalist id="subseries-list">
+                    {% for subserie in subseries_list %}
+                        <option value="{{ subserie }}">
+                    {% endfor %}
+                </datalist>
+                
+                {# Mostrar filtros activos de forma moderna #}
+                {% if filtros_activos %}
+                    <div class="filtros-activos-modernos">
+                        <div class="filtros-activos-header">
+                            <i class="bi bi-tags-fill text-info"></i>
+                            <span>Filtros Activos</span>
+                        </div>
+                        <div class="filtros-activos-content">
+                            {% for key, data in filtros_activos.items %}
+                                {% if data.value %}
+                                    <span class="badge bg-info text-dark me-2 mb-2">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        {{ data.label }}: 
+                                        {% if key == 'fecha_inicio' or key == 'fecha_fin' %}
+                                            {{ data.value|date:"d/m/Y" }}
+                                        {% else %}
+                                            {{ data.value|default:"-" }}
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# Resultados del Historial #}
+    <div class="card card-primary card-outline">
+         <div class="card-header py-2">
+             <div class="d-flex justify-content-end align-items-center">
+                 <div class="d-flex align-items-center">
+                     <i class="bi bi-list-ul me-2 text-primary"></i>
+                     <span class="badge bg-primary">Total: {{ page_obj.paginator.count }} registro{{ page_obj.paginator.count|pluralize }}</span>
+                 </div>
+             </div>
+         </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-striped table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="col-fecha" style="width: 200px;">Fecha</th>
+                            <th class="col-tipo text-center" style="width: 80px;">Tipo</th>
+                            <th class="col-radicado" style="width: 120px;">Radicado</th>
+                            <th class="col-remitente" style="width: 150px;">De</th>
+                            <th class="col-destinatario" style="width: 150px;">Para</th>
+                            <th class="col-asunto" style="white-space: nowrap;">Asunto</th>
+                            <th class="col-oficina" style="width: 120px;">Oficina</th>
+                            <th class="col-serie" style="width: 120px;">Serie</th>
+                            <th class="col-subserie" style="width: 120px;">Subserie</th>
+                            <th class="col-estado text-center" style="width: 100px;">Estado</th>
+                            <th class="col-vencimiento text-center" style="width: 100px;">Vencimiento</th>
+                            <th class="col-origen text-center" style="width: 90px;">Origen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in page_obj %}
+                        <tr>
+                            <td class="col-fecha" title="{{ item.fecha|date:"d/m/Y H:i:s" }}">{{ item.fecha|naturaltime }}</td>
+                            <td class="col-tipo text-center">
+                                {% if item.tipo == 'Entrada' %}
+                                    <span class="badge bg-info" title="Entrada"><i class="bi bi-arrow-down-circle"></i></span>
+                                {% elif item.tipo == 'Salida' %}
+                                    <span class="badge bg-primary" title="Salida"><i class="bi bi-arrow-up-circle"></i></span>
+                                {% else %}
+                                    {{ item.tipo }}
+                                {% endif %}
+                            </td>
+                            <td class="col-radicado">
+                                {% if item.detail_url != '#' %}
+                                    <a href="{{ item.detail_url }}" title="Ver detalle">{{ item.radicado }}</a>
+                                {% else %}
+                                    {{ item.radicado }}
+                                {% endif %}
+                            </td>
+                            <td class="col-remitente" title="{{ item.remitente_nombre }}">
+                                {% if item.tipo == 'Entrada' %}
+                                    <small class="text-muted"><i class="bi bi-person-fill me-1"></i></small>{{ item.remitente_nombre|truncatechars:25 }}
+                                {% else %}
+                                    <small class="text-muted"><i class="bi bi-person-badge me-1"></i></small>{{ item.remitente_nombre|truncatechars:25 }}
+                                {% endif %}
+                            </td>
+                            <td class="col-destinatario" title="{{ item.destinatario_nombre }}">
+                                {% if item.tipo == 'Entrada' %}
+                                    <small class="text-muted"><i class="bi bi-person-badge me-1"></i></small>{{ item.destinatario_nombre|truncatechars:25 }}
+                                {% else %}
+                                    <small class="text-muted"><i class="bi bi-person-fill me-1"></i></small>{{ item.destinatario_nombre|truncatechars:25 }}
+                                {% endif %}
+                            </td>
+                            <td class="col-asunto" title="{{ item.asunto }}" style="white-space: nowrap;">{{ item.asunto|oneline|truncatechars:40 }}</td>
+                            <td class="col-oficina" title="{{ item.oficina }}">{{ item.oficina|truncatechars:40 }}</td>
+                            <td class="col-serie">{{ item.serie|default:"-" }}</td>
+                            <td class="col-subserie">{{ item.subserie|default:"-" }}</td>
+                            <td class="col-estado text-center">
+                                {# Código badges de estado (sin cambios) ... #}
+                                {% if item.tipo == 'Salida' %}
+                                    {% if item.estado_key == 'ENVIADA' %}
+                                        <span class="badge bg-success" title="{{ item.estado_display }}"><i class="bi bi-check-circle-fill"></i></span>
+                                    {% elif item.estado_key == 'ERROR_ENVIO' %}
+                                        <span class="badge bg-danger" title="{{ item.estado_display }}"><i class="bi bi-x-octagon-fill"></i></span>
+                                    {% elif item.estado_key == 'RECHAZADA' %}
+                                        <span class="badge bg-danger" title="{{ item.estado_display }}"><i class="bi bi-hand-thumbs-down-fill"></i></span>
+                                    {% elif item.estado_key == 'PENDIENTE_APROBACION' %}
+                                        <span class="badge bg-warning text-dark" title="{{ item.estado_display }}"><i class="bi bi-hourglass-split"></i></span>
+                                     {% elif item.estado_key == 'APROBADA' %}
+                                        <span class="badge bg-info text-dark" title="{{ item.estado_display }}"><i class="bi bi-hand-thumbs-up-fill"></i></span>
+                                     {% elif item.estado_key == 'BORRADOR' %}
+                                        <span class="badge bg-secondary" title="{{ item.estado_display }}"><i class="bi bi-pencil-fill"></i></span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark" title="{{ item.estado_display }}">{{ item.estado_key }}</span>
+                                    {% endif %}
+                                {% else %}
+                                    {# Estados de Entrada #}
+                                     {% if item.estado_key == 'RADICADA' %}
+                                         <span class="badge bg-secondary" title="{{ item.estado_display }}"><i class="bi bi-file-earmark-check"></i></span>
+                                     {% elif item.estado_key == 'ASIGNADA_USUARIO' %}
+                                         <span class="badge bg-primary" title="{{ item.estado_display }}"><i class="bi bi-person-check"></i></span>
+                                     {% elif item.estado_key == 'LEIDA' %}
+                                         <span class="badge bg-success" title="{{ item.estado_display }}"><i class="bi bi-eye"></i></span>
+                                     {% elif item.estado_key == 'RESPONDIDA' %}
+                                         <span class="badge bg-success" title="{{ item.estado_display }}"><i class="bi bi-reply-fill"></i></span>
+                                     {% else %}
+                                         <span class="badge bg-light text-dark" title="{{ item.estado_display }}">{{ item.estado_key }}</span>
+                                     {% endif %}
+                                {% endif %}
+                            </td>
+                            {# Columna Vencimiento - Días restantes #}
+                            <td class="col-vencimiento text-center">
+                                {% if item.estado_key == 'RESPONDIDA' %}
+                                    {# Ya fue respondida #}
+                                    <span class="badge bg-success" title="Respondida">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    </span>
+                                {% elif item.requiere_respuesta and item.dias_restantes is not None %}
+                                    {# Requiere respuesta y tiene fecha límite #}
+                                    {% if item.dias_restantes < 0 %}
+                                        <span class="badge bg-danger" title="Vencido hace {{ item.dias_restantes|slice:"1:" }} días">
+                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ item.dias_restantes }}d
+                                        </span>
+                                    {% elif item.dias_restantes == 0 %}
+                                        <span class="badge bg-danger" title="Vence hoy">
+                                            <i class="bi bi-clock-fill me-1"></i>Hoy
+                                        </span>
+                                    {% elif item.dias_restantes <= 2 %}
+                                        <span class="badge bg-warning text-dark" title="Próximo a vencer">
+                                            <i class="bi bi-clock me-1"></i>{{ item.dias_restantes }}d
+                                        </span>
+                                    {% elif item.dias_restantes <= 5 %}
+                                        <span class="badge bg-info text-dark" title="{{ item.dias_restantes }} días restantes">
+                                            {{ item.dias_restantes }}d
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success" title="{{ item.dias_restantes }} días restantes">
+                                            {{ item.dias_restantes }}d
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    {# No requiere respuesta (salida o entrada sin requerimiento) #}
+                                    <span class="badge bg-secondary" title="No requiere respuesta">
+                                        <i class="bi bi-dash-circle"></i>
+                                    </span>
+                                {% endif %}
+                            </td>
+                             {# Columna Origen (Radicación rápida) #}
+                             <td class="col-origen text-center">
+                                 {% if item.origen_radicacion == 'RAPIDA' %}
+                                     <span class="badge bg-warning text-dark" title="Radicación Rápida"><i class="bi bi-lightning-fill"></i></span>
+                                 {% else %}
+                                     <span class="text-muted">-</span>
+                                 {% endif %}
+                             </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="12" class="text-center fst-italic text-muted py-4">No hay registros en el historial que coincidan con los filtros aplicados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer clearfix">
+             {% if page_obj.has_other_pages %}
+                 {% include "includes/paginacion.html" with page_obj=page_obj %}
+             {% endif %}
+        </div>
+    </div>
+{% endblock content %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="{% static 'correspondencia/js/historial_compacto.js' %}"></script>
+<script>
+$(document).ready(function() {
+    // Inicializar Select2 para los campos que lo usan en el filtro
+    $('#historial-filter-form .select2').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        placeholder: function() {
+            return $(this).data('placeholder') || 'Seleccionar...';
+        },
+        allowClear: true,
+        minimumResultsForSearch: 0 // Mostrar búsqueda siempre
+    });
+
+    // Lógica simple para mostrar/ocultar filtros de estado basados en el tipo
+    function toggleEstadoFields() {
+        var tipo = $('#id_tipo').val();
+        if (tipo === 'Entrada') {
+            $('#div_id_estado_entrada').show();
+            $('#div_id_estado_salida').hide();
+            $('#id_estado_salida').val('').trigger('change'); // Limpiar el otro campo
+        } else if (tipo === 'Salida') {
+            $('#div_id_estado_entrada').hide();
+            $('#id_estado_salida').show();
+             $('#id_estado_entrada').val('').trigger('change'); // Limpiar el otro campo
+        } else { // Ambos o vacío
+            $('#div_id_estado_entrada').show();
+            $('#id_estado_salida').show();
+        }
+    }
+
+    // Ejecutar al cargar y al cambiar el tipo
+    toggleEstadoFields();
+    $('#id_tipo').on('change', toggleEstadoFields);
+    
+    // Mejorar la experiencia del botón de colapso
+    $('[data-bs-toggle="collapse"]').on('click', function() {
+        var icon = $(this).find('i');
+        if ($(this).attr('aria-expanded') === 'true') {
+            icon.removeClass('bi-chevron-up').addClass('bi-chevron-down');
+        } else {
+            icon.removeClass('bi-chevron-down').addClass('bi-chevron-up');
+        }
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,627 @@
+{% load static %}
+{% load widget_tweaks %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesar Préstamo #{{ prestamo.id }}</title>
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'css/prestamos.css' %}">
+</head>
+<body class="prestamo-body">
+<div class="prestamo-content-wrapper">
+    {% include 'partials/sidebar_nav.html' %}
+    <div class="prestamo-main-content">
+        <div class="prestamo-shell">
+    <header class="prestamo-hero">
+        <div>
+            <p class="prestamo-eyebrow">Préstamo #{{ prestamo.id }}</p>
+            <h1>Gestiona la solicitud</h1>
+            <p class="prestamo-hero-text">
+                Cambia el estado, adjunta soportes y deja trazabilidad de cada movimiento. El solicitante verá los avances en tiempo real.
+            </p>
+        </div>
+        <div class="prestamo-hero-actions">
+            <span class="prestamo-chip prestamo-chip--status prestamo-chip--status-{{ prestamo.estado|lower }}">
+                {{ prestamo.get_estado_display }}
+            </span>
+            <span class="prestamo-chip {% if prestamo.tipo_prestamo == 'VIRTUAL' %}prestamo-chip--virtual{% else %}prestamo-chip--fisico{% endif %}">
+                {% if prestamo.tipo_prestamo == 'VIRTUAL' %}Digital{% else %}{{ prestamo.get_tipo_prestamo_display }}{% endif %}
+            </span>
+        </div>
+    </header>
+
+    <div class="prestamo-layout prestamo-layout--split">
+        <section class="prestamo-card prestamo-card--main">
+            <form method="post" enctype="multipart/form-data" class="prestamo-form-grid">
+                {% csrf_token %}
+
+                {% if form.errors %}
+                <div class="prestamo-alert prestamo-alert-danger">
+                    <strong><i class="bi bi-exclamation-triangle"></i> Revisa los campos:</strong>
+                    {{ form.errors }}
+                </div>
+                {% endif %}
+
+                {% if prestamo.estado == 'SOLICITADO' %}
+                    {# Flujo para préstamos SOLICITADOS: solo cargar evidencia o rechazar #}
+                    <div class="prestamo-form-group">
+                        <label>Acción a realizar</label>
+                        <div class="prestamo-radio-group" id="accionRadios">
+                            <label class="prestamo-radio-card prestamo-radio-card--success" data-accion="cargar_evidencia">
+                                <input type="radio" name="accion" value="cargar_evidencia" id="id_accion_0" class="prestamo-radio-input" {% if form.accion.value == 'cargar_evidencia' %}checked{% endif %}>
+                                <div>
+                                    <strong>
+                                        <i class="bi bi-check-circle"></i> Aceptar y cargar evidencia
+                                    </strong>
+                                    <p>
+                                        Registra la entrega desde Archivo. El préstamo quedará en ENTREGADO hasta que el usuario confirme la recepción.
+                                    </p>
+                                </div>
+                            </label>
+                            <label class="prestamo-radio-card prestamo-radio-card--danger" data-accion="rechazar">
+                                <input type="radio" name="accion" value="rechazar" id="id_accion_1" class="prestamo-radio-input" {% if form.accion.value == 'rechazar' %}checked{% endif %}>
+                                <div>
+                                    <strong>
+                                        <i class="bi bi-x-circle"></i> Rechazar préstamo
+                                    </strong>
+                                    <p>
+                                        Indica el motivo por el cual se rechaza esta solicitud.
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+                        {% if form.accion.errors %}
+                            <div class="prestamo-alert prestamo-alert-danger">{{ form.accion.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="prestamo-form-group" id="bloque-evidencia">
+                        <label for="{{ form.documentos_escaneados.id_for_label }}">Evidencia escaneada</label>
+                        <div class="prestamo-file-upload-wrapper">
+                            {{ form.documentos_escaneados|add_class:"prestamo-form-control prestamo-file-input" }}
+                            <small class="prestamo-form-help">
+                                <i class="bi bi-info-circle"></i> Puedes subir múltiples archivos (PDF, Word o Excel). Máximo 10 MB en total.
+                            </small>
+                        </div>
+                        
+                        {% if prestamo.documentos_escaneados.exists %}
+                            <div class="prestamo-archivos-actuales">
+                                <strong>Archivos actuales:</strong>
+                                <ul class="prestamo-archivos-lista">
+                                    {% for doc in prestamo.documentos_escaneados.all %}
+                                    <li>
+                                        <a href="{{ doc.archivo.url }}" target="_blank" class="prestamo-archivo-link">
+                                            <i class="bi bi-file-earmark"></i> {{ doc.nombre_archivo_original|default:doc.archivo.name }}
+                                        </a>
+                                        <span class="prestamo-archivo-fecha">{{ doc.uploaded_at|date:"d/m/Y H:i" }}</span>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% elif prestamo.documento_escaneado %}
+                            <div class="prestamo-archivos-actuales">
+                                <strong>Archivo actual:</strong>
+                                <div class="prestamo-archivo-single">
+                                    <a href="{{ prestamo.documento_escaneado.url }}" target="_blank" class="prestamo-archivo-link">
+                                        <i class="bi bi-file-earmark"></i> {{ prestamo.documento_escaneado.name }}
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="prestamo-form-group prestamo-hidden" id="bloque-rechazo-motivo">
+                        <label for="{{ form.motivo_rechazo.id_for_label }}">Motivo del rechazo <span class="text-danger">*</span></label>
+                        {{ form.motivo_rechazo|add_class:"prestamo-form-control" }}
+                        <small class="prestamo-form-help">Explica por qué se rechaza esta solicitud de préstamo.</small>
+                    </div>
+                    
+                    <div class="prestamo-form-group prestamo-hidden" id="bloque-rechazo-documento">
+                        <label for="{{ form.documento_rechazo.id_for_label }}">Documento adjunto (opcional)</label>
+                        {{ form.documento_rechazo|add_class:"prestamo-form-control" }}
+                        {% if prestamo.documento_rechazo %}
+                            <div class="prestamo-archivos-actuales mt-2">
+                                <small class="text-muted">
+                                    <i class="bi bi-file-earmark-pdf"></i> 
+                                    Documento actual: 
+                                    <a href="{{ prestamo.documento_rechazo.url }}" target="_blank">{{ prestamo.documento_rechazo.name }}</a>
+                                </small>
+                            </div>
+                        {% endif %}
+                        <small class="prestamo-form-help">Puedes adjuntar un documento explicando los motivos del rechazo (PDF, Word).</small>
+                    </div>
+                {% else %}
+                    {# Flujo para otros estados (mantener lógica anterior) #}
+
+                    {% if prestamo.estado == 'DEVOLUCION_SOLICITADA' %}
+                    <div class="prestamo-alert prestamo-alert-warning" style="margin-bottom:1.5rem;">
+                        <i class="bi bi-bell-fill"></i>
+                        <strong>Devolución solicitada por el usuario.</strong>
+                        Verifica el estado físico del documento, marca las opciones de control de devolución y acepta la entrega.
+                    </div>
+                    {% endif %}
+
+                    {% if prestamo.estado != 'DEVOLUCION_SOLICITADA' %}
+                    <div class="prestamo-grid-two" id="bloque-documentos">
+                        {% if prestamo.tipo_prestamo == 'VIRTUAL' %}
+                            <div class="prestamo-form-group">
+                                <label for="{{ form.documento_virtual.id_for_label }}">Documento digital (PDF)</label>
+                                <input type="file" name="documento_virtual" class="prestamo-form-control" accept=".pdf" id="id_documento_virtual">
+                                
+                                {% if prestamo.documentos_escaneados.exists %}
+                                    <div class="prestamo-archivos-actuales">
+                                        <strong>Archivos actuales:</strong>
+                                        <ul class="prestamo-archivos-lista">
+                                            {% for doc in prestamo.documentos_escaneados.all %}
+                                            <li>
+                                                <a href="{{ doc.archivo.url }}" target="_blank" class="prestamo-archivo-link">
+                                                    <i class="bi bi-file-earmark"></i> {{ doc.nombre_archivo_original|default:doc.archivo.name }}
+                                                </a>
+                                                <button type="button" class="prestamo-btn-borrar" data-doc-id="{{ doc.id }}" title="Borrar archivo">
+                                                    <i class="bi bi-trash"></i> Borrar
+                                                </button>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% elif prestamo.documento_virtual %}
+                                    <div class="prestamo-archivos-actuales">
+                                        <strong>Archivo actual:</strong>
+                                        <div class="prestamo-archivo-single">
+                                            <a href="{{ prestamo.documento_virtual.url }}" target="_blank" class="prestamo-archivo-link">
+                                                <i class="bi bi-file-earmark-pdf"></i> {{ prestamo.documento_virtual.name|default:"Documento digital" }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="prestamo-form-group">
+                                <label for="{{ form.documentos_escaneados.id_for_label }}">Evidencia escaneada</label>
+                                <div class="prestamo-file-upload-wrapper">
+                                    {{ form.documentos_escaneados|add_class:"prestamo-form-control prestamo-file-input" }}
+                                    <small class="prestamo-form-help">
+                                        <i class="bi bi-info-circle"></i> Puedes subir múltiples archivos (PDF, Word o Excel). Máximo 10 MB en total.
+                                    </small>
+                                </div>
+                                
+                                {% if prestamo.documentos_escaneados.exists %}
+                                    <div class="prestamo-archivos-actuales">
+                                        <strong>Archivos actuales:</strong>
+                                        <ul class="prestamo-archivos-lista">
+                                            {% for doc in prestamo.documentos_escaneados.all %}
+                                            <li>
+                                                <a href="{{ doc.archivo.url }}" target="_blank" class="prestamo-archivo-link">
+                                                    <i class="bi bi-file-earmark"></i> {{ doc.nombre_archivo_original|default:doc.archivo.name }}
+                                                </a>
+                                                <button type="button" class="prestamo-btn-borrar" data-doc-id="{{ doc.id }}" title="Borrar archivo">
+                                                    <i class="bi bi-trash"></i> Borrar
+                                                </button>
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% elif prestamo.documento_escaneado %}
+                                    <div class="prestamo-archivos-actuales">
+                                        <strong>Archivo actual:</strong>
+                                        <div class="prestamo-archivo-single">
+                                            <a href="{{ prestamo.documento_escaneado.url }}" target="_blank" class="prestamo-archivo-link">
+                                                <i class="bi bi-file-earmark"></i> {{ prestamo.documento_escaneado.name }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}{# fin estado != DEVOLUCION_SOLICITADA #}
+                {% endif %}
+
+                {% if prestamo.tipo_prestamo == 'FISICO' and prestamo.estado != 'SOLICITADO' and prestamo.estado != 'RECHAZADO' and prestamo.estado != 'RECHAZADO_USUARIO' %}
+                <div id="bloque-devolucion" class="prestamo-card prestamo-card--accent">
+                    <h5><i class="bi bi-box-arrow-in-down"></i> Control de devolución física</h5>
+                    <div class="prestamo-grid-two">
+                        <label class="prestamo-checkbox">
+                            {{ form.documento_devuelto }}
+                            <span>Documento devuelto físicamente</span>
+                        </label>
+                        <label class="prestamo-checkbox prestamo-checkbox--alert">
+                            {{ form.documento_danado }}
+                            <span>Presenta daños o faltantes</span>
+                        </label>
+                    </div>
+                    <div class="prestamo-form-group">
+                        <label for="{{ form.observaciones_dano.id_for_label }}">Observaciones</label>
+                        {{ form.observaciones_dano|add_class:"prestamo-form-control" }}
+                    </div>
+                    
+                    {% if prestamo.estado == 'PRESTAMO_ACTIVO' or prestamo.estado == 'DEVOLUCION_SOLICITADA' or prestamo.estado == 'VENCIDO' %}
+                    <div class="prestamo-card-divider"></div>
+                    <div class="prestamo-alert prestamo-alert-info">
+                        <label class="prestamo-checkbox prestamo-checkbox--success">
+                            {{ form.finalizar_prestamo }}
+                            <span><strong>Finalizar proceso de préstamo</strong></span>
+                        </label>
+                        <small class="prestamo-form-help mt-2 d-block">
+                            <i class="bi bi-info-circle"></i> Marca esta opción cuando Archivo ya recibió físicamente el documento. El estado cambiará a <strong>DEVUELTO</strong> y quedará listo para la reintegración final.
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="prestamo-action-bar">
+                    {% if prestamo.estado == 'DEVOLUCION_SOLICITADA' and prestamo.tipo_prestamo == 'FISICO' %}
+                    <button type="button" class="prestamo-btn prestamo-btn-success" id="btnAceptarDevolucion" style="font-size:1.05rem;">
+                        <i class="bi bi-box-arrow-in-down"></i> Aceptar devolución del documento
+                    </button>
+                    {% endif %}
+                    <button type="submit" class="prestamo-btn prestamo-btn-primary">
+                        <i class="bi bi-save"></i> Guardar cambios
+                    </button>
+                    <a href="{% url 'detalle_prestamo' prestamo.id %}" class="prestamo-btn prestamo-btn-outline">
+                        <i class="bi bi-eye"></i> Ver detalle
+                    </a>
+                    {% if prestamo.estado == 'DEVUELTO' %}
+                        <button type="button" class="prestamo-btn prestamo-btn-success" onclick="mostrarModalReintegracion()">
+                            <i class="bi bi-box-arrow-in-down"></i> Reintegrar a {{ area_responsable_label }}
+                        </button>
+                    {% elif prestamo.estado == 'REINTEGRADO' %}
+                        <span class="prestamo-btn prestamo-btn-success prestamo-btn-disabled" title="Reintegrado el {{ prestamo.fecha_reintegracion|date:'d/m/Y H:i' }}">
+                            <i class="bi bi-check-circle"></i> Reintegrado
+                        </span>
+                    {% endif %}
+                    <a href="{% url 'gestion_prestamos' %}" class="prestamo-btn prestamo-btn-secondary">Volver</a>
+                </div>
+            </form>
+            
+            {# Formulario de reintegración oculto #}
+            {% if prestamo.estado == 'DEVUELTO' %}
+                <form id="formReintegracion" method="post" action="{% url 'reintegrar_prestamo' prestamo.id %}" style="display: none;">
+                    {% csrf_token %}
+                </form>
+            {% endif %}
+        </section>
+
+        <aside class="prestamo-aside">
+            <div class="prestamo-card prestamo-card--info">
+                <h4 class="prestamo-card-title">Datos clave</h4>
+                <ul class="prestamo-mini-list">
+                    <li>
+                        <span class="prestamo-mini-label">Solicitante</span>
+                        <strong>{{ prestamo.solicitante.get_full_name|default:prestamo.solicitante.username }}</strong>
+                        <small>{{ prestamo.oficina_solicitante.nombre|default:"Oficina no registrada" }}</small>
+                    </li>
+                    <li>
+                        <span class="prestamo-mini-label">Oficina responsable</span>
+                        <strong>{{ area_responsable_label }}</strong>
+                    </li>
+                    <li>
+                        <span class="prestamo-mini-label">Descripción</span>
+                        <strong>{{ prestamo.descripcion_documento|default:"Sin descripción" }}</strong>
+                    </li>
+                    {% if prestamo.registro %}
+                    <li>
+                        <span class="prestamo-mini-label">Registro asociado</span>
+                        <a href="{% url 'ver_documento' prestamo.registro.id %}" target="_blank" class="prestamo-btn prestamo-btn-outline prestamo-btn-sm">
+                            <i class="bi bi-box-arrow-up-right"></i> Ver registro
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <div class="prestamo-card prestamo-card--info">
+                <h4 class="prestamo-card-title">Historial reciente</h4>
+                <ul class="prestamo-timeline">
+                    {% for evento in historial %}
+                    <li class="prestamo-timeline-item">
+                        <div class="prestamo-timeline-dot"></div>
+                        <div class="prestamo-timeline-content">
+                            <strong>{{ evento.evento }}</strong>
+                            <p>{{ evento.descripcion|default:"Sin descripción" }}</p>
+                            <small>{{ evento.fecha|date:"d/m/Y H:i" }} · {{ evento.usuario.get_full_name|default:evento.usuario.username|default:"Sistema" }}</small>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="prestamo-timeline-item">
+                        <div class="prestamo-timeline-content">
+                            <p>Aún no hay historial registrado.</p>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </aside>
+    </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/correspondencia/vendor/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Lógica para préstamos SOLICITADOS
+    const accionRadios = document.querySelectorAll('#accionRadios input[type="radio"]');
+    const bloqueEvidencia = document.getElementById('bloque-evidencia');
+    const bloqueRechazoMotivo = document.getElementById('bloque-rechazo-motivo');
+    const bloqueRechazoDocumento = document.getElementById('bloque-rechazo-documento');
+
+    if (accionRadios.length > 0) {
+        function toggleAccionBlocks() {
+            const selected = document.querySelector('#accionRadios input[type="radio"]:checked');
+            
+            // Remover clase de selección de todos los cards
+            document.querySelectorAll('.prestamo-radio-card').forEach(card => {
+                card.classList.remove('prestamo-radio-card--selected');
+            });
+            
+            if (!selected) return;
+            
+            const accion = selected.value;
+            const card = selected.closest('.prestamo-radio-card');
+            
+            // Agregar clase de selección al card seleccionado
+            if (card) {
+                card.classList.add('prestamo-radio-card--selected');
+            }
+            
+            if (bloqueEvidencia) {
+                bloqueEvidencia.classList.toggle('prestamo-hidden', accion !== 'cargar_evidencia');
+            }
+            
+            if (bloqueRechazoMotivo) {
+                bloqueRechazoMotivo.classList.toggle('prestamo-hidden', accion !== 'rechazar');
+            }
+            
+            if (bloqueRechazoDocumento) {
+                bloqueRechazoDocumento.classList.toggle('prestamo-hidden', accion !== 'rechazar');
+            }
+        }
+
+        accionRadios.forEach(radio => {
+            radio.addEventListener('change', toggleAccionBlocks);
+        });
+        
+        toggleAccionBlocks(); // Ejecutar al cargar
+    }
+
+    // Lógica para otros estados (mantener compatibilidad)
+    const estadoSelect = document.querySelector('[data-behaviour="estado-prestamo"]');
+    const bloqueRechazo = document.getElementById('bloque-rechazo');
+    const bloqueDocumentos = document.getElementById('bloque-documentos');
+    const bloqueDevolucion = document.getElementById('bloque-devolucion');
+
+    function toggleBlocks() {
+        if (!estadoSelect) return;
+        const estado = estadoSelect.value;
+
+        if (bloqueRechazo) {
+            bloqueRechazo.classList.toggle('prestamo-hidden', estado !== 'RECHAZADO');
+        }
+
+        if (bloqueDocumentos) {
+            bloqueDocumentos.classList.toggle('prestamo-hidden', estado === 'RECHAZADO');
+        }
+
+        if (bloqueDevolucion) {
+            const mostrarDevolucion = estado === 'DEVUELTO';
+            bloqueDevolucion.classList.toggle('prestamo-hidden', !mostrarDevolucion);
+        }
+    }
+
+    if (estadoSelect) {
+        estadoSelect.addEventListener('change', toggleBlocks);
+        toggleBlocks();
+    }
+
+    // Botón rápido "Aceptar devolución" — marca checkboxes y envía el form
+    const btnAceptarDev = document.getElementById('btnAceptarDevolucion');
+    if (btnAceptarDev) {
+        btnAceptarDev.addEventListener('click', function() {
+            const chkFinalizar = document.querySelector('[name="finalizar_prestamo"]');
+            const chkDevuelto  = document.querySelector('[name="documento_devuelto"]');
+            if (chkFinalizar) chkFinalizar.checked = true;
+            if (chkDevuelto)  chkDevuelto.checked = true;
+            // Enviar el formulario
+            const form = btnAceptarDev.closest('form');
+            if (form) form.submit();
+        });
+    }
+    
+    // Personalizar input de archivos múltiples
+    const fileInputs = document.querySelectorAll('.prestamo-file-input');
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                let totalSize = 0;
+                const maxSize = 10 * 1024 * 1024; // 10 MB
+                const fileList = [];
+                
+                for (let i = 0; i < files.length; i++) {
+                    totalSize += files[i].size;
+                    fileList.push({
+                        name: files[i].name,
+                        size: files[i].size
+                    });
+                }
+                
+                // Validar tamaño total
+                if (totalSize > maxSize) {
+                    const sizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+                    alert(`El tamaño total de los archivos (${sizeMB} MB) excede el límite de 10 MB.`);
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Mostrar información de archivos seleccionados
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'prestamo-archivos-seleccionados';
+                infoDiv.innerHTML = `<strong>Archivos seleccionados (${files.length}):</strong><ul>`;
+                fileList.forEach(file => {
+                    const sizeKB = (file.size / 1024).toFixed(2);
+                    infoDiv.innerHTML += `<li>${file.name} (${sizeKB} KB)</li>`;
+                });
+                infoDiv.innerHTML += '</ul>';
+                
+                // Remover info anterior si existe
+                const oldInfo = input.parentElement.querySelector('.prestamo-archivos-seleccionados');
+                if (oldInfo) oldInfo.remove();
+                
+                input.parentElement.appendChild(infoDiv);
+            }
+        });
+    });
+    
+    // Verificar que el input tenga el atributo multiple
+    const fileInput = document.querySelector('input[name="documentos_escaneados"]');
+    if (fileInput) {
+        if (!fileInput.hasAttribute('multiple')) {
+            console.warn('El input de documentos_escaneados no tiene el atributo multiple. Agregándolo...');
+            fileInput.setAttribute('multiple', 'multiple');
+        } else {
+            console.log('✓ El input tiene el atributo multiple correctamente');
+        }
+    }
+    
+    // Manejar el botón de borrar documentos escaneados
+    document.querySelectorAll('.prestamo-btn-borrar').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const docId = this.getAttribute('data-doc-id');
+            if (!docId) {
+                console.error('No se encontró data-doc-id en el botón');
+                return;
+            }
+            
+            if (confirm('¿Estás seguro de que quieres borrar este archivo?')) {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+                if (!csrfToken) {
+                    alert('Error: No se encontró el token CSRF.');
+                    return;
+                }
+                
+                // Construir la URL usando el patrón de Django
+                const url = '{% url "eliminar_documento_prestamo" 0 %}'.replace('0', docId);
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken.value,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.error || 'Error al eliminar el archivo');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Remover el elemento de la lista
+                        const listItem = this.closest('li');
+                        if (listItem) {
+                            listItem.remove();
+                        }
+                        // Si no quedan archivos, ocultar la sección
+                        const archivosLista = document.querySelector('.prestamo-archivos-lista');
+                        if (archivosLista && archivosLista.children.length === 0) {
+                            const archivosActuales = document.querySelector('.prestamo-archivos-actuales');
+                            if (archivosActuales) {
+                                archivosActuales.remove();
+                            }
+                        }
+                        // También verificar si hay un archivo único
+                        const archivoSingle = document.querySelector('.prestamo-archivo-single');
+                        if (archivoSingle) {
+                            const archivosActuales = document.querySelector('.prestamo-archivos-actuales');
+                            if (archivosActuales) {
+                                archivosActuales.remove();
+                            }
+                        }
+                    } else {
+                        alert('Error al borrar el archivo: ' + (data.error || 'Error desconocido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Ocurrió un error al intentar borrar el archivo: ' + error.message);
+                });
+            }
+        });
+    });
+});
+
+// Modal de confirmación para reintegración
+function mostrarModalReintegracion() {
+    const modal = document.getElementById('modalReintegracion');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+function cerrarModalReintegracion() {
+    const modal = document.getElementById('modalReintegracion');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function confirmarReintegracion() {
+    const form = document.getElementById('formReintegracion');
+    if (form) {
+        form.submit();
+    }
+}
+
+// Cerrar modal al hacer clic fuera de él
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('modalReintegracion');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                cerrarModalReintegracion();
+            }
+        });
+    }
+});
+</script>
+
+{# Modal de confirmación personalizado #}
+{% if prestamo.estado == 'DEVUELTO' %}
+<div id="modalReintegracion" class="prestamo-modal" style="display: none;">
+    <div class="prestamo-modal-content">
+        <div class="prestamo-modal-header">
+            <h3><i class="bi bi-exclamation-triangle"></i> Confirmar reintegración</h3>
+            <button type="button" class="prestamo-modal-close" onclick="cerrarModalReintegracion()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="prestamo-modal-body">
+            <p>¿Está seguro de que desea marcar este préstamo como <strong>reintegrado a {{ area_responsable_label }}</strong>?</p>
+            <p class="prestamo-modal-info">
+                <i class="bi bi-info-circle"></i> Esta acción cambiará el estado del préstamo a <strong>REINTEGRADO</strong> y registrará la fecha de reintegración.
+            </p>
+        </div>
+        <div class="prestamo-modal-footer">
+            <button type="button" class="prestamo-btn prestamo-btn-secondary" onclick="cerrarModalReintegracion()">
+                <i class="bi bi-x-circle"></i> Cancelar
+            </button>
+            <button type="button" class="prestamo-btn prestamo-btn-success" onclick="confirmarReintegracion()">
+                <i class="bi bi-check-circle"></i> Confirmar reintegración
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+</body>
+</html>

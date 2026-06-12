@@ -1,0 +1,190 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load crispy_forms_tags %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+<script>
+// Variable global para pasar el codigo_trd de la oficina del usuario
+var usuarioOficinaTrd = '{{ request.user.perfil.oficina.codigo_trd|default:"" }}';
+</script>
+
+{% block content %}
+<style>
+    /* Estilo para campo readonly */
+    input[readonly] {
+        background-color: #e9ecef;
+        cursor: not-allowed;
+    }
+</style>
+
+<div class="row">
+  <div class="col-lg-10">
+    <div class="card shadow">
+      <div class="card-body">
+        <form method="post" id="formComunicacionInterna">
+          {% csrf_token %}
+          {{ form|crispy }}
+          <div class="mt-3 d-flex gap-2">
+            <button type="submit" class="btn btn-secondary">Guardar borrador</button>
+            <a class="btn btn-outline-secondary" href="{% url 'correspondencia:comunicaciones_list' %}">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const serieSelect = document.getElementById('id_serie_comunicacion');
+    const subserieSelect = document.getElementById('id_subserie_comunicacion');
+    const codigoTrdInput = document.getElementById('id_trd');
+    const endpoint = '/registros/cargar_subseries/';
+
+    if (!serieSelect || !subserieSelect) {
+        console.error('No se encontraron los selectores de serie/subserie');
+        return;
+    }
+
+    const emptyLabel = 'Seleccione una serie primero...';
+
+    function resetSubseries() {
+        subserieSelect.innerHTML = `<option value="">${emptyLabel}</option>`;
+        subserieSelect.disabled = true;
+        if (codigoTrdInput) {
+            codigoTrdInput.value = '';
+        }
+    }
+
+    // Función para generar el TRD completo: OFICINA.SERIE.SUBSERIE
+    function generarTrdCompleto() {
+        if (!codigoTrdInput) return;
+        
+        // Obtener el codigo_trd de la oficina del usuario logueado desde la variable global
+        const usuarioOficinaTrd = window.usuarioOficinaTrd || '';
+        
+        // Obtener el codigo_trd de la serie seleccionada
+        const serieId = serieSelect?.value;
+        let serieTrd = '';
+        if (serieId) {
+            const serieOption = serieSelect?.options[serieSelect?.selectedIndex];
+            serieTrd = serieOption?.getAttribute('data-codigo-trd') || '';
+        }
+        
+        // Obtener el codigo_trd de la subserie seleccionada
+        const subserieOption = subserieSelect?.options[subserieSelect?.selectedIndex];
+        const subserieTrd = subserieOption?.getAttribute('data-codigo-trd') || '';
+        
+        // Construir el TRD completo
+        const partesValidas = [];
+        if (usuarioOficinaTrd) partesValidas.push(usuarioOficinaTrd);
+        if (serieTrd) partesValidas.push(serieTrd);
+        if (subserieTrd) partesValidas.push(subserieTrd);
+        
+        // Asignar el TRD completo o vacío si faltan partes
+        codigoTrdInput.value = partesValidas.length === 3 ? partesValidas.join('.') : '';
+    }
+
+    // Cargar series dinámicamente con sus codigos_trd
+    function cargarSeries() {
+        if (!serieSelect) return;
+        
+        fetch("/registros/cargar_series/") // Este endpoint devuelve todos los series
+            .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
+            .then(data => {
+                // No modificamos el HTML, solo usamos los datos para llenar atributos
+                if (Array.isArray(data)) {
+                    data.forEach(s => {
+                        const opt = serieSelect.querySelector(`option[value="${s.id}"]`);
+                        if (opt) {
+                            // Guardar el codigo_trd de la serie como atributo del option
+                            opt.setAttribute('data-codigo-trd', s.codigo_trd || '');
+                        }
+                    });
+                }
+            })
+            .catch(() => {
+                console.error('Error al cargar información de series');
+            });
+    }
+
+    // Cargar subseries cuando cambie la serie
+    serieSelect.addEventListener('change', () => {
+        const serieId = serieSelect.value;
+        resetSubseries();
+
+        if (!serieId) {
+            generarTrdCompleto();
+            return;
+        }
+
+        // Mostrar indicador de carga
+        subserieSelect.disabled = true;
+        const loadingOption = document.createElement('option');
+        loadingOption.value = '';
+        loadingOption.textContent = 'Cargando...';
+        loadingOption.disabled = true;
+        subserieSelect.appendChild(loadingOption);
+
+        fetch(`${endpoint}?serie_id=${serieId}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin'
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                resetSubseries();
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        option.textContent = item.nombre;
+                        option.dataset.codigoTrd = item.codigo_trd || '';
+                        subserieSelect.appendChild(option);
+                    });
+                    subserieSelect.disabled = false;
+                } else {
+                    const noDataOption = document.createElement('option');
+                    noDataOption.value = '';
+                    noDataOption.textContent = 'No hay subseries disponibles';
+                    subserieSelect.appendChild(noDataOption);
+                }
+                // Generar TRD cuando cambia la serie
+                generarTrdCompleto();
+            })
+            .catch(error => {
+                console.error('Error al cargar subseries:', error);
+                resetSubseries();
+                const errorOption = document.createElement('option');
+                errorOption.value = '';
+                errorOption.textContent = 'Error al cargar subseries';
+                subserieSelect.appendChild(errorOption);
+            });
+    });
+
+    // Actualizar TRD cuando se selecciona una subserie
+    if (subserieSelect) {
+        subserieSelect.addEventListener('change', generarTrdCompleto);
+    }
+
+    // Si ya hay una serie seleccionada al cargar la página, cargar sus subseries
+    if (serieSelect.value) {
+        serieSelect.dispatchEvent(new Event('change'));
+    }
+    
+    // Cargar información de series
+    cargarSeries();
+});
+</script>
+{% endblock %}
+
+

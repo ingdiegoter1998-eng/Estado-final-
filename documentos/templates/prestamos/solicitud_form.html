@@ -1,0 +1,274 @@
+{% load static %}
+{% load widget_tweaks %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar Préstamo Documental</title>
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{% static 'css/prestamos.css' %}">
+</head>
+<body class="prestamo-body">
+<div class="prestamo-content-wrapper">
+    {% include 'partials/sidebar_nav.html' %}
+    <div class="prestamo-main-content">
+<div class="prestamo-shell">
+    <header class="prestamo-hero">
+        <div>
+            <p class="prestamo-eyebrow">Préstamos documentales</p>
+            <h1>Solicita un documento al área responsable</h1>
+            <p class="prestamo-hero-text">
+                Completa la información mínima del documento. Nosotros nos encargamos de ubicarlo,
+                preparar la entrega y mantener trazabilidad completa.
+            </p>
+        </div>
+        <div class="prestamo-hero-actions">
+            <span class="prestamo-chip prestamo-chip--soft">
+                <i class="bi bi-clock-history"></i> Físico: 10 días hábiles (Historia Clínica) / 20 días hábiles (otros)
+            </span>
+        </div>
+    </header>
+
+    <div class="prestamo-stepper">
+        <div class="prestamo-step prestamo-step--done">
+            <span class="prestamo-step__icon"><i class="bi bi-person-badge"></i></span>
+            <div>Solicitante</div>
+        </div>
+        <div class="prestamo-step prestamo-step--active">
+            <span class="prestamo-step__icon"><i class="bi bi-folder2-open"></i></span>
+            <div>Detalle del documento</div>
+        </div>
+        <div class="prestamo-step">
+            <span class="prestamo-step__icon"><i class="bi bi-send-check"></i></span>
+            <div>Confirmación</div>
+        </div>
+    </div>
+
+    <div class="prestamo-layout prestamo-layout--split">
+        <section class="prestamo-card prestamo-card--main">
+            <form method="post" class="prestamo-form-grid">
+                {% csrf_token %}
+
+                {% if form.errors %}
+                <div class="prestamo-alert prestamo-alert-danger">
+                    <strong><i class="bi bi-exclamation-triangle"></i> Revisa los campos:</strong>
+                    {{ form.errors }}
+                </div>
+                {% endif %}
+
+                <div class="prestamo-grid-two">
+                    <div class="prestamo-form-group">
+                        <label for="{{ form.oficina_responsable.id_for_label }}">Oficina a la que se solicita</label>
+                        {{ form.oficina_responsable|add_class:"prestamo-form-control" }}
+                        <small class="prestamo-form-help">Define explícitamente qué oficina debe gestionar el préstamo.</small>
+                    </div>
+                    <div class="prestamo-form-group">
+                        <label for="{{ form.serie.id_for_label }}">Serie documental</label>
+                        {{ form.serie|add_class:"prestamo-form-control js-serie-select"|attr:"data-subseries-endpoint:/registros/cargar_subseries/"}}
+                        <small class="prestamo-form-help">Selecciona la serie según la TRD institucional.</small>
+                    </div>
+                    <div class="prestamo-form-group">
+                        <label for="{{ form.subserie.id_for_label }}">Subserie asociada</label>
+                        {{ form.subserie|add_class:"prestamo-form-control js-subserie-select"|attr:"data-empty-label:Selecciona una serie primero"}}
+                    </div>
+                </div>
+
+                <div class="prestamo-grid-two">
+                    <div class="prestamo-form-group">
+                        <label for="{{ form.tipo_prestamo.id_for_label }}">Tipo de préstamo</label>
+                        {{ form.tipo_prestamo|add_class:"prestamo-form-control" }}
+                    </div>
+                </div>
+
+                <div class="prestamo-form-group">
+                    <label for="{{ form.descripcion_documento.id_for_label }}">Describe el documento</label>
+                    {{ form.descripcion_documento|add_class:"prestamo-form-control" }}
+                    <small class="prestamo-form-help">
+                        Incluye fechas, asunto, titulares, número de historia clínica o cualquier dato que facilite su localización.
+                    </small>
+                </div>
+
+                <div class="prestamo-form-group">
+                    <label for="{{ form.notas.id_for_label }}">Notas adicionales (opcional)</label>
+                    {{ form.notas|add_class:"prestamo-form-control" }}
+                </div>
+
+                <div class="prestamo-card prestamo-card--accent">
+                    <h5><i class="bi bi-lightbulb"></i> ¿Físico o digital?</h5>
+                    <div class="prestamo-grid-two prestamo-gap-2">
+                        <div class="prestamo-pill">
+                            <span class="prestamo-pill__label"><i class="bi bi-file-earmark-arrow-up"></i> Préstamo digital</span>
+                            <p>Subimos un PDF escaneado y recibirás un enlace seguro para descargarlo.</p>
+                        </div>
+                        <div class="prestamo-pill">
+                            <span class="prestamo-pill__label"><i class="bi bi-archive"></i> Préstamo físico</span>
+                            <p>El documento físico se entrega al solicitante. Vigencia: 10 días hábiles para Historia Clínica, 20 días hábiles para otros documentos.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="prestamo-action-bar">
+                    <button type="submit" class="prestamo-btn prestamo-btn-primary">
+                        <i class="bi bi-send"></i> Enviar solicitud
+                    </button>
+                    <a href="{% url 'mis_prestamos' %}" class="prestamo-btn prestamo-btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </section>
+
+        <aside class="prestamo-aside">
+            <div class="prestamo-card prestamo-card--info">
+                <h4 class="prestamo-card-title">Resumen del solicitante</h4>
+                <ul class="prestamo-mini-list">
+                    <li>
+                        <span class="prestamo-mini-label">Solicitante</span>
+                        <strong>{{ user.get_full_name|default:user.username }}</strong>
+                    </li>
+                    <li>
+                        <span class="prestamo-mini-label">Oficina</span>
+                        <strong>{{ user.perfil.oficina.nombre|default:"No registrada" }}</strong>
+                    </li>
+                    <li>
+                        <span class="prestamo-mini-label">Se solicita a</span>
+                        <strong>Selecciona una oficina gestora</strong>
+                    </li>
+                    <li>
+                        <span class="prestamo-mini-label">Estado actual</span>
+                        <strong>Preparando solicitud</strong>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="prestamo-card prestamo-card--info">
+                <h4 class="prestamo-card-title">Firmas automáticas</h4>
+                <div class="prestamo-signature-stack">
+                    <div>
+                        <span class="prestamo-mini-label">Solicitante</span>
+                        <strong>{{ user.get_full_name|default:user.username }}</strong>
+                    </div>
+                    <div>
+                        <span class="prestamo-mini-label">Vo.Bo. Archivo</span>
+                        <strong>Eliana Gelves</strong>
+                        <small>Jefatura del área responsable</small>
+                    </div>
+                    <div>
+                        <span class="prestamo-mini-label">Gestión</span>
+                        <strong>Equipo gestor del préstamo</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prestamo-card prestamo-card--info">
+                <h4 class="prestamo-card-title">Buenas prácticas</h4>
+                <ul class="prestamo-tips">
+                    <li><i class="bi bi-check-circle"></i> Usa palabras clave que aparezcan dentro de la carpeta.</li>
+                    <li><i class="bi bi-check-circle"></i> Si el registro no existe en el sistema, describe dónde lo viste.</li>
+                    <li><i class="bi bi-check-circle"></i> Para historiales clínicos indica número de historia y vigencia.</li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/correspondencia/vendor/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const serieSelect = document.querySelector('.js-serie-select');
+    const subserieSelect = document.querySelector('.js-subserie-select');
+
+    if (!serieSelect || !subserieSelect) {
+        console.error('No se encontraron los selectores de serie/subserie');
+        return;
+    }
+
+    // Usar la URL completa desde el atributo data o construirla
+    let endpoint = serieSelect.dataset.subseriesEndpoint;
+    if (!endpoint) {
+        endpoint = '/registros/cargar_subseries/';
+    }
+    
+    const emptyLabel = subserieSelect.dataset.emptyLabel || 'Selecciona una serie primero';
+
+    function resetSubseries() {
+        subserieSelect.innerHTML = `<option value="">${emptyLabel}</option>`;
+        subserieSelect.disabled = true;
+    }
+
+    serieSelect.addEventListener('change', () => {
+        const serieId = serieSelect.value;
+        resetSubseries();
+
+        if (!serieId) {
+            return;
+        }
+
+        // Mostrar indicador de carga
+        subserieSelect.disabled = true;
+        const loadingOption = document.createElement('option');
+        loadingOption.value = '';
+        loadingOption.textContent = 'Cargando...';
+        loadingOption.disabled = true;
+        subserieSelect.appendChild(loadingOption);
+
+        fetch(`${endpoint}?serie_id=${serieId}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            credentials: 'same-origin'
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                resetSubseries();
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        option.textContent = item.nombre;
+                        subserieSelect.appendChild(option);
+                    });
+                    subserieSelect.disabled = false;
+                } else {
+                    const noDataOption = document.createElement('option');
+                    noDataOption.value = '';
+                    noDataOption.textContent = 'No hay subseries disponibles';
+                    subserieSelect.appendChild(noDataOption);
+                }
+            })
+            .catch(error => {
+                console.error('Error al cargar subseries:', error);
+                resetSubseries();
+                const errorOption = document.createElement('option');
+                errorOption.value = '';
+                errorOption.textContent = 'Error al cargar subseries';
+                subserieSelect.appendChild(errorOption);
+            });
+    });
+
+    // Si ya hay una serie seleccionada al cargar la página, cargar sus subseries
+    if (serieSelect.value) {
+        serieSelect.dispatchEvent(new Event('change'));
+    }
+
+    // Cambiar "Virtual" a "Digital" en el select de tipo de préstamo
+    const tipoPrestamoSelect = document.getElementById('id_tipo_prestamo');
+    if (tipoPrestamoSelect) {
+        const virtualOption = tipoPrestamoSelect.querySelector('option[value="VIRTUAL"]');
+        if (virtualOption && virtualOption.textContent.trim() === 'Virtual') {
+            virtualOption.textContent = 'Digital';
+        }
+    }
+});
+</script>
+</body>
+</html>
+

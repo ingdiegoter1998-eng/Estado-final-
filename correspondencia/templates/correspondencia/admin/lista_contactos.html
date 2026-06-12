@@ -1,0 +1,363 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load static humanize %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-end align-items-center mb-4">
+        <form method="get" action="{% url 'correspondencia:listar_contactos' %}" class="me-2 d-flex">
+            <input type="text" name="q" class="form-control form-control-sm me-1" placeholder="Buscar contacto..." value="{{ search_query }}">
+            <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
+        </form>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrearContacto">
+            <i class="bi bi-plus-circle-fill me-1"></i> Crear Nuevo Contacto
+        </button>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header">
+            Lista de Contactos Registrados
+        </div>
+        <div class="card-body">
+            {% if contactos %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover table-bordered align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="py-2 px-3">Nombre Contacto</th>
+                                <th class="py-2 px-3">Entidad Externa</th>
+                                <th class="py-2 px-3 text-center">Ámbito</th>
+                                <th class="py-2 px-3">Cargo</th>
+                                <th class="py-2 px-3">Correo Electrónico</th>
+                                <th class="py-2 px-3">Teléfono Contacto</th>
+                                <th class="py-2 px-3 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contacto in contactos %}
+                            <tr>
+                                <td class="py-2 px-3">{{ contacto.nombre_completo }}</td>
+                                <td class="py-2 px-3">{{ contacto.entidad_externa.nombre }}</td> {# Mostrar nombre de entidad #}
+                                <td class="py-2 px-3 text-center">
+                                    <span class="badge bg-primary">Global</span>
+                                </td>
+                                <td class="py-2 px-3">{{ contacto.cargo|default:"-" }}</td>
+                                <td class="py-2 px-3">{{ contacto.correo_electronico|default:"-" }}</td>
+                                <td class="py-2 px-3">{{ contacto.telefono_contacto|default:"-" }}</td>
+                                <td class="py-2 px-3 text-center">
+                                    <button class="btn btn-sm btn-outline-primary" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#modalEditarContacto"
+                                            data-contacto-id="{{ contacto.id }}"
+                                            data-contacto-nombres="{{ contacto.nombres }}"
+                                            data-contacto-apellidos="{{ contacto.apellidos|default:'' }}"
+                                            data-contacto-cargo="{{ contacto.cargo|default:'' }}"
+                                            data-contacto-email="{{ contacto.correo_electronico|default:'' }}"
+                                            data-contacto-telefono="{{ contacto.telefono_contacto|default:'' }}"
+                                            data-contacto-documento="{{ contacto.numero_documento|default:'' }}"
+                                            data-contacto-entidad="{{ contacto.entidad_externa.id }}"
+                                            title="Editar contacto">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <a href="#" class="btn btn-sm btn-outline-danger disabled" title="Eliminar (Próximamente)"><i class="bi bi-trash"></i></a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {# Paginación #}
+                {% if contactos.has_other_pages %}
+                <nav aria-label="Page navigation" class="mt-3">
+                    <ul class="pagination justify-content-center">
+                         {% if contactos.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ contactos.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">&laquo;</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                        {% endif %}
+                        {% for i in contactos.paginator.page_range %}
+                            {% if contactos.number == i %}
+                                <li class="page-item active" aria-current="page"><span class="page-link">{{ i }}</span></li>
+                             {% elif i > contactos.number|add:'-3' and i < contactos.number|add:'3' %}
+                                <li class="page-item"><a class="page-link" href="?page={{ i }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ i }}</a></li>
+                            {% elif i == contactos.paginator.num_pages or i == 1 %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                        {% endfor %}
+                        {% if contactos.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ contactos.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}">&raquo;</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+            {% else %}
+                 <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    {% if search_query %}
+                        No se encontraron contactos que coincidan con "{{ search_query }}".
+                    {% else %}
+                        No hay contactos globales registrados todavía.
+                         <a href="{% url 'correspondencia:crear_contacto' %}" class="alert-link ms-2">Crear el primer contacto</a>.
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para crear contacto -->
+{% include 'correspondencia/partials/modals/modal_contacto.html' with modal_id='modalCrearContacto' form_contacto=form_contacto open_contacto_modal=open_contacto_modal %}
+
+<!-- Modal para editar contacto -->
+<div class="modal fade" id="modalEditarContacto" tabindex="-1" aria-labelledby="modalEditarContactoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" id="formEditarContacto">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEditarContactoLabel">Editar Contacto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_entidad_externa" class="form-label">
+                            Entidad Externa <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="edit_entidad_externa" name="entidad_externa" required>
+                            <option value="">Seleccione una entidad...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_nombres" class="form-label">
+                            Nombres <span class="text-danger">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="edit_nombres" name="nombres" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_apellidos" class="form-label">Apellidos</label>
+                        <input type="text" class="form-control" id="edit_apellidos" name="apellidos">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_cargo" class="form-label">Cargo</label>
+                        <input type="text" class="form-control" id="edit_cargo" name="cargo">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_correo_electronico" class="form-label">
+                            Correo Electrónico <span class="text-danger">*</span>
+                        </label>
+                        <input type="email" class="form-control" id="edit_correo_electronico" name="correo_electronico" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_telefono_contacto" class="form-label">Teléfono del Contacto</label>
+                        <input type="text" class="form-control" id="edit_telefono_contacto" name="telefono_contacto">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_numero_documento" class="form-label">Número de Documento</label>
+                        <input type="text" class="form-control" id="edit_numero_documento" name="numero_documento">
+                    </div>
+                    
+                    <!-- Alerta de correspondencia activa (se muestra dinámicamente) -->
+                    <div id="alertaCorreoActivo" class="alert alert-warning d-none" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        <span id="alertaCorreoActivoTexto"></span>
+                    </div>
+                    
+                    <!-- Historial de cambios -->
+                    <hr class="my-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0 text-muted">
+                            <i class="bi bi-clock-history me-1"></i>Historial de Cambios
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="btnToggleHistorial" onclick="toggleHistorial()">
+                            <i class="bi bi-chevron-down me-1"></i>Ver historial
+                        </button>
+                    </div>
+                    <div id="historialCambiosContainer" class="collapse">
+                        <div id="historialCambiosBody" class="small">
+                            <div class="text-center text-muted py-3">
+                                <div class="spinner-border spinner-border-sm" role="status"></div>
+                                Cargando historial...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleHistorial() {
+    const container = document.getElementById('historialCambiosContainer');
+    const btn = document.getElementById('btnToggleHistorial');
+    if (container.classList.contains('show')) {
+        container.classList.remove('show');
+        btn.innerHTML = '<i class="bi bi-chevron-down me-1"></i>Ver historial';
+    } else {
+        container.classList.add('show');
+        btn.innerHTML = '<i class="bi bi-chevron-up me-1"></i>Ocultar historial';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+    // Reabrir modal tras POST inválido
+    var openContacto = {% if open_contacto_modal %}true{% else %}false{% endif %};
+    if (openContacto && window.bootstrap) {
+        var m = document.getElementById('modalCrearContacto'); 
+        if(m) new bootstrap.Modal(m).show();
+    }
+    
+    // Cargar entidades cuando se abre el modal de editar
+    const modalEditarContacto = document.getElementById('modalEditarContacto');
+    if (modalEditarContacto) {
+        let contactoIdActual = null;
+        let emailOriginal = '';
+        
+        modalEditarContacto.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            contactoIdActual = button.getAttribute('data-contacto-id');
+            emailOriginal = button.getAttribute('data-contacto-email') || '';
+            
+            // Cargar datos del contacto en el formulario
+            document.getElementById('edit_nombres').value = button.getAttribute('data-contacto-nombres') || '';
+            document.getElementById('edit_apellidos').value = button.getAttribute('data-contacto-apellidos') || '';
+            document.getElementById('edit_cargo').value = button.getAttribute('data-contacto-cargo') || '';
+            document.getElementById('edit_correo_electronico').value = emailOriginal;
+            document.getElementById('edit_telefono_contacto').value = button.getAttribute('data-contacto-telefono') || '';
+            document.getElementById('edit_numero_documento').value = button.getAttribute('data-contacto-documento') || '';
+            
+            // Ocultar alerta y resetear historial
+            document.getElementById('alertaCorreoActivo').classList.add('d-none');
+            document.getElementById('historialCambiosContainer').classList.remove('show');
+            document.getElementById('btnToggleHistorial').innerHTML = '<i class="bi bi-chevron-down me-1"></i>Ver historial';
+            
+            const entidadId = button.getAttribute('data-contacto-entidad');
+            
+            // Cargar entidades en el select
+            fetch('{% url "correspondencia:buscar_entidades_ajax" %}', {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const selectEntidad = document.getElementById('edit_entidad_externa');
+                    selectEntidad.innerHTML = '<option value="">Seleccione una entidad...</option>';
+                    data.entidades.forEach(function(entidad) {
+                        const option = document.createElement('option');
+                        option.value = entidad.id;
+                        option.textContent = entidad.nombre;
+                        if (entidad.id == entidadId) option.selected = true;
+                        selectEntidad.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => console.error('Error cargando entidades:', error));
+            
+            // Cargar historial de auditoría
+            const historialBody = document.getElementById('historialCambiosBody');
+            historialBody.innerHTML = '<div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm" role="status"></div> Cargando historial...</div>';
+            
+            fetch(`{% url "correspondencia:auditoria_contacto_ajax" 0 %}`.replace('0', contactoIdActual), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.historial.length > 0) {
+                    let html = '<div class="list-group list-group-flush" style="max-height: 200px; overflow-y: auto;">';
+                    data.historial.forEach(function(item) {
+                        let detalles = '';
+                        if (item.campos_modificados && Object.keys(item.campos_modificados).length > 0) {
+                            const cambios = Object.entries(item.campos_modificados).map(([campo, vals]) => {
+                                const label = campo.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                                return `<span class="text-muted">${label}:</span> <del class="text-danger">${vals.antes || '(vacío)'}</del> → <span class="text-success">${vals.despues || '(vacío)'}</span>`;
+                            }).join('<br>');
+                            detalles = `<div class="mt-1 small">${cambios}</div>`;
+                        }
+                        html += `
+                            <div class="list-group-item px-2 py-2">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <span class="badge bg-${item.tipo_cambio === 'CREACION' ? 'success' : item.tipo_cambio === 'EDICION' ? 'primary' : 'danger'} me-1">${item.tipo_cambio_display}</span>
+                                        <small class="text-muted">por <strong>${item.usuario || 'Sistema'}</strong></small>
+                                    </div>
+                                    <small class="text-muted">${item.fecha}</small>
+                                </div>
+                                ${detalles}
+                            </div>`;
+                    });
+                    html += '</div>';
+                    historialBody.innerHTML = html;
+                } else {
+                    historialBody.innerHTML = '<div class="text-center text-muted py-3"><i class="bi bi-info-circle me-1"></i>Sin historial de cambios registrado.</div>';
+                }
+            })
+            .catch(error => {
+                historialBody.innerHTML = '<div class="text-center text-danger py-3"><i class="bi bi-exclamation-circle me-1"></i>Error al cargar historial.</div>';
+            });
+            
+            // Verificar correspondencia activa del contacto
+            fetch(`{% url "correspondencia:verificar_contacto_activo_ajax" 0 %}`.replace('0', contactoIdActual), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.total_activas > 0) {
+                    // Monitorear cambio de email para mostrar alerta
+                    const emailInput = document.getElementById('edit_correo_electronico');
+                    emailInput._correspondenciaActiva = data.total_activas;
+                    emailInput._detalle = data.detalle;
+                }
+            });
+        });
+        
+        // Mostrar alerta al cambiar email si hay correspondencia activa
+        document.getElementById('edit_correo_electronico').addEventListener('input', function() {
+            const alerta = document.getElementById('alertaCorreoActivo');
+            const alertaTexto = document.getElementById('alertaCorreoActivoTexto');
+            
+            if (this._correspondenciaActiva > 0 && this.value.trim().toLowerCase() !== emailOriginal.toLowerCase()) {
+                alertaTexto.textContent = `⚠️ Este contacto tiene ${this._correspondenciaActiva} correspondencia(s) activa(s) (${this._detalle}). Los envíos ya realizados NO se afectan, pero los futuros usarán el nuevo email.`;
+                alerta.classList.remove('d-none');
+            } else {
+                alerta.classList.add('d-none');
+            }
+        });
+        
+        // Manejar envío del formulario de edición
+        const formEditar = document.getElementById('formEditarContacto');
+        if (formEditar) {
+            formEditar.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (contactoIdActual) {
+                    const url = "{% url 'correspondencia:editar_contacto' 0 %}".replace('0', contactoIdActual);
+                    formEditar.action = url;
+                    formEditar.submit();
+                }
+            });
+        }
+    }
+});
+</script>
+{% endblock %} 

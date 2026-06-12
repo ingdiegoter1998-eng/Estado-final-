@@ -1,0 +1,1125 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soporte | Hospital del Sarare</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <style>
+    :root {
+      /* ── Paleta institucional (línea correspondencia) ── */
+      --bg: #f4f7f8;
+      --bg-gradient: radial-gradient(circle at top left, rgba(15,108,122,0.06), transparent 30%),
+                     radial-gradient(circle at bottom right, rgba(139,92,246,0.04), transparent 28%),
+                     linear-gradient(180deg, #f7fbfb 0%, #f4f7f8 100%);
+      --surface: rgba(255,255,255,0.94);
+      --surface2: #f0f4f5;
+      --surface-blur: blur(12px);
+      --border: rgba(21,53,70,0.10);
+      --border-strong: rgba(21,53,70,0.16);
+      --text: #143040;
+      --text2: #5f7281;
+      --text3: #8a9baa;
+      --accent: #0f6c7a;
+      --accent-deep: #0b4b56;
+      --accent-dim: rgba(15,108,122,0.10);
+      --accent-glow: rgba(15,108,122,0.22);
+      --success: #237f63;
+      --success-dim: rgba(34,197,94,0.12);
+      --danger: #c2534d;
+      --danger-dim: rgba(239,68,68,0.12);
+      --warning: #cb8b2d;
+      --warning-dim: rgba(245,158,11,0.14);
+      --ai-accent: #7c3aed;
+      --ai-accent-dim: rgba(124,58,237,0.10);
+      --ai-accent-glow: rgba(124,58,237,0.22);
+      /* Bubbles — claras para tema light */
+      --user-bubble: linear-gradient(135deg, #0f6c7a, #0b4b56);
+      --user-bubble-text: #e0f5f7;
+      --admin-bubble-bg: #eaf5f0;
+      --admin-bubble-text: #1a4832;
+      --ai-bubble-bg: linear-gradient(135deg, #ede9fe, #f0ebff);
+      --ai-bubble-text: #3b1f7e;
+      /* Shadows */
+      --shadow-sm: 0 4px 14px -6px rgba(15,23,42,0.08);
+      --shadow-md: 0 12px 32px -16px rgba(15,23,42,0.14);
+      --shadow-lg: 0 24px 56px -28px rgba(15,23,42,0.20);
+      --shadow-card: 0 18px 42px -28px rgba(15,23,42,0.16);
+      /* Radius */
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --radius-xl: 28px;
+      --radius-pill: 999px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      background-image: var(--bg-gradient);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #root { height: 100%; }
+
+    .app {
+      display: flex; flex-direction: column; height: 100%;
+      max-width: 1400px; margin: 0 auto;
+      padding: 12px;
+    }
+
+    /* ═══ Header / Hero ═══ */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 28px;
+      background: var(--surface);
+      backdrop-filter: var(--surface-blur);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      background-image: radial-gradient(circle at top left, rgba(15,108,122,0.06), transparent 40%),
+                        linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,251,252,0.90));
+    }
+    .header h1 {
+      font-size: 17px; font-weight: 800; letter-spacing: -0.04em;
+      color: var(--text);
+    }
+    .header .sub {
+      font-size: 12px; color: var(--text3); margin-top: 2px; line-height: 1.5;
+    }
+    .header .back-link {
+      color: var(--accent); text-decoration: none; font-size: 13px;
+      font-weight: 600; transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: var(--radius-pill);
+      background: var(--accent-dim);
+    }
+    .header .back-link:hover {
+      background: var(--accent-glow); color: var(--accent-deep);
+    }
+
+    /* ═══ Tabs ═══ */
+    .tab-bar {
+      display: flex;
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background: var(--surface);
+      backdrop-filter: var(--surface-blur);
+    }
+    .tab-btn {
+      flex: 1; padding: 13px 16px; border: none; background: none;
+      color: var(--text3); font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all 0.25s ease;
+      border-bottom: 3px solid transparent;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .tab-btn:hover { color: var(--text2); background: rgba(15,108,122,0.04); }
+    .tab-btn.active-support {
+      color: var(--accent); border-bottom-color: var(--accent);
+      background: rgba(15,108,122,0.05);
+    }
+    .tab-btn.active-ai {
+      color: var(--ai-accent); border-bottom-color: var(--ai-accent);
+      background: rgba(124,58,237,0.04);
+    }
+    .tab-icon { font-size: 16px; }
+
+    .matachito-icon {
+      width: 18px;
+      height: 18px;
+      object-fit: contain;
+      border-radius: 50%;
+      vertical-align: middle;
+      box-shadow: 0 2px 8px -3px rgba(15,23,42,0.25);
+    }
+    .matachito-icon.sm {
+      width: 14px;
+      height: 14px;
+      box-shadow: none;
+      margin-right: 6px;
+    }
+    .matachito-icon.md {
+      width: 22px;
+      height: 22px;
+      box-shadow: 0 4px 12px -5px rgba(15,23,42,0.25);
+      margin-bottom: 1px;
+    }
+    .matachito-icon.lg {
+      width: 34px;
+      height: 34px;
+      box-shadow: 0 8px 20px -8px rgba(15,23,42,0.28);
+      margin-bottom: 12px;
+    }
+    .matachito-icon.xl {
+      width: 42px;
+      height: 42px;
+      box-shadow: 0 10px 24px -10px rgba(15,23,42,0.3);
+      margin-bottom: 12px;
+    }
+
+    /* ═══ Layout principal ═══ */
+    .main {
+      display: flex; flex: 1; min-height: 0;
+      background: var(--surface);
+      backdrop-filter: var(--surface-blur);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+
+    /* ═══ Sidebar ═══ */
+    .sidebar {
+      width: 320px; border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,251,252,0.92));
+    }
+    .sidebar-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(248,251,252,0.95));
+    }
+    .sidebar-header h2 {
+      font-size: 14px; font-weight: 700; color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    .btn-new {
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      color: #fff; border: none;
+      padding: 8px 18px; border-radius: var(--radius-pill);
+      font-size: 12px; font-weight: 700;
+      cursor: pointer; transition: all 0.3s ease;
+      box-shadow: 0 4px 14px -4px rgba(15,108,122,0.35);
+    }
+    .btn-new:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 22px -6px rgba(15,108,122,0.45);
+    }
+    .btn-new-ai {
+      background: linear-gradient(135deg, var(--ai-accent), #6d28d9);
+      box-shadow: 0 4px 14px -4px rgba(124,58,237,0.35);
+    }
+    .btn-new-ai:hover {
+      box-shadow: 0 8px 22px -6px rgba(124,58,237,0.45);
+    }
+    .conv-list { flex: 1; overflow-y: auto; }
+    .conv-item {
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: all 0.2s ease;
+      border-left: 3px solid transparent;
+    }
+    .conv-item:hover { background: rgba(15,108,122,0.04); }
+    .conv-item.active {
+      background: rgba(15,108,122,0.07);
+      border-left-color: var(--accent);
+    }
+    .conv-item.active-ai { border-left-color: var(--ai-accent); background: rgba(124,58,237,0.05); }
+    .conv-item .title {
+      font-size: 13px; font-weight: 600; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .conv-item .preview {
+      font-size: 11px; color: var(--text3); margin-top: 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      line-height: 1.4;
+    }
+    .conv-item .meta {
+      display: flex; align-items: center; gap: 6px; margin-top: 6px;
+    }
+    .badge-urgente {
+      background: var(--danger-dim); color: var(--danger);
+      font-size: 10px; font-weight: 700; padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .badge-cerrada {
+      background: rgba(138,155,170,0.14); color: var(--text3);
+      font-size: 10px; font-weight: 700; padding: 3px 10px;
+      border-radius: var(--radius-pill);
+    }
+    .badge-count {
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      color: #fff;
+      font-size: 10px; font-weight: 700;
+      width: 20px; height: 20px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px -2px rgba(15,108,122,0.4);
+    }
+    .badge-ai {
+      background: var(--ai-accent-dim); color: var(--ai-accent);
+      font-size: 10px; font-weight: 700; padding: 3px 10px;
+      border-radius: var(--radius-pill);
+    }
+    .time-ago { font-size: 10px; color: var(--text3); font-weight: 500; }
+
+    /* ═══ Chat panel ═══ */
+    .chat-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .chat-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(248,251,252,0.94));
+    }
+    .chat-header h2 {
+      font-size: 15px; font-weight: 700; color: var(--text);
+      letter-spacing: -0.02em;
+    }
+    .chat-header .info { font-size: 11px; color: var(--text3); margin-top: 3px; line-height: 1.4; }
+
+    .messages {
+      flex: 1; overflow-y: auto; padding: 24px 28px;
+      display: flex; flex-direction: column; gap: 10px;
+      background: linear-gradient(180deg, #f7fafb 0%, #f2f5f7 100%);
+    }
+    .msg { display: flex; }
+    .msg.mine { justify-content: flex-end; }
+    .msg.theirs { justify-content: flex-start; }
+    .bubble {
+      max-width: 72%; padding: 12px 16px;
+      border-radius: var(--radius-md); font-size: 13px; line-height: 1.6;
+      word-break: break-word; white-space: pre-wrap;
+      box-shadow: var(--shadow-sm);
+    }
+    .msg.mine .bubble {
+      background: var(--user-bubble); color: var(--user-bubble-text);
+      border-bottom-right-radius: 4px;
+    }
+    .msg.theirs .bubble {
+      background: var(--admin-bubble-bg); color: var(--admin-bubble-text);
+      border-bottom-left-radius: 4px;
+      border: 1px solid rgba(34,197,94,0.12);
+    }
+    .msg.theirs.ai-msg .bubble {
+      background: var(--ai-bubble-bg); color: var(--ai-bubble-text);
+      border: 1px solid rgba(124,58,237,0.10);
+    }
+    .bubble .author {
+      font-size: 10px; font-weight: 700; margin-bottom: 3px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      opacity: 0.7;
+    }
+    .bubble .time {
+      font-size: 9px; opacity: 0.5; text-align: right; margin-top: 4px;
+      font-weight: 500;
+    }
+    .bubble .citations {
+      margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(0,0,0,0.08);
+    }
+    .bubble .citation-item {
+      font-size: 10px; color: rgba(0,0,0,0.45); margin-top: 2px;
+    }
+    .bubble .citation-note {
+      margin-top: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 10px; font-weight: 600;
+      color: var(--ai-accent);
+      background: rgba(124,58,237,0.08);
+      border: 1px solid rgba(124,58,237,0.10);
+    }
+
+    .input-bar {
+      padding: 14px 20px; border-top: 1px solid var(--border);
+      display: flex; gap: 10px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(248,251,252,0.96));
+    }
+    .input-bar input[type="text"] {
+      flex: 1; background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 12px 18px;
+      color: var(--text); font-size: 13px; outline: none;
+      transition: all 0.25s ease;
+    }
+    .input-bar input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+      background: #fff;
+    }
+    .input-bar input[type="text"].ai-focus:focus {
+      border-color: var(--ai-accent);
+      box-shadow: 0 0 0 3px var(--ai-accent-dim);
+    }
+    .input-bar input[type="text"]::placeholder { color: var(--text3); }
+    .btn-send {
+      background: linear-gradient(135deg, var(--accent), var(--accent-deep));
+      color: #fff; border: none;
+      padding: 10px 24px; border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all 0.3s ease;
+      box-shadow: 0 4px 14px -4px rgba(15,108,122,0.35);
+    }
+    .btn-send:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 22px -6px rgba(15,108,122,0.45);
+    }
+    .btn-send:disabled { opacity: 0.4; cursor: default; transform: none; box-shadow: none; }
+    .btn-send-ai {
+      background: linear-gradient(135deg, var(--ai-accent), #6d28d9);
+      box-shadow: 0 4px 14px -4px rgba(124,58,237,0.35);
+    }
+    .btn-send-ai:hover {
+      box-shadow: 0 8px 22px -6px rgba(124,58,237,0.45);
+    }
+
+    .closed-bar {
+      padding: 16px; text-align: center; font-size: 12px;
+      color: var(--text3); border-top: 1px solid var(--border);
+      background: rgba(138,155,170,0.06);
+      font-weight: 600;
+    }
+
+    /* ═══ Empty state ═══ */
+    .empty {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 8px; color: var(--text3);
+    }
+    .empty svg { opacity: 0.2; color: var(--accent); }
+    .empty p { font-size: 13px; line-height: 1.5; }
+
+    /* ═══ Modal nueva conversación ═══ */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(20,48,64,0.45);
+      backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal-box {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 28px;
+      width: 460px; max-width: 92vw;
+      box-shadow: var(--shadow-lg);
+    }
+    .modal-box h3 {
+      font-size: 18px; font-weight: 800; margin-bottom: 20px;
+      color: var(--text); letter-spacing: -0.03em;
+    }
+    .modal-box label {
+      display: block; font-size: 12px; color: var(--text2);
+      margin-bottom: 5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .modal-box input, .modal-box textarea, .modal-box select {
+      width: 100%; background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 11px 16px;
+      color: var(--text); font-size: 13px; outline: none;
+      margin-bottom: 14px; font-family: inherit;
+      transition: all 0.25s ease;
+    }
+    .modal-box input:focus, .modal-box textarea:focus, .modal-box select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+      background: #fff;
+    }
+    .modal-box textarea { resize: vertical; min-height: 80px; }
+    .modal-actions {
+      display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;
+    }
+    .btn-cancel {
+      background: #fff; color: var(--text2);
+      border: 1px solid var(--border-strong);
+      padding: 10px 22px; border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s ease;
+    }
+    .btn-cancel:hover {
+      background: var(--surface2); border-color: var(--border-strong);
+    }
+
+    /* ═══ AI thinking indicator ═══ */
+    .thinking {
+      display: flex; align-items: center; gap: 8px;
+      padding: 4px 0; color: var(--ai-accent); font-size: 12px;
+      font-weight: 600;
+    }
+    .thinking-dots { display: inline-flex; gap: 4px; }
+    .thinking-dots span {
+      display: inline-block; width: 7px; height: 7px;
+      border-radius: 50%; background: var(--ai-accent);
+      animation: dot-pulse 1.4s ease-in-out infinite;
+    }
+    .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes dot-pulse {
+      0%, 80%, 100% { opacity: 0.25; transform: scale(0.8); }
+      40% { opacity: 1; transform: scale(1.1); }
+    }
+
+    /* ═══ Scrollbar styling ═══ */
+    .messages::-webkit-scrollbar,
+    .conv-list::-webkit-scrollbar { width: 6px; }
+    .messages::-webkit-scrollbar-track,
+    .conv-list::-webkit-scrollbar-track { background: transparent; }
+    .messages::-webkit-scrollbar-thumb,
+    .conv-list::-webkit-scrollbar-thumb {
+      background: rgba(21,53,70,0.12); border-radius: 999px;
+    }
+    .messages::-webkit-scrollbar-thumb:hover,
+    .conv-list::-webkit-scrollbar-thumb:hover { background: rgba(21,53,70,0.22); }
+
+    /* ═══ Responsive ═══ */
+    @media (max-width: 640px) {
+      .app { padding: 6px; }
+      .sidebar { width: 100%; }
+      .main { flex-direction: column; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+      .main.has-active .sidebar { display: none; }
+      .main:not(.has-active) .chat-panel { display: none; }
+      .header { border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 14px 16px; }
+      .header h1 { font-size: 15px; }
+      .messages { padding: 16px 12px; }
+      .btn-back-mobile {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 12px; color: var(--accent); background: var(--accent-dim);
+        border: none; cursor: pointer; margin-right: 8px;
+        padding: 5px 12px; border-radius: var(--radius-pill);
+        font-weight: 600;
+      }
+    }
+    @media (min-width: 641px) {
+      .btn-back-mobile { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script>
+    // ─── Config ──────────────────────────────────────────────────────
+    var CHAT_API = "/registros/correspondencia/api/chat";
+    var BOT_API  = "/registros/correspondencia/api/chatbot";
+    var BACK_URL = "{{ back_url|default:'/registros/correspondencia/' }}";
+    var MATACHITO_ICON = "{% static 'correspondencia/img/matachito-favicon.svg' %}";
+
+    function getCookie(name) {
+      var v = "; " + document.cookie;
+      var parts = v.split("; " + name + "=");
+      if (parts.length === 2) return parts.pop().split(";").shift();
+      return null;
+    }
+
+    function apiFetch(base, path, opts) {
+      opts = opts || {};
+      var url = base + path;
+      var isFormData = opts.body instanceof FormData;
+      var headers = Object.assign({
+        "Accept": "application/json",
+        "X-CSRFToken": getCookie("csrftoken") || "",
+        "X-Requested-With": "XMLHttpRequest",
+      }, !isFormData ? {"Content-Type": "application/json"} : {}, opts.headers || {});
+      return fetch(url, Object.assign({}, opts, { headers: headers, credentials: "same-origin" }))
+        .then(function(res) {
+          if (res.status === 403 || res.status === 401) {
+            window.location.href = "/registros/correspondencia/login/?next=" + encodeURIComponent(window.location.href);
+            throw new Error("Auth required");
+          }
+          return res.json();
+        });
+    }
+
+    function chatApi(path, opts) { return apiFetch(CHAT_API, path, opts); }
+    function botApi(path, opts)  { return apiFetch(BOT_API, path, opts); }
+
+    function timeAgo(iso) {
+      var diff = (Date.now() - new Date(iso).getTime()) / 1000;
+      if (diff < 60) return "ahora";
+      if (diff < 3600) return Math.floor(diff / 60) + " min";
+      if (diff < 86400) return Math.floor(diff / 3600) + " h";
+      return Math.floor(diff / 86400) + " d";
+    }
+
+    var e = React.createElement;
+
+    // ═══════════════════════════════════════════════════════════════
+    // SUPPORT CHAT COMPONENTS
+    // ═══════════════════════════════════════════════════════════════
+
+    function NewConvModal(props) {
+      var onClose = props.onClose;
+      var onCreated = props.onCreated;
+      var _s1 = React.useState(""); var asunto = _s1[0]; var setAsunto = _s1[1];
+      var _s2 = React.useState(""); var mensaje = _s2[0]; var setMensaje = _s2[1];
+      var _s3 = React.useState("normal"); var prioridad = _s3[0]; var setPrioridad = _s3[1];
+      var _s4 = React.useState(false); var loading = _s4[0]; var setLoading = _s4[1];
+
+      function handleSubmit(ev) {
+        ev.preventDefault();
+        if (!asunto.trim() || !mensaje.trim() || loading) return;
+        setLoading(true);
+        chatApi("/conversaciones/crear/", {
+          method: "POST",
+          body: JSON.stringify({ asunto: asunto.trim(), mensaje: mensaje.trim(), prioridad: prioridad }),
+        }).then(function(data) {
+          onCreated(data.id);
+        }).catch(function(err) {
+          console.error(err);
+        }).finally(function() {
+          setLoading(false);
+        });
+      }
+
+      return e("div", { className: "modal-overlay", onClick: onClose },
+        e("div", { className: "modal-box", onClick: function(ev) { ev.stopPropagation(); } },
+          e("h3", null, "Nuevo reporte"),
+          e("form", { onSubmit: handleSubmit },
+            e("label", null, "Asunto"),
+            e("input", {
+              value: asunto, onChange: function(ev) { setAsunto(ev.target.value); },
+              placeholder: "Describe brevemente el problema", maxLength: 200, autoFocus: true,
+            }),
+            e("label", null, "Prioridad"),
+            e("select", { value: prioridad, onChange: function(ev) { setPrioridad(ev.target.value); } },
+              e("option", { value: "normal" }, "Normal"),
+              e("option", { value: "urgente" }, "Urgente"),
+            ),
+            e("label", null, "Mensaje"),
+            e("textarea", {
+              value: mensaje, onChange: function(ev) { setMensaje(ev.target.value); },
+              placeholder: "Detalla el error o la consulta\u2026", rows: 4,
+            }),
+            e("div", { className: "modal-actions" },
+              e("button", { type: "button", className: "btn-cancel", onClick: onClose }, "Cancelar"),
+              e("button", {
+                type: "submit", className: "btn-send",
+                disabled: !asunto.trim() || !mensaje.trim() || loading,
+              }, loading ? "Enviando\u2026" : "Enviar"),
+            ),
+          ),
+        ),
+      );
+    }
+
+    function ConvItem(props) {
+      var conv = props.conv; var active = props.active; var onClick = props.onClick;
+      return e("div", {
+        className: "conv-item" + (active ? " active" : ""),
+        onClick: onClick,
+      },
+        e("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "start" } },
+          e("span", { className: "title", style: { flex: 1 } }, conv.asunto),
+          conv.no_leidos > 0 ? e("span", { className: "badge-count" }, conv.no_leidos) : null,
+        ),
+        e("div", { className: "preview" }, conv.ultimo_texto),
+        e("div", { className: "meta" },
+          conv.prioridad === "urgente" ? e("span", { className: "badge-urgente" }, "Urgente") : null,
+          conv.estado === "cerrada" ? e("span", { className: "badge-cerrada" }, "Cerrada") : null,
+          e("span", { className: "time-ago" }, timeAgo(conv.actualizado)),
+        ),
+      );
+    }
+
+    function SupportChatPanel(props) {
+      var convId = props.convId; var onBack = props.onBack;
+      var _s1 = React.useState(null); var data = _s1[0]; var setData = _s1[1];
+      var _s2 = React.useState(""); var texto = _s2[0]; var setTexto = _s2[1];
+      var _s3 = React.useState([]); var imagenes = _s3[0]; var setImagenes = _s3[1];
+      var _s4 = React.useState([]); var previews = _s4[0]; var setPreviews = _s4[1];
+      var _s5 = React.useState(false); var sending = _s5[0]; var setSending = _s5[1];
+      var _s6 = React.useState(null); var lightbox = _s6[0]; var setLightbox = _s6[1];
+      var scrollRef = React.useRef(null);
+      var fileRef = React.useRef(null);
+      var intervalRef = React.useRef(null);
+
+      function loadMessages() {
+        chatApi("/conversaciones/" + convId + "/mensajes/")
+          .then(setData).catch(function() {});
+      }
+
+      React.useEffect(function() {
+        loadMessages();
+        intervalRef.current = setInterval(loadMessages, 3000);
+        return function() { clearInterval(intervalRef.current); };
+      }, [convId]);
+
+      React.useEffect(function() {
+        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }, [data]);
+
+      function handleFiles(files) {
+        if (!files) return;
+        var nuevas = Array.from(files).filter(function(f) {
+          return f.type.startsWith("image/") && f.size <= 5 * 1024 * 1024;
+        }).slice(0, 5 - imagenes.length);
+        var all = imagenes.concat(nuevas);
+        setImagenes(all);
+        setPreviews(all.map(function(f) { return URL.createObjectURL(f); }));
+      }
+
+      function removeImage(idx) {
+        var next = imagenes.filter(function(_, i) { return i !== idx; });
+        setImagenes(next);
+        setPreviews(next.map(function(f) { return URL.createObjectURL(f); }));
+      }
+
+      function handleSend() {
+        if ((!texto.trim() && imagenes.length === 0) || sending) return;
+        setSending(true);
+        var p;
+        if (imagenes.length > 0) {
+          var fd = new FormData();
+          fd.append("texto", texto.trim());
+          imagenes.forEach(function(f) { fd.append("imagenes", f); });
+          p = apiFetch(CHAT_API, "/conversaciones/" + convId + "/mensajes/enviar/", {
+            method: "POST", body: fd,
+          });
+        } else {
+          p = chatApi("/conversaciones/" + convId + "/mensajes/enviar/", {
+            method: "POST",
+            body: JSON.stringify({ texto: texto.trim() }),
+          });
+        }
+        p.then(function() {
+          setTexto(""); setImagenes([]); setPreviews([]);
+          loadMessages();
+        }).finally(function() { setSending(false); });
+      }
+
+      function handlePaste(ev) {
+        var items = ev.clipboardData && ev.clipboardData.items;
+        if (!items) return;
+        var imgs = [];
+        for (var i = 0; i < items.length; i++) {
+          if (items[i].type.startsWith("image/")) {
+            var f = items[i].getAsFile();
+            if (f) imgs.push(f);
+          }
+        }
+        if (imgs.length > 0) {
+          ev.preventDefault();
+          var all = imagenes.concat(imgs).slice(0, 5);
+          setImagenes(all);
+          setPreviews(all.map(function(f) { return URL.createObjectURL(f); }));
+        }
+      }
+
+      if (!data) return e("div", { className: "chat-panel" },
+        e("div", { className: "empty" }, e("p", null, "Cargando\u2026")));
+
+      var conv = data.conversacion;
+      var msgs = data.mensajes;
+
+      return e("div", { className: "chat-panel" },
+        e("div", { className: "chat-header" },
+          e("div", { style: { display: "flex", alignItems: "center" } },
+            e("button", { className: "btn-back-mobile", onClick: onBack }, "\u2190 Volver"),
+            e("div", null,
+              e("h2", null, conv.asunto),
+              e("div", { className: "info" },
+                conv.prioridad === "urgente" ? "\uD83D\uDD34 Urgente" : "",
+                conv.estado === "cerrada" ? " \u2014 Cerrada" : ""),
+            ),
+          ),
+        ),
+        e("div", { className: "messages", ref: scrollRef },
+          msgs.map(function(m) {
+            return e("div", { key: m.id, className: "msg " + (m.es_admin ? "theirs" : "mine") },
+              e("div", { className: "bubble" },
+                e("div", { className: "author" }, m.autor),
+                m.texto,
+                m.adjuntos && m.adjuntos.length > 0
+                  ? e("div", { style: { display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "6px" } },
+                      m.adjuntos.map(function(a) {
+                        return e("img", {
+                          key: a.id, src: a.url, alt: a.nombre,
+                          onClick: function() { setLightbox(a.url); },
+                          style: { maxHeight: "140px", maxWidth: "200px", borderRadius: "12px",
+                            objectFit: "cover", cursor: "pointer", border: "1px solid rgba(21,53,70,0.12)", boxShadow: "0 4px 12px -4px rgba(15,23,42,0.1)" },
+                        });
+                      }))
+                  : null,
+                e("div", { className: "time" },
+                  new Date(m.creado).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })),
+              ),
+            );
+          }),
+          msgs.length === 0 ? e("div", { className: "empty" }, e("p", null, "Sin mensajes a\u00fan")) : null,
+        ),
+        conv.estado === "abierta"
+          ? e("div", { style: { borderTop: "1px solid var(--border)", padding: "12px 16px", background: "var(--surface)" } },
+              previews.length > 0
+                ? e("div", { style: { display: "flex", gap: "8px", marginBottom: "8px", flexWrap: "wrap" } },
+                    previews.map(function(src, i) {
+                      return e("div", { key: i, style: { position: "relative" } },
+                        e("img", { src: src, style: { height: "56px", width: "56px", objectFit: "cover", borderRadius: "12px", border: "1px solid var(--border)", boxShadow: "0 2px 8px -2px rgba(15,23,42,0.1)" } }),
+                        e("button", {
+                          onClick: function() { removeImage(i); },
+                          style: { position: "absolute", top: "-4px", right: "-4px",
+                            background: "#c2534d", color: "#fff", border: "none",
+                            borderRadius: "50%", width: "18px", height: "18px",
+                            fontSize: "10px", cursor: "pointer", display: "flex",
+                            alignItems: "center", justifyContent: "center",
+                            boxShadow: "0 2px 6px -2px rgba(194,83,77,0.4)" },
+                        }, "\u00d7"),
+                      );
+                    }))
+                : null,
+              e("div", { className: "input-bar", style: { padding: 0, border: "none" } },
+                e("input", { type: "file", ref: fileRef, accept: "image/*", multiple: true,
+                  style: { display: "none" },
+                  onChange: function(ev) { handleFiles(ev.target.files); } }),
+                e("button", {
+                  onClick: function() { fileRef.current && fileRef.current.click(); },
+                  style: { background: "var(--surface2)", border: "1px solid var(--border)",
+                    borderRadius: "16px", padding: "10px 14px", cursor: "pointer",
+                    color: "var(--text2)", display: "flex", alignItems: "center",
+                    transition: "all 0.2s ease", fontSize: "16px" },
+                  title: "Adjuntar imagen",
+                }, "\uD83D\uDCCE"),
+                e("input", {
+                  type: "text",
+                  value: texto,
+                  onChange: function(ev) { setTexto(ev.target.value); },
+                  onKeyDown: function(ev) { if (ev.key === "Enter" && !ev.shiftKey) handleSend(); },
+                  onPaste: handlePaste,
+                  placeholder: "Escribe tu mensaje\u2026 (pega capturas con Ctrl+V)",
+                }),
+                e("button", {
+                  className: "btn-send", onClick: handleSend,
+                  disabled: (!texto.trim() && imagenes.length === 0) || sending,
+                }, "Enviar"),
+              ),
+            )
+          : e("div", { className: "closed-bar" }, "Esta conversaci\u00f3n fue cerrada por un administrador."),
+
+        lightbox
+          ? e("div", {
+              onClick: function() { setLightbox(null); },
+              style: { position: "fixed", inset: 0, background: "rgba(20,48,64,0.65)",
+                backdropFilter: "blur(8px)", zIndex: 200, display: "flex", alignItems: "center",
+                justifyContent: "center", cursor: "pointer" },
+            },
+              e("img", {
+                src: lightbox, alt: "Vista ampliada",
+                onClick: function(ev) { ev.stopPropagation(); },
+                style: { maxHeight: "90vh", maxWidth: "90vw", objectFit: "contain", borderRadius: "16px", boxShadow: "0 24px 56px -16px rgba(15,23,42,0.35)" },
+              }),
+              e("button", {
+                onClick: function() { setLightbox(null); },
+                style: { position: "absolute", top: "16px", right: "16px",
+                  color: "#fff", background: "rgba(0,0,0,0.3)", border: "none",
+                  borderRadius: "50%", width: "36px", height: "36px",
+                  fontSize: "18px", fontWeight: "bold", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center" },
+              }, "\u00d7"),
+            )
+          : null,
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SUPPORT TAB
+    // ═══════════════════════════════════════════════════════════════
+
+    function SupportTab() {
+      var _s1 = React.useState([]); var convs = _s1[0]; var setConvs = _s1[1];
+      var _s2 = React.useState(null); var active = _s2[0]; var setActive = _s2[1];
+      var _s3 = React.useState(false); var showNew = _s3[0]; var setShowNew = _s3[1];
+      var intervalRef = React.useRef(null);
+
+      function loadConvs() {
+        chatApi("/conversaciones/").then(setConvs).catch(function() {});
+      }
+
+      React.useEffect(function() {
+        loadConvs();
+        intervalRef.current = setInterval(loadConvs, 5000);
+        return function() { clearInterval(intervalRef.current); };
+      }, []);
+
+      function handleCreated(id) {
+        setShowNew(false); setActive(id); loadConvs();
+      }
+
+      return e(React.Fragment, null,
+        e("div", { className: "main" + (active ? " has-active" : "") },
+          e("aside", { className: "sidebar" },
+            e("div", { className: "sidebar-header" },
+              e("h2", null, "Mis reportes"),
+              e("button", { className: "btn-new", onClick: function() { setShowNew(true); } }, "+ Nuevo"),
+            ),
+            e("div", { className: "conv-list" },
+              convs.map(function(c) {
+                return e(ConvItem, { key: c.id, conv: c, active: active === c.id,
+                  onClick: function() { setActive(c.id); } });
+              }),
+              convs.length === 0 ? e("div", { className: "empty", style: { padding: "32px 0" } },
+                e("p", null, "No tienes reportes a\u00fan")) : null,
+            ),
+          ),
+          active
+            ? e(SupportChatPanel, { key: active, convId: active, onBack: function() { setActive(null); } })
+            : e("div", { className: "empty" },
+                e("svg", { width: 48, height: 48, fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", strokeWidth: 1 },
+                  e("path", { strokeLinecap: "round", strokeLinejoin: "round", d: "M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" })),
+                e("p", null, "Selecciona un reporte o crea uno nuevo"),
+              ),
+        ),
+        showNew ? e(NewConvModal, { onClose: function() { setShowNew(false); }, onCreated: handleCreated }) : null,
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // AI CHATBOT COMPONENTS
+    // ═══════════════════════════════════════════════════════════════
+
+    function AiConvItem(props) {
+      var conv = props.conv; var active = props.active; var onClick = props.onClick;
+      return e("div", {
+        className: "conv-item" + (active ? " active active-ai" : ""),
+        onClick: onClick,
+      },
+        e("div", { className: "title" }, conv.title || "Nueva conversaci\u00f3n"),
+        e("div", { className: "preview" }, conv.last_message_preview),
+        e("div", { className: "meta" },
+          e("span", { className: "badge-ai" }, conv.messages_count + " msgs"),
+          e("span", { className: "time-ago" }, timeAgo(conv.updated_at)),
+        ),
+      );
+    }
+
+    function ThinkingIndicator() {
+      return e("div", { className: "msg theirs ai-msg" },
+        e("div", { className: "bubble" },
+          e("div", { className: "thinking" },
+            e("div", { className: "thinking-dots" }, e("span"), e("span"), e("span")),
+            " Pensando\u2026",
+          ),
+        ),
+      );
+    }
+
+    function AiChatPanel(props) {
+      var convId = props.convId; var onBack = props.onBack;
+      var _s1 = React.useState(null); var data = _s1[0]; var setData = _s1[1];
+      var _s2 = React.useState(""); var question = _s2[0]; var setQuestion = _s2[1];
+      var _s3 = React.useState(false); var sending = _s3[0]; var setSending = _s3[1];
+      var scrollRef = React.useRef(null);
+
+      function loadMessages() {
+        botApi("/conversations/" + convId + "/messages/")
+          .then(setData).catch(function() {});
+      }
+
+      React.useEffect(function() { loadMessages(); }, [convId]);
+
+      React.useEffect(function() {
+        if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }, [data, sending]);
+
+      function handleAsk() {
+        if (!question.trim() || sending) return;
+        var q = question.trim();
+        setQuestion("");
+        setSending(true);
+
+        // Optimistic update: show user message immediately
+        setData(function(prev) {
+          if (!prev) return prev;
+          return Object.assign({}, prev, {
+            messages: prev.messages.concat([{
+              id: Date.now(), role: "user", content: q,
+              citations: [], metadata: {}, created_at: new Date().toISOString(),
+            }]),
+          });
+        });
+
+        botApi("/conversations/" + convId + "/ask/", {
+          method: "POST",
+          body: JSON.stringify({ question: q }),
+        }).then(function() {
+          loadMessages();
+        }).catch(function() {
+          setData(function(prev) {
+            if (!prev) return prev;
+            return Object.assign({}, prev, {
+              messages: prev.messages.concat([{
+                id: Date.now() + 1, role: "assistant",
+                content: "No pude obtener una respuesta en este momento. Intenta de nuevo.",
+                citations: [], metadata: {}, created_at: new Date().toISOString(),
+              }]),
+            });
+          });
+        }).finally(function() { setSending(false); });
+      }
+
+      if (!data) return e("div", { className: "chat-panel" },
+        e("div", { className: "empty" }, e("p", null, "Cargando\u2026")));
+
+      var conv = data.conversation;
+      var msgs = data.messages;
+
+      return e("div", { className: "chat-panel" },
+        e("div", { className: "chat-header", style: { borderBottomColor: "rgba(124,58,237,0.15)" } },
+          e("div", { style: { display: "flex", alignItems: "center" } },
+            e("button", { className: "btn-back-mobile", onClick: onBack }, "\u2190 Volver"),
+            e("div", null,
+              e("h2", { style: { display: "flex", alignItems: "center", gap: "8px" } },
+                e("img", { src: MATACHITO_ICON, alt: "Matachito", className: "matachito-icon md" }),
+                conv.title || "Nueva conversaci\u00f3n"),
+              e("div", { className: "info" }, "Asistente IA \u2014 responde con base en documentaci\u00f3n del sistema"),
+            ),
+          ),
+        ),
+        e("div", { className: "messages", ref: scrollRef },
+          msgs.length === 0
+            ? e("div", { className: "empty" },
+                e("div", { style: { textAlign: "center", maxWidth: "320px" } },
+                  e("img", { src: MATACHITO_ICON, alt: "Matachito", className: "matachito-icon lg" }),
+                  e("p", { style: { fontSize: "14px", color: "var(--text2)", marginBottom: "8px" } },
+                    "Soy el asistente del Hospital del Sarare"),
+                  e("p", { style: { fontSize: "12px" } },
+                    "Preg\u00fantame sobre procedimientos, radicados, correspondencia o el uso del sistema."),
+                ))
+            : null,
+          msgs.map(function(m) {
+            var isUser = m.role === "user";
+            return e("div", { key: m.id, className: "msg " + (isUser ? "mine" : "theirs ai-msg") },
+              e("div", { className: "bubble" },
+                e("div", { className: "author" },
+                  isUser
+                    ? "T\u00fa"
+                    : e("span", { style: { display: "inline-flex", alignItems: "center" } },
+                        e("img", { src: MATACHITO_ICON, alt: "Matachito", className: "matachito-icon sm" }),
+                        "Asistente")),
+                m.content,
+                m.citations && m.citations.length > 0
+                  ? e("div", { className: "citation-note" },
+                      "\uD83D\uDCD6 Basado en documentaci\u00f3n interna del sistema")
+                  : null,
+                e("div", { className: "time" },
+                  new Date(m.created_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })),
+              ),
+            );
+          }),
+          sending ? e(ThinkingIndicator) : null,
+        ),
+        e("div", { className: "input-bar" },
+          e("input", {
+            type: "text",
+            className: "ai-focus",
+            value: question,
+            onChange: function(ev) { setQuestion(ev.target.value); },
+            onKeyDown: function(ev) { if (ev.key === "Enter" && !ev.shiftKey) handleAsk(); },
+            placeholder: "Pregunta algo sobre el sistema\u2026",
+            disabled: sending,
+          }),
+          e("button", {
+            className: "btn-send btn-send-ai", onClick: handleAsk,
+            disabled: !question.trim() || sending,
+          }, sending ? "\u2026" : "Enviar"),
+        ),
+      );
+    }
+
+    function AiTab() {
+      var _s1 = React.useState([]); var convs = _s1[0]; var setConvs = _s1[1];
+      var _s2 = React.useState(null); var active = _s2[0]; var setActive = _s2[1];
+      var _s3 = React.useState(false); var loading = _s3[0]; var setLoading = _s3[1];
+
+      function loadConvs() {
+        botApi("/conversations/")
+          .then(function(d) { setConvs(d.results || []); })
+          .catch(function() {});
+      }
+
+      React.useEffect(function() { loadConvs(); }, []);
+
+      function handleNewConv() {
+        if (loading) return;
+        setLoading(true);
+        botApi("/conversations/create/", { method: "POST", body: "{}" })
+          .then(function(data) {
+            setActive(data.conversation.id);
+            loadConvs();
+          }).catch(function(err) { console.error(err); })
+          .finally(function() { setLoading(false); });
+      }
+
+      return e("div", { className: "main" + (active ? " has-active" : "") },
+        e("aside", { className: "sidebar" },
+          e("div", { className: "sidebar-header" },
+            e("h2", null, "\u2728 Mis consultas IA"),
+            e("button", {
+              className: "btn-new btn-new-ai", onClick: handleNewConv, disabled: loading,
+            }, loading ? "\u2026" : "+ Nueva"),
+          ),
+          e("div", { className: "conv-list" },
+            convs.map(function(c) {
+              return e(AiConvItem, { key: c.id, conv: c, active: active === c.id,
+                onClick: function() { setActive(c.id); } });
+            }),
+            convs.length === 0 ? e("div", { className: "empty", style: { padding: "32px 0" } },
+              e("div", { style: { textAlign: "center" } },
+                e("img", { src: MATACHITO_ICON, alt: "Matachito", className: "matachito-icon md" }),
+                e("p", null, "Sin consultas a\u00fan"),
+                e("p", { style: { fontSize: "11px", marginTop: "4px" } }, "Crea una nueva para empezar"),
+              )) : null,
+          ),
+        ),
+        active
+          ? e(AiChatPanel, { key: active, convId: active, onBack: function() { setActive(null); } })
+          : e("div", { className: "empty" },
+              e("div", { style: { textAlign: "center", maxWidth: "360px" } },
+                e("img", { src: MATACHITO_ICON, alt: "Matachito", className: "matachito-icon xl" }),
+                e("p", { style: { fontSize: "14px", color: "var(--text2)", marginBottom: "8px" } },
+                  "Asistente IA del Hospital del Sarare"),
+                e("p", null, "Haz preguntas sobre correspondencia, radicados, procedimientos o el uso del sistema."),
+                e("button", {
+                  className: "btn-new btn-new-ai",
+                  style: { marginTop: "16px", padding: "10px 24px", fontSize: "13px" },
+                  onClick: handleNewConv, disabled: loading,
+                }, loading ? "Creando\u2026" : "\u2728 Nueva consulta"),
+              ),
+            ),
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // MAIN APP
+    // ═══════════════════════════════════════════════════════════════
+
+    function App() {
+      var _s1 = React.useState("support"); var tab = _s1[0]; var setTab = _s1[1];
+
+      return e("div", { className: "app" },
+        e("header", { className: "header" },
+          e("div", null,
+            e("a", { href: BACK_URL, className: "back-link" }, "\u2190 Volver al sistema"),
+          ),
+          e("div", { style: { textAlign: "center" } },
+            e("h1", null, "Soporte \u2014 Hospital del Sarare"),
+            e("div", { className: "sub" }, "Reporta errores, consulta al equipo de TI o pregunta al asistente IA"),
+          ),
+          e("div"),
+        ),
+        e("div", { className: "tab-bar" },
+          e("button", {
+            className: "tab-btn" + (tab === "support" ? " active-support" : ""),
+            onClick: function() { setTab("support"); },
+          },
+            e("span", { className: "tab-icon" }, "\uD83D\uDCAC"),
+            "Soporte TI"),
+          e("button", {
+            className: "tab-btn" + (tab === "ai" ? " active-ai" : ""),
+            onClick: function() { setTab("ai"); },
+          },
+            e("img", { src: MATACHITO_ICON, alt: "Matachito", className: "matachito-icon" }),
+            "Asistente IA"),
+        ),
+        tab === "support" ? e(SupportTab) : e(AiTab),
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(e(App));
+  </script>
+</body>
+</html>

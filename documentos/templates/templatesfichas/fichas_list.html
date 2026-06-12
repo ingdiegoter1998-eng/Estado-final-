@@ -1,0 +1,413 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lista de Fichas de Pacientes{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background: #f8f9fa;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        line-height: 1.6;
+    }
+    .fichas-layout {
+        display: flex;
+        min-height: 100vh;
+    }
+    .fichas-content {
+        flex: 1;
+        padding: 1.5rem 2rem;
+        max-width: 1600px;
+        margin: 0 auto;
+    }
+    .fichas-navbar {
+        background-color: #ffffff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        padding: 0.75rem 1.5rem;
+        margin-bottom: 2rem;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .fichas-navbar-brand {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #003366;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .fichas-navbar-brand i {
+        font-size: 1.8rem;
+        color: #0077cc;
+    }
+    .fichas-hero {
+        background: linear-gradient(135deg, #003366 0%, #005599 50%, #0077cc 100%);
+        color: white;
+        padding: 2rem 2.5rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 20px rgba(0, 51, 102, 0.3);
+    }
+    .fichas-hero h1 {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    .fichas-hero p {
+        font-size: 1rem;
+        opacity: 0.95;
+        margin: 0;
+    }
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        background: white;
+    }
+    .table {
+        margin-bottom: 0;
+    }
+    .table thead th {
+        background-color: #003366;
+        color: white;
+        font-weight: 600;
+        border-bottom: none;
+        padding: 0.8rem 1rem;
+        font-size: 0.85rem;
+    }
+    .table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+    .table tbody tr:hover {
+        background-color: #f0f4f8;
+    }
+    .table tbody td {
+        padding: 0.75rem 1rem;
+        vertical-align: middle;
+        border-top: 1px solid #e1e8ed;
+        color: #4a4a4a;
+        font-size: 0.85rem;
+    }
+    .btn-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        transition: all 0.3s ease;
+    }
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+    }
+    .accordion-item {
+        border: none;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .accordion-button {
+        background: #f8f9fa;
+        border: none;
+        font-weight: 600;
+        color: #003366;
+    }
+    .accordion-button:not(.collapsed) {
+        background: #e9f5ff;
+        color: #003366;
+    }
+    .form-control, .form-select {
+        border-radius: 6px;
+        border-color: #ced4da;
+        padding: 0.6rem 1rem;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+    }
+    .badge {
+        padding: 0.4rem 0.75rem;
+        font-weight: 600;
+        border-radius: 6px;
+    }
+</style>
+{% endblock %}
+
+{% block body_content %}
+<div class="fichas-layout">
+    {% include 'partials/sidebar_nav.html' %}
+    <div class="fichas-content">
+        <nav class="fichas-navbar">
+            <div class="fichas-navbar-brand">
+                <i class="bi bi-folder2-open"></i>
+                <span>Lista de Fichas</span>
+            </div>
+            <div>
+                <a href="{% url 'bienvenida_fichas' %}" class="btn btn-outline-secondary btn-sm me-2">
+                    <i class="bi bi-house me-1"></i>Inicio
+                </a>
+                <a href="{% url 'crear_ficha1' %}" class="btn btn-success btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>Nueva Ficha
+                </a>
+            </div>
+        </nav>
+
+        <div class="fichas-hero">
+            <h1><i class="bi bi-list-ul me-2"></i>Listado de Fichas de Pacientes</h1>
+            <p>Gestión completa de información de pacientes del Hospital del Sarare</p>
+        </div>
+
+        <!-- Filtros Avanzados -->
+        <div class="accordion mb-4" id="filtrosAvanzados">  
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingFiltros">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseFiltros"
+                            aria-expanded="false" aria-controls="collapseFiltros">
+                        <i class="bi bi-funnel me-2"></i>Filtros Avanzados
+                    </button>
+                </h2>
+
+                <div id="collapseFiltros" class="accordion-collapse collapse"
+                     aria-labelledby="headingFiltros" data-bs-parent="#filtrosAvanzados">
+                    <div class="accordion-body bg-white rounded-3">
+                        <form method="get" action="{% url 'lista_fichas1' %}" id="filtrosForm">
+                            <div class="row g-3">
+                                <!-- Identificación -->
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1">Identificación Primaria</label>
+                                    <input name="num_identificacion" value="{{ request.GET.num_identificacion }}" class="form-control">
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1">Identificación Secundaria</label>
+                                    <input name="num_identificacion_secundario" value="{{ request.GET.num_identificacion_secundario }}" class="form-control">
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1">Historia Clínica</label>
+                                    <input name="Numero_historia_clinica" value="{{ request.GET.Numero_historia_clinica }}" class="form-control">
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <!-- Nombres y Apellidos -->
+                                    <div class="col-md-3">
+                                        <label class="form-label mb-1">Primer Nombre</label>
+                                        <input name="primer_nombre"
+                                              value="{{ request.GET.primer_nombre }}"
+                                              class="form-control">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label mb-1">Segundo Nombre</label>
+                                        <input name="segundo_nombre"
+                                              value="{{ request.GET.segundo_nombre }}"
+                                              class="form-control">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label mb-1">Primer Apellido</label>
+                                        <input name="primer_apellido"
+                                              value="{{ request.GET.primer_apellido }}"
+                                              class="form-control">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label mb-1">Segundo Apellido</label>
+                                        <input name="segundo_apellido"
+                                              value="{{ request.GET.segundo_apellido }}"
+                                              class="form-control">
+                                    </div>
+                                </div>
+                                
+                                <!-- Tipo de Documento -->
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1">Tipo Documento (Primario)</label>
+                                    <select name="tipo_identificacion" class="form-select">
+                                        <option value="">Selecciona...</option>
+                                        {% for td in tipos_doc %}
+                                            <option value="{{ td.nombre }}"
+                                                {% if request.GET.tipo_identificacion == td.nombre %}selected{% endif %}>
+                                                {{ td.nombre }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1">Tipo Documento (Secundario)</label>
+                                    <select name="tipo_identificacion_secundario" class="form-select">
+                                        <option value="">Selecciona...</option>
+                                        {% for td in tipos_doc %}
+                                            <option value="{{ td.nombre }}"
+                                                {% if request.GET.tipo_identificacion_secundario == td.nombre %}selected{% endif %}>
+                                                {{ td.nombre }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <!-- Fechas de Nacimiento -->
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1">Fecha de Nacimiento Desde</label>
+                                    <input type="date" name="f_ini" value="{{ request.GET.f_ini }}" class="form-control">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label mb-1">Fecha de Nacimiento Hasta</label>
+                                    <input type="date" name="f_fin" value="{{ request.GET.f_fin }}" class="form-control">
+                                </div>
+
+                                <!-- Estado Activo y Migrada -->
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1">Activo</label>
+                                    <select name="activo" class="form-select">
+                                        <option value="">Selecciona...</option>
+                                        <option value="si" {% if request.GET.activo == "si" %}selected{% endif %}>Sí</option>
+                                        <option value="no" {% if request.GET.activo == "no" %}selected{% endif %}>No</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1">Migrada</label>
+                                    <select name="migrada" class="form-select">
+                                        <option value="">Selecciona...</option>
+                                        <option value="si" {% if request.GET.migrada == "si" %}selected{% endif %}>Sí</option>
+                                        <option value="no" {% if request.GET.migrada == "no" %}selected{% endif %}>No</option>
+                                    </select>
+                                </div>
+
+                                <!-- Sexo -->
+                                <div class="col-md-2">
+                                    <label class="form-label mb-1">Sexo</label>
+                                    <select name="sexo" class="form-select">
+                                        <option value="">Selecciona...</option>
+                                        <option value="Masculino" {% if request.GET.sexo == "Masculino" %}selected{% endif %}>Masculino</option>
+                                        <option value="Femenino" {% if request.GET.sexo == "Femenino" %}selected{% endif %}>Femenino</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Botones -->
+                            <div class="mt-3 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-funnel me-1"></i>Filtrar
+                                </button>
+                                <a href="{% url 'lista_fichas1' %}" class="btn btn-outline-secondary btn-sm">
+                                    <i class="bi bi-x-circle me-1"></i>Limpiar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla responsive -->
+        <div class="table-responsive">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Identificación</th>
+                        <th>Nombre completo</th>
+                        <th>Tipo doc.</th>
+                        <th>F. nacimiento</th>
+                        <th>Sexo</th>
+                        <th>Historia</th>
+                        <th>Caja</th>
+                        <th>Carp.</th>
+                        <th>Últ. visita</th>
+                        <th>Activo</th>
+                        <th>Gaveta</th>
+                        <th>Migrada</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ficha in page_obj %}
+                        <tr>
+                            <td>{{ ficha.consecutivo }}</td>
+                            <td>{{ ficha.num_identificacion|default:"—" }}</td>
+                            <td>{{ ficha.primer_nombre }} {{ ficha.segundo_nombre|default:"" }} {{ ficha.primer_apellido }} {{ ficha.segundo_apellido|default:"" }}</td>
+                            <td>{{ ficha.tipo_identificacion|default:"—" }}</td>
+                            <td>{{ ficha.fecha_nacimiento|date:"Y-m-d"|default:"—" }}</td>
+                            <td>{{ ficha.sexo }}</td>
+                            <td>{{ ficha.Numero_historia_clinica }}</td>
+                            <td>{{ ficha.caja|default:"—" }}</td>
+                            <td>{{ ficha.carpeta|default:"—" }}</td>
+                            <td>{{ ficha.ultimo_registro_de_visita_en_la_base_de_datos|date:"Y-m-d"|default:"—" }}</td>
+                            <td>
+                                <span class="badge {{ ficha.activo|yesno:'bg-success,bg-secondary' }}">
+                                    {{ ficha.activo|yesno:'Sí,No' }}
+                                </span>
+                            </td>
+                            <td>{{ ficha.gabeta|default:"—" }}</td>
+                            <td>
+                                <span class="badge {{ ficha.estado_de_migracion|yesno:'bg-success,bg-secondary' }}">
+                                    {{ ficha.estado_de_migracion|yesno:'Sí,No' }}
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'detalle_ficha1' ficha.consecutivo %}" class="btn btn-sm btn-info me-1">
+                                    <i class="bi bi-eye"></i> Detalle
+                                </a>
+                                <a href="{% url 'editar_ficha1' ficha.consecutivo %}" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="14" class="text-center py-4">
+                                <i class="bi bi-inbox" style="font-size: 2rem; color: #ccc;"></i>
+                                <p class="mt-2 text-muted">No se encontraron fichas.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Paginación" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                        </li>
+                    {% endif %}
+                    <li class="page-item active">
+                        <span class="page-link">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById("filtrosForm");
+        if (form) {
+            form.addEventListener("submit", function(event) {
+                const inputs = form.querySelectorAll("input, select");
+                inputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        input.disabled = true;
+                    }
+                });
+            });
+        }
+    });
+</script>
+{% endblock %}

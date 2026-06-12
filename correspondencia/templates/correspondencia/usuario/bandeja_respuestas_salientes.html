@@ -1,0 +1,1016 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static humanize %}
+
+{% block title %}{{ page_title|default:"Mis Respuestas Salientes" }}{% endblock %}
+
+{% block extra_css %}
+    <style>
+        .salientes-page {
+            --salientes-surface: #ffffff;
+            --salientes-surface-muted: #f8fafc;
+            --salientes-border: #e2e8f0;
+            --salientes-muted: #64748b;
+            --salientes-title: #0f172a;
+            --salientes-primary: var(--bs-primary, #0d6efd);
+            --salientes-shadow: 0 18px 42px -28px rgba(15, 23, 42, 0.28);
+            --salientes-radius: 24px;
+        }
+
+        .salientes-page .salientes-shell {
+            width: 95%;
+            margin: 0 auto 2rem;
+        }
+
+        .salientes-page .hero-section {
+            background:
+                radial-gradient(circle at top right, rgba(13, 110, 253, 0.14), transparent 34%),
+                linear-gradient(135deg, #ffffff 0%, #f8fbff 52%, #f4f8ff 100%);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            border-radius: 28px;
+            padding: 2rem;
+            box-shadow: var(--salientes-shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        .salientes-page .hero-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .salientes-page .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.85rem;
+            border-radius: 999px;
+            background: rgba(13, 110, 253, 0.1);
+            color: var(--salientes-primary);
+            font-weight: 700;
+            font-size: 0.82rem;
+            margin-bottom: 1rem;
+        }
+
+        .salientes-page .hero-section h1 {
+            font-size: clamp(2rem, 3vw, 2.6rem);
+            line-height: 1.08;
+            font-weight: 800;
+            color: var(--salientes-title);
+            margin-bottom: 0.75rem;
+        }
+
+        .salientes-page .hero-section p {
+            margin: 0;
+            max-width: 78ch;
+            color: var(--salientes-muted);
+            font-size: 1rem;
+        }
+
+        .salientes-page .hero-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+        }
+
+        .salientes-page .hero-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.7rem 0.95rem;
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            background: rgba(255, 255, 255, 0.9);
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        .salientes-page .view-switch {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            justify-content: flex-end;
+        }
+
+        .salientes-page .view-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.72rem 0.95rem;
+            border-radius: 16px;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            color: #475569;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all .2s ease;
+        }
+
+        .salientes-page .view-link:hover,
+        .salientes-page .view-link.is-active {
+            color: var(--salientes-primary);
+            border-color: rgba(13, 110, 253, 0.24);
+            background: rgba(13, 110, 253, 0.08);
+        }
+
+        .salientes-page .stats-card,
+        .salientes-page .filters-card,
+        .salientes-page .table-card,
+        .salientes-page .alert-card,
+        .salientes-page .modal-content {
+            border: 1px solid var(--salientes-border);
+            border-radius: var(--salientes-radius);
+            background: var(--salientes-surface);
+            box-shadow: var(--salientes-shadow);
+        }
+
+        .salientes-page .stats-card {
+            position: relative;
+            overflow: hidden;
+            padding: 1.25rem;
+            height: 100%;
+        }
+
+        .salientes-page .stats-card::before {
+            content: '';
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 4px;
+            background: linear-gradient(180deg, rgba(var(--bs-primary-rgb, 13, 110, 253), 0.9), rgba(var(--bs-info-rgb, 13, 202, 240), 0.65));
+        }
+
+        .salientes-page .stats-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--salientes-primary);
+            background: rgba(13, 110, 253, 0.1);
+            margin-bottom: 1rem;
+        }
+
+        .salientes-page .stats-value {
+            font-size: 1.85rem;
+            line-height: 1;
+            font-weight: 800;
+            color: var(--salientes-title);
+            margin-bottom: 0.3rem;
+        }
+
+        .salientes-page .stats-label {
+            color: var(--salientes-muted);
+            font-weight: 600;
+        }
+
+        .salientes-page .filters-card {
+            padding: 1.35rem;
+            margin: 1.5rem 0;
+        }
+
+        .salientes-page .table-card {
+            overflow: hidden;
+        }
+
+        .salientes-page .table-card-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.35rem 1.4rem 1rem;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        }
+
+        .salientes-page .table-card-head h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--salientes-title);
+        }
+
+        .salientes-page .table-card-head p {
+            margin: 0.25rem 0 0;
+            color: var(--salientes-muted);
+        }
+
+        .salientes-page .section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .salientes-page .section-head h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--salientes-title);
+        }
+
+        .salientes-page .section-head p {
+            margin: 0.25rem 0 0;
+            color: var(--salientes-muted);
+        }
+
+        .salientes-page .filtros-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .salientes-page .toggle-icon {
+            transition: transform .2s ease;
+        }
+
+        .salientes-page .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
+
+        .salientes-page .alert-card {
+            padding: 1rem 1.2rem;
+            margin-bottom: 1rem;
+            color: #991b1b;
+            background: linear-gradient(180deg, #fff7f7 0%, #fff1f2 100%);
+            border-color: rgba(248, 113, 113, 0.35);
+        }
+
+        .salientes-page .table-wrap {
+            padding: 0 1rem 1rem;
+        }
+
+        .salientes-page .table {
+            margin-bottom: 0;
+            --bs-table-bg: transparent;
+        }
+
+        .salientes-page .table thead th {
+            border-bottom-width: 1px;
+            border-color: rgba(226, 232, 240, 0.9);
+            color: var(--salientes-muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 800;
+            padding: 1rem 0.9rem;
+            background: var(--salientes-surface-muted);
+        }
+
+        .salientes-page .table tbody td {
+            padding: 1rem 0.9rem;
+            border-color: rgba(226, 232, 240, 0.8);
+            vertical-align: middle;
+        }
+
+        .salientes-page .table tbody tr:hover {
+            background: rgba(248, 250, 252, 0.7);
+        }
+
+        .salientes-page .col-radicado {
+            min-width: 190px;
+            width: 220px;
+            white-space: nowrap;
+        }
+
+        .salientes-page .col-asunto {
+            min-width: 240px;
+        }
+
+        .salientes-page .radicado-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.55rem 0.9rem;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.12), rgba(13, 110, 253, 0.18));
+            color: var(--salientes-primary);
+            text-decoration: none;
+            font-weight: 800;
+        }
+
+        .salientes-page .radicado-link:hover {
+            color: #0b5ed7;
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.16), rgba(13, 110, 253, 0.24));
+        }
+
+        .salientes-page .shared-badge,
+        .salientes-page .state-badge,
+        .salientes-page .recipient-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            border-radius: 999px;
+            padding: 0.5rem 0.8rem;
+            font-weight: 700;
+            font-size: 0.78rem;
+        }
+
+        .salientes-page .shared-badge {
+            background: rgba(14, 165, 233, 0.14);
+            color: #0369a1;
+            margin-left: 0.5rem;
+        }
+
+        .salientes-page .state-badge.state-sent { background: rgba(34, 197, 94, 0.14); color: #166534; }
+        .salientes-page .state-badge.state-pending { background: rgba(245, 158, 11, 0.18); color: #92400e; }
+        .salientes-page .state-badge.state-rejected { background: rgba(239, 68, 68, 0.16); color: #991b1b; }
+        .salientes-page .state-badge.state-error { background: rgba(220, 38, 38, 0.16); color: #991b1b; }
+        .salientes-page .state-badge.state-approved { background: rgba(14, 165, 233, 0.16); color: #075985; }
+        .salientes-page .state-badge.state-draft { background: rgba(148, 163, 184, 0.2); color: #334155; }
+
+        .salientes-page .btn-destinatario {
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            text-align: left;
+            width: 100%;
+        }
+
+        .salientes-page .btn-destinatario-card {
+            width: 100%;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            border-radius: 18px;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+            padding: 0.9rem 1rem;
+            transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+        }
+
+        .salientes-page .btn-destinatario:hover .btn-destinatario-card {
+            transform: translateY(-2px);
+            border-color: rgba(13, 110, 253, 0.25);
+            box-shadow: 0 18px 34px -28px rgba(15, 23, 42, 0.4);
+        }
+
+        .salientes-page .recipient-name {
+            color: var(--salientes-title);
+            font-weight: 800;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+        }
+
+        .salientes-page .recipient-entity,
+        .salientes-page .recipient-meta,
+        .salientes-page .subtle-text {
+            color: var(--salientes-muted);
+        }
+
+        .salientes-page .recipient-badge {
+            background: rgba(13, 110, 253, 0.12);
+            color: var(--salientes-primary);
+        }
+
+        .salientes-page .responded-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.5rem 0.8rem;
+            border-radius: 999px;
+            font-weight: 700;
+        }
+
+        .salientes-page .responded-pill.is-self {
+            background: rgba(34, 197, 94, 0.12);
+            color: #166534;
+        }
+
+        .salientes-page .responded-pill.is-shared {
+            background: rgba(245, 158, 11, 0.18);
+            color: #92400e;
+        }
+
+        .salientes-page .delivery-metrics {
+            display: inline-flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            align-items: center;
+        }
+
+        .salientes-page .delivery-line {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 700;
+        }
+
+        .salientes-page .empty-state {
+            padding: 2rem 1rem;
+        }
+
+        .salientes-page .pagination {
+            padding: 0 1rem 1.25rem;
+            margin: 0;
+        }
+
+        .salientes-page .page-link {
+            border-radius: 12px;
+            margin: 0 0.15rem;
+            border-color: rgba(226, 232, 240, 0.9);
+            color: #334155;
+            font-weight: 700;
+        }
+
+        .salientes-page .page-item.active .page-link {
+            background: var(--salientes-primary);
+            border-color: var(--salientes-primary);
+        }
+
+        .salientes-page .modal-content {
+            border-radius: 24px;
+        }
+
+        .salientes-page .modal-header,
+        .salientes-page .modal-footer {
+            border-color: rgba(226, 232, 240, 0.85);
+        }
+
+        .salientes-page .modal-section {
+            padding: 1rem;
+            border-radius: 18px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+        }
+
+        .salientes-page .modal-section h6 {
+            color: var(--salientes-primary);
+            font-weight: 800;
+            margin-bottom: 0.85rem;
+        }
+
+        .salientes-page .modal-info-card {
+            padding: 1rem 1.1rem;
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(13, 110, 253, 0.08) 0%, rgba(13, 110, 253, 0.03) 100%);
+            border: 1px solid rgba(13, 110, 253, 0.14);
+        }
+
+        .salientes-page .modal-recipient-list {
+            display: grid;
+            gap: 0.85rem;
+        }
+
+        .salientes-page .modal-recipient-item {
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            border-radius: 18px;
+            padding: 1rem;
+            background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+        }
+
+        @media (max-width: 991.98px) {
+            .salientes-page .hero-top,
+            .salientes-page .table-card-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .salientes-page .hero-section {
+                padding: 1.5rem;
+                border-radius: 24px;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .salientes-page .salientes-shell {
+                width: 100%;
+            }
+
+            .salientes-page .section-head {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .salientes-page .table-wrap {
+                padding: 0 0.5rem 0.75rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="salientes-page">
+        <div class="salientes-shell">
+            {% if not load_success %}
+                <div class="alert-card" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Hubo un problema al cargar tu bandeja de respuestas salientes. Por favor, revisa los logs del servidor o contacta al administrador.
+                </div>
+            {% endif %}
+
+            <section class="filters-card" id="filtros-panel-salientes">
+                <div class="section-head filtros-toggle">
+                    <div>
+                        <h2><i class="bi bi-funnel-fill me-2"></i>Filtros de búsqueda</h2>
+                        <p>
+                            {% if alcance_actual == 'oficina' %}
+                                Respuestas enviadas por todos los miembros de tu oficina.
+                            {% else %}
+                                Tus respuestas y las de correspondencia compartida contigo.
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <div class="view-switch" onclick="event.stopPropagation()">
+                            <a href="{% url 'correspondencia:bandeja_respuestas_salientes' %}?alcance=mias"
+                               class="view-link{% if alcance_actual == 'mias' %} is-active{% endif %}"
+                               title="Solo tus respuestas">
+                                <i class="bi bi-person-fill"></i>Mis respuestas
+                            </a>
+                            <a href="{% url 'correspondencia:bandeja_respuestas_salientes' %}?alcance=oficina"
+                               class="view-link{% if alcance_actual == 'oficina' %} is-active{% endif %}"
+                               title="Respuestas de todos en tu oficina">
+                                <i class="bi bi-building"></i>Mi oficina
+                            </a>
+                        </div>
+                        <i class="bi bi-chevron-down toggle-icon"></i>
+                    </div>
+                </div>
+                <div class="filtros-body">
+                    <form method="GET" class="row g-3">
+                        <input type="hidden" name="alcance" value="{{ filtro_alcance|default:'mias' }}">
+                        <div class="col-12 col-lg-5">
+                            <label for="search_term" class="form-label">Búsqueda</label>
+                            <input type="text" class="form-control" id="search_term" name="search_term"
+                                   value="{{ filtro_search_term }}"
+                                   placeholder="Radicado, asunto, destinatario...">
+                        </div>
+
+                        <div class="col-12 col-md-4 col-lg-3">
+                            <label for="estado_salida" class="form-label">Estado</label>
+                            <select id="estado_salida" name="estado_salida" class="form-select">
+                                <option value="">Todos los estados</option>
+                                {% for valor, etiqueta in estados_salida %}
+                                    <option value="{{ valor }}" {% if filtro_estado_salida == valor %}selected{% endif %}>
+                                        {{ etiqueta }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-4 col-lg-2">
+                            <label for="fecha_inicio" class="form-label">Desde</label>
+                            <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio"
+                                   value="{{ filtro_fecha_inicio }}">
+                        </div>
+
+                        <div class="col-12 col-md-4 col-lg-2">
+                            <label for="fecha_fin" class="form-label">Hasta</label>
+                            <input type="date" class="form-control" id="fecha_fin" name="fecha_fin"
+                                   value="{{ filtro_fecha_fin }}">
+                        </div>
+
+                        <div class="col-12 d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search me-2"></i>Aplicar filtros
+                            </button>
+                            <a href="{% url 'correspondencia:bandeja_respuestas_salientes' %}?alcance={{ filtro_alcance|default:'mias' }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-counterclockwise me-2"></i>Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            {% if load_success %}
+                <section class="table-card">
+                    <div class="table-card-head">
+                        <div>
+                            <h2><i class="bi bi-table me-2"></i>
+                                {% if alcance_actual == 'oficina' %}Respuestas de la oficina{% else %}Mis respuestas{% endif %}
+                            </h2>
+                            <p>
+                                {% if alcance_actual == 'oficina' %}
+                                    {{ total_respuestas }} respuesta{{ total_respuestas|pluralize }} · {{ propias_total }} tuya{{ propias_total|pluralize:"s" }} · {{ compartidas_total }} de compañeros
+                                {% else %}
+                                    Seguimiento de radicados, destinatarios y resultado de tus envíos.
+                                {% endif %}
+                            </p>
+                        </div>
+                        <span class="hero-chip"><i class="bi bi-list-ul"></i> Página {{ respuestas_page.number|default:1 }}{% if respuestas_page %} de {{ respuestas_page.paginator.num_pages }}{% endif %}</span>
+                    </div>
+                    <div class="table-wrap">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th scope="col" class="col-fecha">Fecha</th>
+                                <th scope="col" class="col-radicado">Radicado</th>
+                                <th scope="col" class="col-asunto">Asunto</th>
+                                <th scope="col" class="col-destinatario">Destinatario</th>
+                                <th scope="col" class="col-respondido-por">Respondido por</th>
+                                <th scope="col" class="col-estado">Estado</th>
+                                <th scope="col" class="col-destinatarios text-center">Envíos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for respuesta in respuestas %}
+                            <tr>
+                                <td class="col-fecha">
+                                    <div class="subtle-text small text-uppercase fw-semibold">Creada</div>
+                                    <div class="fw-semibold">{{ respuesta.fecha_creacion|date:"Y-m-d" }}</div>
+                                    <small class="subtle-text">{{ respuesta.fecha_creacion|date:"H:i" }}</small>
+                                </td>
+                                <td class="col-radicado">
+                                    <a href="{% url 'correspondencia:detalle_respuesta_salida' respuesta_id=respuesta.pk %}"
+                                       class="radicado-link">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                        {{ respuesta.numero_radicado_salida }}
+                                    </a>
+                                    {% if respuesta.es_respuesta_compartida %}
+                                        <span class="shared-badge"
+                                              title="Respuesta de correspondencia compartida - Respondida por {{ respuesta.usuario_redactor.get_full_name|default:respuesta.usuario_redactor.username }}">
+                                            <i class="bi bi-share-fill"></i>Compartida
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="col-asunto">
+                                    <div class="fw-semibold" title="{{ respuesta.asunto }}">{{ respuesta.asunto|truncatechars:90 }}</div>
+                                </td>
+                                <td class="col-destinatario">
+                                    {% if respuesta.envio_tipo == 'GRUPO' and respuesta.envio_grupo %}
+                                        <a href="{% url 'correspondencia:categoria_detalle' respuesta.envio_grupo.id %}" class="text-decoration-none">
+                                            <span class="recipient-badge">
+                                                <i class="bi bi-tags"></i>
+                                                {{ respuesta.envio_grupo.nombre }}
+                                            </span>
+                                        </a>
+                                    {% elif respuesta.envio_tipo == 'MULTIPLE_SELECTIVO' %}
+                                        <button type="button" class="btn-destinatario"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#modalDestinatariosMultiples"
+                                                data-salida-id="{{ respuesta.id }}"
+                                                data-salida-radicado="{{ respuesta.numero_radicado_salida }}"
+                                                data-salida-asunto="{{ respuesta.asunto }}">
+                                            <div class="btn-destinatario-card">
+                                                <span class="recipient-badge mb-2">
+                                                    <i class="bi bi-people"></i>
+                                                    {{ respuesta.total_destinatarios }} destinatario{{ respuesta.total_destinatarios|pluralize }}
+                                                </span>
+                                                <div class="recipient-meta small">Haz clic para ver el detalle del envío múltiple.</div>
+                                            </div>
+                                        </button>
+                                    {% elif respuesta.destinatario_contacto %}
+                                        <button type="button" class="btn-destinatario"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#modalDetalleContacto"
+                                                data-contacto-nombre="{{ respuesta.destinatario_contacto.nombre_completo }}"
+                                                data-contacto-cargo="{{ respuesta.destinatario_contacto.cargo|default:'No especificado' }}"
+                                                data-contacto-entidad="{{ respuesta.destinatario_contacto.entidad_externa.nombre }}"
+                                                data-contacto-email="{{ respuesta.destinatario_contacto.correo_electronico|default:'No especificado' }}"
+                                                data-contacto-telefono="{{ respuesta.destinatario_contacto.telefono_contacto|default:'No especificado' }}">
+                                            <div class="btn-destinatario-card">
+                                                <div class="recipient-name">{{ respuesta.destinatario_contacto.nombre_completo }}</div>
+                                                <small class="recipient-entity d-block mt-1">{{ respuesta.destinatario_contacto.entidad_externa.nombre }}</small>
+                                            </div>
+                                        </button>
+                                    {% else %}
+                                        <span class="subtle-text">Sin destinatario</span>
+                                    {% endif %}
+                                </td>
+                                <td class="col-respondido-por">
+                                    {% if respuesta.es_respuesta_compartida %}
+                                        <div>
+                                            <span class="responded-pill is-shared">
+                                                <i class="bi bi-person-fill"></i>{{ respuesta.usuario_redactor.get_full_name|default:respuesta.usuario_redactor.username }}
+                                            </span>
+                                        </div>
+                                        <small class="subtle-text d-block mt-1">Correspondencia compartida</small>
+                                    {% else %}
+                                        <span class="responded-pill is-self">
+                                            <i class="bi bi-person-check"></i>Tú
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="col-estado">
+                                    {% if respuesta.estado == 'ENVIADA' %}
+                                        <span class="state-badge state-sent">Enviada</span>
+                                    {% elif respuesta.estado == 'PENDIENTE_APROBACION' %}
+                                        <span class="state-badge state-pending">Pendiente</span>
+                                    {% elif respuesta.estado == 'RECHAZADA' %}
+                                        <span class="state-badge state-rejected">Rechazada</span>
+                                    {% elif respuesta.estado == 'ERROR_ENVIO' %}
+                                        <span class="state-badge state-error">Error</span>
+                                    {% elif respuesta.estado == 'APROBADA' %}
+                                        <span class="state-badge state-approved">Aprobada</span>
+                                    {% elif respuesta.estado == 'BORRADOR' %}
+                                        <span class="state-badge state-draft">Borrador</span>
+                                    {% else %}
+                                        <span class="state-badge state-draft">{{ respuesta.get_estado_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="col-destinatarios text-center">
+                                    {% if respuesta.total_destinatarios > 0 %}
+                                        <div class="delivery-metrics">
+                                            <div class="delivery-line text-success">
+                                                <i class="bi bi-check-circle"></i>{{ respuesta.destinatarios_enviados }}
+                                            </div>
+                                            {% if respuesta.destinatarios_fallidos > 0 %}
+                                                <div class="delivery-line text-danger">
+                                                    <i class="bi bi-x-circle"></i>{{ respuesta.destinatarios_fallidos }}
+                                                </div>
+                                            {% endif %}
+                                            <div class="subtle-text small">
+                                                Total: {{ respuesta.total_destinatarios }}
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <span class="subtle-text">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <div class="empty-state">
+                                        <i class="bi bi-send-x text-muted" style="font-size: 2.6rem;"></i>
+                                        <p class="mt-3 text-muted mb-0">
+                                            {% if alcance_actual == 'oficina' %}
+                                                No hay respuestas salientes registradas para tu oficina con estos filtros.
+                                            {% else %}
+                                                No tienes respuestas salientes registradas con estos filtros.
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    {% if respuestas_page and respuestas_page.has_other_pages %}
+                        <nav aria-label="Paginación de respuestas salientes" class="mt-3">
+                            <ul class="pagination justify-content-center">
+                                {% if respuestas_page.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% if filtro_query_string %}{{ filtro_query_string }}&{% endif %}page={{ respuestas_page.previous_page_number }}">Anterior</a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for num in respuestas_page.paginator.page_range %}
+                                    {% if num == respuestas_page.number %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > respuestas_page.number|add:'-3' and num < respuestas_page.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% if filtro_query_string %}{{ filtro_query_string }}&{% endif %}page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if respuestas_page.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% if filtro_query_string %}{{ filtro_query_string }}&{% endif %}page={{ respuestas_page.next_page_number }}">Siguiente</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                </div>
+                    </div>
+                </section>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const panel = document.getElementById('filtros-panel-salientes');
+    const header = panel?.querySelector('.filtros-toggle');
+    const body = panel?.querySelector('.filtros-body');
+    const icon = panel?.querySelector('.toggle-icon');
+    const storageKey = 'filtros_salientes_collapsed';
+
+    if (!header || !body || !icon) return;
+
+    // Cargar estado desde localStorage
+    try {
+        const isCollapsed = localStorage.getItem(storageKey) === '1';
+        if (isCollapsed) {
+            body.classList.add('d-none');
+            icon.classList.add('rotated');
+        }
+    } catch (e) {}
+
+    header.addEventListener('click', function(event) {
+        if (event.target.closest('button, a, input, select, label')) return;
+        body.classList.toggle('d-none');
+        icon.classList.toggle('rotated');
+        try { localStorage.setItem(storageKey, body.classList.contains('d-none') ? '1' : '0'); } catch (e) {}
+    });
+});
+</script>
+
+{# Modal Detalle de Contacto #}
+<div class="modal fade" id="modalDetalleContacto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-person-circle me-2"></i>
+                    Detalle del Contacto
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="modal-section">
+                            <h6 class="text-primary mb-2">
+                                <i class="bi bi-person me-2"></i>Información Personal
+                            </h6>
+                            <div class="mb-1">
+                                <strong>Nombre:</strong>
+                                <span id="modal-nombre" class="ms-2"></span>
+                            </div>
+                            <div class="mb-1">
+                                <strong>Cargo:</strong>
+                                <span id="modal-cargo" class="ms-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="modal-section">
+                            <h6 class="text-primary mb-2">
+                                <i class="bi bi-building me-2"></i>Información de Entidad
+                            </h6>
+                            <div class="mb-1">
+                                <strong>Entidad:</strong>
+                                <span id="modal-entidad" class="ms-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="modal-section">
+                            <h6 class="text-primary mb-2">
+                                <i class="bi bi-envelope me-2"></i>Contacto
+                            </h6>
+                            <div class="mb-1">
+                                <strong>Email:</strong>
+                                <span id="modal-email" class="ms-2"></span>
+                            </div>
+                            <div class="mb-1">
+                                <strong>Teléfono:</strong>
+                                <span id="modal-telefono" class="ms-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Modal de contacto
+const modalDetalleContacto = document.getElementById('modalDetalleContacto');
+if (modalDetalleContacto) {
+    modalDetalleContacto.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        document.getElementById('modal-nombre').textContent = button.getAttribute('data-contacto-nombre') || 'No especificado';
+        document.getElementById('modal-cargo').textContent = button.getAttribute('data-contacto-cargo') || 'No especificado';
+        document.getElementById('modal-entidad').textContent = button.getAttribute('data-contacto-entidad') || 'No especificado';
+        document.getElementById('modal-email').textContent = button.getAttribute('data-contacto-email') || 'No especificado';
+        document.getElementById('modal-telefono').textContent = button.getAttribute('data-contacto-telefono') || 'No especificado';
+    });
+}
+</script>
+
+{# Modal Destinatarios Múltiples #}
+<div class="modal fade" id="modalDestinatariosMultiples" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-people me-2"></i>
+                    Destinatarios Múltiples
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-salida-info" class="mb-3"></div>
+                <div id="modal-destinatarios-lista"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Modal de destinatarios múltiples
+document.addEventListener('DOMContentLoaded', function() {
+    const modalDestinatariosMultiples = document.getElementById('modalDestinatariosMultiples');
+    if (modalDestinatariosMultiples) {
+        modalDestinatariosMultiples.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const salidaId = button.getAttribute('data-salida-id');
+            const salidaRadicado = button.getAttribute('data-salida-radicado');
+            const salidaAsunto = button.getAttribute('data-salida-asunto');
+            
+            // Actualizar info de la salida
+            document.getElementById('modal-salida-info').innerHTML = `
+                <div class="modal-info-card mb-0">
+                    <strong>Radicado:</strong> ${salidaRadicado}<br>
+                    <strong>Asunto:</strong> ${salidaAsunto}
+                </div>
+            `;
+            
+            // Mostrar loading
+            document.getElementById('modal-destinatarios-lista').innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Cargando destinatarios...</p>
+                </div>
+            `;
+            
+            const url = `/registros/correspondencia/salidas/${salidaId}/destinatarios-ajax/`;
+            
+            // Cargar destinatarios via AJAX
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const destinatarios = data.destinatarios;
+                    let html = '';
+                    
+                    if (destinatarios.length > 0) {
+                        html = `
+                            <div class="mb-3">
+                                <h6 class="text-muted">Total de destinatarios: ${destinatarios.length}</h6>
+                            </div>
+                            <div class="modal-recipient-list">
+                        `;
+                        
+                        destinatarios.forEach((dest) => {
+                            html += `
+                                <div class="modal-recipient-item">
+                                    <div class="d-flex w-100 justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">${dest.nombre}</h6>
+                                            <p class="mb-1 text-muted">
+                                                <i class="bi bi-envelope me-1"></i>${dest.email}
+                                            </p>
+                                            <small class="text-muted">
+                                                <i class="bi bi-building me-1"></i>${dest.entidad}
+                                            </small>
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge bg-${dest.estado_class}">${dest.estado}</span>
+                                            ${dest.fecha_envio ? `<br><small class="text-muted">${dest.fecha_envio}</small>` : ''}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        
+                        html += '</div>';
+                    } else {
+                        html = `
+                            <div class="text-center py-4">
+                                <i class="bi bi-people display-4 text-muted d-block mb-2"></i>
+                                <p class="text-muted">No hay destinatarios registrados.</p>
+                            </div>
+                        `;
+                    }
+                    
+                    document.getElementById('modal-destinatarios-lista').innerHTML = html;
+                } else {
+                    document.getElementById('modal-destinatarios-lista').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Error al cargar destinatarios: ${data.error}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                document.getElementById('modal-destinatarios-lista').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error al cargar destinatarios. Por favor, inténtalo de nuevo.
+                    </div>
+                `;
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

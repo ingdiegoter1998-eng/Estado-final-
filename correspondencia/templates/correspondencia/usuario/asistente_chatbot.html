@@ -1,0 +1,43 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+
+{% block content %}
+<div class="chatbot-launch-page">
+    <section class="chatbot-launch-hero section-card">
+        <div class="chatbot-launch-copy">
+            <span class="chatbot-kicker">Asistente documental MVP</span>
+            <h2 class="chatbot-title">Una experiencia más útil y enfocada en la operación</h2>
+            <p class="chatbot-subtitle">
+                El asistente ahora se abre como un modal de trabajo ampliable para consultar procedimientos sin abandonar la navegación de correspondencia.
+            </p>
+            <div class="chatbot-launch-actions">
+                <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#modalAsistenteChatbot">
+                    <i class="bi bi-stars me-2"></i>Abrir asistente
+                </button>
+                <a href="{% url 'correspondencia:dashboard_usuario' %}" class="btn btn-outline-primary btn-lg">
+                    <i class="bi bi-grid-1x2 me-2"></i>Ir al dashboard
+                </a>
+            </div>
+        </div>
+        <div class="chatbot-launch-highlights">
+            <article class="chatbot-launch-card">
+                <span>Modal inteligente</span>
+                <strong>Expandible y contraíble</strong>
+                <p>Ajusta el tamaño del espacio de trabajo según la tarea que estés resolviendo.</p>
+            </article>
+            <article class="chatbot-launch-card">
+                <span>Sesiones</span>
+                <strong>Conversaciones recientes</strong>
+                <p>Recupera conversaciones recientes y retoma contexto sin empezar de cero.</p>
+            </article>
+            <article class="chatbot-launch-card {% if gemini_configured %}is-ok{% else %}is-warning{% endif %}">
+                <span>Estado del servicio</span>
+                <strong>{% if gemini_configured %}Gemini Flash listo{% else %}Configura la API key{% endif %}</strong>
+                <p>El asistente usa la documentación indexada del proyecto para responder con contexto.</p>
+            </article>
+        </div>
+    </section>
+</div>
+{% endblock %}

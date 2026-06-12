@@ -1,0 +1,25 @@
+[Unit]
+Description=Next.js Monitoreo Correspondencia
+After=network.target correspondencia.service
+Wants=correspondencia.service
+
+[Service]
+User=devdiego
+Group=www-data
+WorkingDirectory=/home/devdiego/Correspondencia-diciembre-1.0/monitoreo-nextjs
+Environment="NODE_ENV=production"
+Environment="PORT=3001"
+Environment="NEXT_BASE_PATH=/monitoreo"
+Environment="NEXT_BACKEND_ORIGIN=http://127.0.0.1"
+Environment="PATH=/usr/bin:/usr/local/bin"
+
+ExecStart=/usr/bin/npx next start -p 3001
+
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=correspondencia-monitoreo
+
+[Install]
+WantedBy=multi-user.target

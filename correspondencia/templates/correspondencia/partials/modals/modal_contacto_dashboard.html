@@ -1,0 +1,968 @@
+<style>
+    .modal-contacto-redesign,
+    .modal-entidad-redesign {
+        --contacto-ink: #173042;
+        --contacto-muted: #60727f;
+        --contacto-line: rgba(23, 48, 66, 0.12);
+        --contacto-card: #fffdfa;
+        --contacto-soft: #f4f8f8;
+        --contacto-primary: #0e7a6f;
+        --contacto-primary-deep: #0a5a52;
+        --contacto-accent: #d59a3d;
+        --contacto-shadow: 0 26px 72px -38px rgba(19, 42, 58, 0.4);
+    }
+
+    .modal-contacto-redesign .modal-dialog {
+        max-width: min(1120px, calc(100vw - 2rem));
+        height: calc(100vh - 2rem);
+        margin: 1rem auto;
+    }
+
+    .modal-contacto-redesign .modal-content,
+    .modal-entidad-redesign .modal-content {
+        border: 1px solid rgba(14, 122, 111, 0.16);
+        border-radius: 28px;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at top right, rgba(213, 154, 61, 0.12), transparent 24%),
+            linear-gradient(180deg, #fffefa 0%, #f8fbfb 100%);
+        box-shadow: var(--contacto-shadow);
+    }
+
+    .modal-contacto-redesign .modal-content {
+        height: 100%;
+        max-height: calc(100vh - 2rem);
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-contacto-redesign #formContactoDashboard {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .modal-contacto-redesign .modal-header,
+    .modal-contacto-redesign .modal-footer,
+    .modal-entidad-redesign .modal-header,
+    .modal-entidad-redesign .modal-footer {
+        border: 0;
+        background: transparent;
+        padding: 1.5rem 1.75rem;
+    }
+
+    .modal-contacto-redesign .modal-body,
+    .modal-entidad-redesign .modal-body {
+        padding: 0 1.75rem 1.75rem;
+    }
+
+    .modal-contacto-redesign .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(14, 122, 111, 0.55) rgba(14, 122, 111, 0.08);
+    }
+
+    .modal-contacto-redesign .modal-body::-webkit-scrollbar {
+        width: 12px;
+    }
+
+    .modal-contacto-redesign .modal-body::-webkit-scrollbar-track {
+        background: rgba(14, 122, 111, 0.08);
+        border-radius: 999px;
+    }
+
+    .modal-contacto-redesign .modal-body::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, rgba(14, 122, 111, 0.72), rgba(10, 90, 82, 0.92));
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        border-radius: 999px;
+    }
+
+    .modal-contacto-redesign .modal-body::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(180deg, rgba(14, 122, 111, 0.9), rgba(10, 90, 82, 1));
+    }
+
+    .modal-contacto-hero {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        width: 100%;
+    }
+
+    .modal-contacto-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.42rem 0.78rem;
+        border-radius: 999px;
+        background: rgba(14, 122, 111, 0.1);
+        color: var(--contacto-primary-deep);
+        font-size: 0.77rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .modal-contacto-title {
+        margin: 0.8rem 0 0.35rem;
+        color: var(--contacto-ink);
+        font-size: clamp(1.45rem, 1.15rem + 1vw, 1.95rem);
+        font-weight: 800;
+        line-height: 1.08;
+    }
+
+    .modal-contacto-copy {
+        margin: 0;
+        max-width: 60ch;
+        color: var(--contacto-muted);
+        line-height: 1.65;
+    }
+
+    .modal-contacto-chip {
+        flex: 0 0 auto;
+        padding: 1rem 1.1rem;
+        border: 1px solid rgba(213, 154, 61, 0.24);
+        border-radius: 18px;
+        background: rgba(255, 248, 233, 0.92);
+        color: var(--contacto-ink);
+        font-size: 0.88rem;
+        font-weight: 700;
+    }
+
+    .modal-contacto-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.45fr) minmax(290px, 0.9fr);
+        gap: 1.25rem;
+        margin-top: 1.35rem;
+    }
+
+    .modal-contacto-stack {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .modal-contacto-panel {
+        border: 1px solid var(--contacto-line);
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.9);
+        overflow: hidden;
+        box-shadow: 0 16px 40px -34px rgba(23, 48, 66, 0.38);
+    }
+
+    .modal-contacto-panel-head {
+        padding: 1rem 1.15rem;
+        border-bottom: 1px solid var(--contacto-line);
+        background: linear-gradient(135deg, rgba(14, 122, 111, 0.09), rgba(213, 154, 61, 0.08));
+    }
+
+    .modal-contacto-panel-head h6,
+    .modal-contacto-panel-head p {
+        margin: 0;
+    }
+
+    .modal-contacto-panel-head h6 {
+        color: var(--contacto-ink);
+        font-size: 0.98rem;
+        font-weight: 800;
+    }
+
+    .modal-contacto-panel-head p {
+        margin-top: 0.25rem;
+        color: var(--contacto-muted);
+        font-size: 0.85rem;
+    }
+
+    .modal-contacto-panel-body {
+        padding: 1.15rem;
+    }
+
+    .modal-contacto-redesign .form-label,
+    .modal-entidad-redesign .form-label {
+        margin-bottom: 0.45rem;
+        color: var(--contacto-ink);
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .modal-contacto-redesign .form-control,
+    .modal-contacto-redesign .form-select,
+    .modal-entidad-redesign .form-control {
+        min-height: 50px;
+        border: 1px solid rgba(14, 122, 111, 0.18);
+        border-radius: 16px;
+        background: #fffefa;
+        box-shadow: none;
+    }
+
+    .modal-contacto-redesign .form-control:focus,
+    .modal-contacto-redesign .form-select:focus,
+    .modal-entidad-redesign .form-control:focus {
+        border-color: rgba(14, 122, 111, 0.42);
+        box-shadow: 0 0 0 0.22rem rgba(14, 122, 111, 0.12);
+    }
+
+    .modal-contacto-note {
+        padding: 1rem 1.05rem;
+        border: 1px solid rgba(14, 122, 111, 0.14);
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(14, 122, 111, 0.08), rgba(255, 255, 255, 0.7));
+        color: var(--contacto-muted);
+        line-height: 1.6;
+    }
+
+    .modal-contacto-note strong,
+    .modal-contacto-sidecard strong {
+        color: var(--contacto-ink);
+    }
+
+    .modal-contacto-email-tools {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        margin-top: 0.75rem;
+    }
+
+    .modal-contacto-sidecard {
+        padding: 1rem 1.05rem;
+        border: 1px solid var(--contacto-line);
+        border-radius: 20px;
+        background: rgba(244, 248, 248, 0.8);
+        color: var(--contacto-muted);
+        line-height: 1.65;
+    }
+
+    .modal-contacto-sidecard + .modal-contacto-sidecard {
+        margin-top: 0.9rem;
+    }
+
+    .modal-contacto-redesign .btn,
+    .modal-entidad-redesign .btn {
+        border-radius: 14px;
+        font-weight: 700;
+    }
+
+    .modal-contacto-redesign .btn-success {
+        background: linear-gradient(135deg, var(--contacto-primary), var(--contacto-primary-deep));
+        border-color: transparent;
+    }
+
+    .modal-contacto-redesign .btn-outline-primary,
+    .modal-entidad-redesign .btn-primary {
+        background: linear-gradient(135deg, #1d88a0, #0f6c7a);
+        border-color: transparent;
+        color: #fff;
+    }
+
+    .modal-contacto-redesign .btn-secondary,
+    .modal-entidad-redesign .btn-secondary {
+        background: #eef2f3;
+        border-color: #eef2f3;
+        color: var(--contacto-ink);
+    }
+
+    .modal-contacto-redesign #email-validation-feedback {
+        min-height: 1.25rem;
+        font-weight: 600;
+    }
+
+    .modal-contacto-redesign .alert,
+    .modal-entidad-redesign .alert {
+        border-radius: 16px;
+    }
+
+    .modal-contacto-redesign .select2-container {
+        width: 100% !important;
+    }
+
+    .modal-contacto-redesign .select2-container--bootstrap-5 .select2-selection {
+        min-height: 50px;
+        border: 1px solid rgba(14, 122, 111, 0.18);
+        border-radius: 16px;
+        background: #fffefa;
+        box-shadow: none;
+        display: flex;
+        align-items: center;
+        padding: 0.25rem 0.85rem;
+    }
+
+    .modal-contacto-redesign .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+        padding: 0;
+        color: var(--contacto-ink);
+        line-height: 1.45;
+    }
+
+    .modal-contacto-redesign .select2-container--bootstrap-5 .select2-selection--single .select2-selection__placeholder {
+        color: #7f909a;
+    }
+
+    .modal-contacto-redesign .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+        position: absolute;
+        top: 50%;
+        right: 0.85rem;
+        transform: translateY(-50%);
+    }
+
+    .modal-contacto-redesign .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+    .modal-contacto-redesign .select2-container--bootstrap-5.select2-container--open .select2-selection {
+        border-color: rgba(14, 122, 111, 0.42);
+        box-shadow: 0 0 0 0.22rem rgba(14, 122, 111, 0.12);
+    }
+
+    .select2-container--open .select2-dropdown.modal-contacto-select-dropdown {
+        border: 1px solid rgba(14, 122, 111, 0.16);
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 20px 44px -28px rgba(23, 48, 66, 0.42);
+    }
+
+    .select2-container--open .modal-contacto-select-dropdown .select2-search--dropdown {
+        padding: 0.85rem 0.85rem 0.55rem;
+        background: linear-gradient(180deg, rgba(255, 254, 250, 0.98), rgba(248, 251, 251, 0.95));
+    }
+
+    .select2-container--open .modal-contacto-select-dropdown .select2-search__field {
+        min-height: 44px;
+        border: 1px solid rgba(14, 122, 111, 0.18);
+        border-radius: 14px;
+        padding: 0.55rem 0.85rem;
+    }
+
+    .select2-container--open .modal-contacto-select-dropdown .select2-results__options {
+        max-height: 300px;
+        padding: 0.3rem;
+    }
+
+    .select2-container--open .modal-contacto-select-dropdown .select2-results__option {
+        border-radius: 12px;
+        padding: 0.7rem 0.8rem;
+        line-height: 1.4;
+    }
+
+    .select2-container--open .modal-contacto-select-dropdown .select2-results__option--highlighted.select2-results__option--selectable {
+        background: rgba(14, 122, 111, 0.1);
+        color: var(--contacto-ink);
+    }
+
+    .modal-contacto-select-hint {
+        margin-top: 0.55rem;
+        color: var(--contacto-muted);
+        font-size: 0.82rem;
+        line-height: 1.55;
+    }
+
+    .modal-contacto-redesign .modal-header {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        backdrop-filter: blur(10px);
+        background: linear-gradient(180deg, rgba(255, 254, 250, 0.96), rgba(255, 254, 250, 0.88));
+    }
+
+    .modal-contacto-redesign .modal-footer {
+        position: sticky;
+        bottom: 0;
+        z-index: 3;
+        backdrop-filter: blur(10px);
+        background: linear-gradient(180deg, rgba(248, 251, 251, 0.9), rgba(248, 251, 251, 0.98));
+        box-shadow: 0 -10px 24px -24px rgba(23, 48, 66, 0.65);
+    }
+
+    @media (max-width: 991.98px) {
+        .modal-contacto-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .modal-contacto-chip {
+            display: none;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .modal-contacto-redesign .modal-dialog {
+            height: calc(100vh - 1rem);
+            margin: 0.5rem auto;
+        }
+
+        .modal-contacto-redesign .modal-header,
+        .modal-contacto-redesign .modal-body,
+        .modal-contacto-redesign .modal-footer,
+        .modal-entidad-redesign .modal-header,
+        .modal-entidad-redesign .modal-body,
+        .modal-entidad-redesign .modal-footer {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+    }
+</style>
+
+<!-- Modal para crear contacto desde dashboard -->
+<div class="modal fade modal-contacto-redesign" id="modalCrearContactoDashboard" tabindex="-1" aria-labelledby="modalCrearContactoDashboardLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-contacto-hero">
+                    <div>
+                        <span class="modal-contacto-badge">
+                            <i class="bi bi-person-plus-fill"></i>
+                            Agenda global
+                        </span>
+                        <h5 class="modal-title modal-contacto-title" id="modalCrearContactoDashboardLabel">Crear contacto global reutilizable</h5>
+                        <p class="modal-contacto-copy">Registra un contacto limpio, verificable y listo para reutilizarse en respuestas, oficios y futuras radicaciones sin duplicar informacion.</p>
+                    </div>
+                    <div class="modal-contacto-chip">Uso institucional compartido</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formContactoDashboard" method="post" action="{% url 'correspondencia:crear_contacto_ajax' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" id="registrar_dominio_entidad" name="registrar_dominio_entidad" value="0">
+                <div class="modal-body">
+                    <div id="modalContactoErrorContainer" class="mb-3" style="display: none;"></div>
+
+                    <div class="modal-contacto-note mb-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Nota operativa:</strong> el contacto quedara disponible en la agenda global para toda la entidad. La edicion y eliminacion siguen restringidas a Ventanilla o Administracion.
+                    </div>
+
+                    <div class="modal-contacto-layout">
+                        <div class="modal-contacto-stack">
+                            <section class="modal-contacto-panel">
+                                <div class="modal-contacto-panel-head">
+                                    <h6><i class="bi bi-person me-2"></i>Identidad del contacto</h6>
+                                    <p>Datos base para identificar a la persona y su rol dentro de la entidad externa.</p>
+                                </div>
+                                <div class="modal-contacto-panel-body">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="nombres" class="form-label">Nombres</label>
+                                            <input type="text" class="form-control" id="nombres" name="nombres" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="apellidos" class="form-label">Apellidos</label>
+                                            <input type="text" class="form-control" id="apellidos" name="apellidos">
+                                        </div>
+                                        <div class="col-12">
+                                            <label for="cargo" class="form-label">Cargo</label>
+                                            <input type="text" class="form-control" id="cargo" name="cargo" placeholder="Ej: Gerente, Director, Profesional de apoyo">
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="modal-contacto-panel">
+                                <div class="modal-contacto-panel-head">
+                                    <h6><i class="bi bi-envelope-check me-2"></i>Canales de contacto</h6>
+                                    <p>Correo principal para respuesta institucional y telefono como respaldo operativo.</p>
+                                </div>
+                                <div class="modal-contacto-panel-body">
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <label for="correo_electronico" class="form-label">Correo electronico</label>
+                                            <input type="email" class="form-control" id="correo_electronico" name="correo_electronico" required placeholder="usuario@entidad.com">
+                                            <div class="form-text mt-2">Este correo se usara como destino principal al responder o emitir correspondencia. Si el dominio es válido pero aún no está asociado a la entidad, podrás guardarlo y anexarlo.</div>
+                                            <div class="modal-contacto-email-tools">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnCheckEmail">
+                                                    <i class="bi bi-search me-1"></i>Verificar correo electronico
+                                                </button>
+                                                <div id="emailCheckSpinner" class="spinner-border spinner-border-sm text-secondary d-none" role="status">
+                                                    <span class="visually-hidden">Comprobando...</span>
+                                                </div>
+                                                <div id="email-validation-feedback" class="small"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="telefono_contacto" class="form-label">Telefono</label>
+                                            <input type="tel" class="form-control" id="telefono_contacto" name="telefono_contacto" placeholder="Celular o conmutador">
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="modal-contacto-stack">
+                            <section class="modal-contacto-panel">
+                                <div class="modal-contacto-panel-head">
+                                    <h6><i class="bi bi-building me-2"></i>Entidad externa</h6>
+                                    <p>Relaciona el contacto con una entidad existente o crea una nueva sin salir del modal.</p>
+                                </div>
+                                <div class="modal-contacto-panel-body">
+                                    <div class="mb-3">
+                                        <label for="entidad_externa" class="form-label">Entidad</label>
+                                        <select class="form-select select2" id="entidad_externa" name="entidad_externa" required data-placeholder="Buscar entidad por nombre...">
+                                            <option value="">Seleccione una entidad...</option>
+                                        </select>
+                                        <div class="modal-contacto-select-hint">
+                                            Escribe parte del nombre para filtrar rápido entre las entidades disponibles.
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="modal" data-bs-target="#modalCrearEntidadRapida">
+                                        <i class="bi bi-plus-circle me-1"></i>Nueva entidad
+                                    </button>
+                                </div>
+                            </section>
+
+                            <div class="modal-contacto-sidecard">
+                                <strong>Buenas practicas</strong>
+                                <div class="mt-2">Usa el nombre completo real, evita cargos genericos como unico identificador y verifica el correo antes de guardar cuando el dominio sea nuevo o poco frecuente.</div>
+                            </div>
+
+                            <div class="modal-contacto-sidecard">
+                                <strong>Impacto del registro</strong>
+                                <div class="mt-2">Un contacto bien creado reduce devoluciones, acelera respuestas y mejora la reutilizacion de agenda en toda la unidad de correspondencia.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success" id="btnGuardarContacto">
+                        <i class="bi bi-check-circle me-1"></i>Crear contacto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal rápido para crear entidad -->
+<div class="modal fade modal-entidad-redesign" id="modalCrearEntidadRapida" tabindex="-1" aria-labelledby="modalCrearEntidadRapidaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <span class="modal-contacto-badge">
+                        <i class="bi bi-building-add"></i>
+                        Entidad nueva
+                    </span>
+                    <h5 class="modal-title modal-contacto-title mt-3" id="modalCrearEntidadRapidaLabel">Crear nueva entidad externa</h5>
+                    <p class="modal-contacto-copy">Agrega la entidad base para continuar con el contacto sin salir del flujo actual.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEntidadRapida" method="post" action="{% url 'correspondencia:crear_entidad_ajax' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div id="modalEntidadErrorContainer" style="display:none;"></div>
+                    <div class="mb-3">
+                        <label for="nombre_entidad" class="form-label">Nombre de la entidad</label>
+                        <input type="text" class="form-control" id="nombre_entidad" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="nit_entidad" class="form-label">NIT</label>
+                        <input type="text" class="form-control" id="nit_entidad" name="nit">
+                    </div>
+                    <div class="mb-0">
+                        <label for="dominio_entidad" class="form-label">Dominio de correo</label>
+                        <input type="text" class="form-control" id="dominio_entidad" name="dominio" placeholder="ejemplo.com o varios separados por coma">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear entidad</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let lastMxValidation = null;
+    const $modalContacto = $('#modalCrearContactoDashboard');
+    const $selectEntidad = $('#entidad_externa');
+
+    function initEntidadSelectSearch() {
+        if (!$.fn.select2 || !$selectEntidad.length) {
+            return;
+        }
+
+        if ($selectEntidad.hasClass('select2-hidden-accessible')) {
+            $selectEntidad.select2('destroy');
+        }
+
+        $selectEntidad.select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            dropdownParent: $modalContacto,
+            placeholder: $selectEntidad.data('placeholder') || 'Buscar entidad por nombre...',
+            allowClear: true,
+            minimumResultsForSearch: 0,
+            language: {
+                noResults: function() {
+                    return 'No se encontraron entidades';
+                },
+                searching: function() {
+                    return 'Buscando entidades...';
+                },
+                inputTooShort: function() {
+                    return 'Escribe para buscar';
+                }
+            },
+            dropdownCssClass: 'modal-contacto-select-dropdown'
+        });
+    }
+
+    // Cargar entidades al abrir el modal y limpiar errores
+    $modalContacto.on('show.bs.modal', function() {
+        cargarEntidades();
+        initEntidadSelectSearch();
+        // Limpiar mensajes de error al abrir el modal
+        $('#modalContactoErrorContainer').hide().empty();
+        $('#registrar_dominio_entidad').val('0');
+        lastMxValidation = null;
+    });
+
+    $modalContacto.on('hidden.bs.modal', function() {
+        if ($selectEntidad.hasClass('select2-hidden-accessible')) {
+            $selectEntidad.val('').trigger('change.select2');
+        }
+    });
+    
+    // Función para cargar entidades
+    function cargarEntidades() {
+        $.ajax({
+            url: '{% url "correspondencia:buscar_entidades_ajax" %}',
+            method: 'GET',
+            headers: {'X-Requested-With':'XMLHttpRequest'},
+            success: function(resp){
+                if(resp.success){
+                    const valorActual = $selectEntidad.val();
+                    $selectEntidad.find('option:not(:first)').remove();
+                    resp.entidades.forEach(function(e){
+                        $selectEntidad.append(new Option(e.nombre, e.id));
+                    });
+
+                    if (valorActual && $selectEntidad.find('option[value="' + valorActual + '"]').length) {
+                        $selectEntidad.val(valorActual);
+                    }
+
+                    if ($selectEntidad.hasClass('select2-hidden-accessible')) {
+                        $selectEntidad.trigger('change.select2');
+                    }
+                }
+            }
+        });
+    }
+    
+    // Manejar envío del formulario de contacto
+    $('#formContactoDashboard').on('submit', function(e){
+        e.preventDefault();
+
+        if (
+            prelimOK &&
+            lastMxValidation &&
+            lastMxValidation.tiene_mx &&
+            lastMxValidation.selected_entity_id &&
+            !lastMxValidation.known_for_entity &&
+            lastMxValidation.can_register_for_entity
+        ) {
+            const registrar = confirm('El dominio es válido pero no está registrado para la entidad seleccionada. ¿Desea asociarlo también a la entidad para futuras validaciones?');
+            $('#registrar_dominio_entidad').val(registrar ? '1' : '0');
+        } else {
+            $('#registrar_dominio_entidad').val('0');
+        }
+        
+        const formData = new FormData(this);
+        
+        $.ajax({
+            url: $(this).attr('action'),
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {'X-Requested-With':'XMLHttpRequest'},
+            success: function(resp){
+                if(resp.success){
+                    // Ocultar cualquier error previo en el modal
+                    $('#modalContactoErrorContainer').hide().empty();
+                    
+                    // Mostrar mensaje de éxito fuera del modal
+                    const alertHtml = `
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle me-2"></i>
+                            ${resp.message || `Contacto creado exitosamente: ${resp.contacto.nombre_completo}`}
+                            ${resp.warning ? `<div class="mt-2 small">${resp.warning}</div>` : ''}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    `;
+                    
+                    // Insertar alerta al inicio del contenido principal
+                    $('.row').first().before(alertHtml);
+                    
+                    // Cerrar modal y limpiar formulario
+                    $('#modalCrearContactoDashboard').modal('hide');
+                    $('#formContactoDashboard')[0].reset();
+                    $('#registrar_dominio_entidad').val('0');
+                    lastMxValidation = null;
+                    
+                    // Scroll al mensaje
+                    $('html, body').animate({
+                        scrollTop: $('.alert-success').offset().top - 100
+                    }, 500);
+                    
+                    // Remover alerta después de 5 segundos
+                    setTimeout(function(){
+                        $('.alert-success').fadeOut();
+                    }, 5000);
+                } else {
+                    // Mostrar mensaje de error dentro del modal
+                    const errorMessage = resp.error || 'Error desconocido al crear contacto';
+                    const errorHtml = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <div>${errorMessage}</div>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    `;
+                    
+                    // Insertar alerta dentro del modal
+                    $('#modalContactoErrorContainer').html(errorHtml).show();
+                    
+                    // Scroll dentro del modal al mensaje
+                    const modalBody = $('#modalCrearContactoDashboard .modal-body');
+                    modalBody.animate({
+                        scrollTop: 0
+                    }, 300);
+                }
+            },
+            error: function(xhr, status, error){
+                // Mostrar mensaje de error de conexión dentro del modal
+                const errorHtml = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <div>Error de conexión al crear contacto. Por favor, intente nuevamente.</div>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                
+                // Insertar alerta dentro del modal
+                $('#modalContactoErrorContainer').html(errorHtml).show();
+                
+                // Scroll dentro del modal al mensaje
+                const modalBody = $('#modalCrearContactoDashboard .modal-body');
+                modalBody.animate({
+                    scrollTop: 0
+                }, 300);
+            }
+        });
+    });
+    
+    // Limpiar errores al abrir el modal de entidad rápida
+    $('#modalCrearEntidadRapida').on('show.bs.modal', function(){
+        $('#modalEntidadErrorContainer').hide().empty();
+    });
+
+    // Manejar envío del formulario de entidad rápida
+    $('#formEntidadRapida').on('submit', function(e){
+        e.preventDefault();
+        
+        $.ajax({
+            url: $(this).attr('action'),
+            method: 'POST',
+            data: $(this).serialize(),
+            headers: {'X-Requested-With':'XMLHttpRequest'},
+            success: function(resp){
+                if(resp.success){
+                    // Agregar nueva entidad al select
+                    $selectEntidad.append(new Option(resp.entidad.nombre, resp.entidad.id, true, true));
+                    if ($selectEntidad.hasClass('select2-hidden-accessible')) {
+                        $selectEntidad.trigger('change.select2');
+                    } else {
+                        $selectEntidad.val(resp.entidad.id);
+                    }
+                    
+                    // Cerrar modal y limpiar formulario
+                    $('#modalCrearEntidadRapida').modal('hide');
+                    $('#formEntidadRapida')[0].reset();
+                    $('#modalEntidadErrorContainer').hide().empty();
+                } else {
+                    // Mostrar mensaje de error DENTRO del modal
+                    const errorHtml = `
+                        <div class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            ${resp.error || 'Error desconocido al crear la entidad.'}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    `;
+                    $('#modalEntidadErrorContainer').html(errorHtml).show();
+                    
+                    // Scroll dentro del modal al mensaje
+                    const modalBody = $('#modalCrearEntidadRapida .modal-body');
+                    modalBody.animate({ scrollTop: 0 }, 300);
+                }
+            },
+            error: function(xhr, status, error){
+                const errorHtml = `
+                    <div class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error de conexión al crear entidad. Por favor, intente nuevamente.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                $('#modalEntidadErrorContainer').html(errorHtml).show();
+            }
+        });
+    });
+
+    // === Comprobación de email (MX + SMTP opcional) ===
+    const $btnCheck = $('#btnCheckEmail');
+    const $spinner = $('#emailCheckSpinner');
+    const $feedback = $('#email-validation-feedback');
+
+    function setFeedback(html, type) {
+        $feedback.removeClass('text-success text-danger text-muted text-warning').addClass(type).html(html);
+    }
+
+    function buildPrelimFeedback(mx) {
+        if (mx.known_for_entity) {
+            return {
+                html: '<span class="text-success">Dominio registrado para la entidad seleccionada.</span>',
+                type: 'text-success'
+            };
+        }
+
+        if (mx.known_in_system && mx.matching_entity_name) {
+            return {
+                html: `<span class="text-warning">Dominio válido. Ya existe en el sistema y está asociado a ${mx.matching_entity_name}. Puedes guardar el contacto sin reasignar el dominio.</span>`,
+                type: 'text-warning'
+            };
+        }
+
+        if (mx.selected_entity_id) {
+            return {
+                html: '<span class="text-warning">Dominio válido con MX. No está registrado para la entidad seleccionada; puedes guardarlo y anexarlo a la entidad.</span>',
+                type: 'text-warning'
+            };
+        }
+
+        return {
+            html: '<span class="text-success">Dominio válido (MX encontrado)</span>',
+            type: 'text-success'
+        };
+    }
+
+    function toggleLoading(isLoading) {
+        if (isLoading) {
+            $spinner.removeClass('d-none');
+            $btnCheck.prop('disabled', true);
+        } else {
+            $spinner.addClass('d-none');
+            $btnCheck.prop('disabled', false);
+        }
+    }
+
+    // ===== Validación preliminar (formato + MX) =====
+    let prelimOK = false;
+    const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+    let prelimTimer = null;
+
+    function validatePrelim(email) {
+        prelimOK = false;
+        lastMxValidation = null;
+        $('#registrar_dominio_entidad').val('0');
+        $('#btnCheckEmail').prop('disabled', true);
+        if (!emailRegex.test(email)) {
+            setFeedback('<span class="text-danger">Formato inválido (usuario@dominio.com)</span>', 'text-danger');
+            return;
+        }
+        $.ajax({
+            url: '{% url "correspondencia:validar_email_mx_ajax" %}',
+            method: 'GET',
+            data: {
+                email,
+                entidad_id: $('#entidad_externa').val()
+            },
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).done(function(mx){
+            lastMxValidation = mx;
+            if (mx && mx.formato_valido && mx.tiene_mx) {
+                prelimOK = true;
+                const feedback = buildPrelimFeedback(mx);
+                setFeedback(feedback.html, feedback.type);
+                $('#btnCheckEmail').prop('disabled', false);
+            } else {
+                setFeedback('<span class="text-danger">El dominio no posee MX o no es válido.</span>', 'text-danger');
+                $('#btnCheckEmail').prop('disabled', true);
+            }
+        }).fail(function(){
+            setFeedback('<span class="text-danger">No fue posible validar el dominio.</span>', 'text-danger');
+            $('#btnCheckEmail').prop('disabled', true);
+        });
+    }
+
+    $('#correo_electronico').on('input', function(){
+        const email = $(this).val().trim();
+        clearTimeout(prelimTimer);
+        prelimTimer = setTimeout(function(){
+            validatePrelim(email);
+        }, 400);
+    });
+
+    $('#entidad_externa').on('change', function(){
+        const email = $('#correo_electronico').val().trim();
+        if (email) {
+            validatePrelim(email);
+        }
+    });
+
+    function comprobarAPI(email) {
+        return $.ajax({
+            url: '{% url "correspondencia:validar_email_api_ajax" %}',
+            method: 'GET',
+            data: { email },
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            timeout: 45000  // 45 segundos de timeout
+        });
+    }
+
+    $btnCheck.on('click', function() {
+        const email = $('#correo_electronico').val().trim();
+        if (!email) {
+            setFeedback('<span class="text-danger">Ingrese un email primero.</span>', 'text-danger');
+            return;
+        }
+        if (!prelimOK) {
+            setFeedback('<span class="text-danger">Completa primero la validación preliminar.</span>', 'text-danger');
+            return;
+        }
+        setFeedback('Comprobando con servicio externo…', 'text-muted');
+        toggleLoading(true);
+        comprobarAPI(email).done(function(r){
+            if (r.success) {
+                setFeedback(`<span class="text-success">Entregable (${r.result || 'ok'})</span>`, 'text-success');
+            } else {
+                const reason = r.reason || r.message || 'No entregable o desconocido';
+                if (reason.toLowerCase().includes('timeout') || reason.toLowerCase().includes('proveedor') || (r.result === 'unknown')) {
+                    const ok = confirm('La verificación externa no pudo completarse. ¿Está seguro de que desea guardar este correo de todas formas?');
+                    if (ok) {
+                        setFeedback('<span class="text-warning">Se habilitó guardar bajo responsabilidad del funcionario.</span>', 'text-muted');
+                    } else {
+                        setFeedback(`<span class="text-danger">${reason}</span>`, 'text-danger');
+                    }
+                } else {
+                    setFeedback(`<span class="text-danger">${reason}</span>`, 'text-danger');
+                }
+            }
+        }).fail(function(){
+            setFeedback('<span class="text-danger">No fue posible contactar el servicio.</span>', 'text-danger');
+            const ok = confirm('La verificación externa no pudo completarse. ¿Está seguro de que desea guardar este correo de todas formas?');
+            if (ok) {
+                setFeedback('<span class="text-warning">Se habilitó guardar bajo responsabilidad del funcionario.</span>', 'text-muted');
+            }
+        }).always(function(){
+            toggleLoading(false);
+        });
+    });
+});
+</script>

@@ -1,0 +1,293 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Responder Comunicación Interna{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-reply-fill me-2"></i>Responder Comunicación
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-secondary mb-4">
+                        <h6 class="alert-heading">
+                            <i class="bi bi-file-earmark-text me-2"></i>Respondiendo a:
+                        </h6>
+                        <p class="mb-1"><strong>{{ comunicacion_origen.radicado }}</strong> - {{ comunicacion_origen.asunto }}</p>
+                        <small class="text-muted">
+                            De: {{ comunicacion_origen.remitente_nombre }} ({{ comunicacion_origen.remitente_oficina.nombre }})
+                        </small>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="id_ciudad" class="form-label">Ciudad</label>
+                                {{ form.ciudad }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_fecha_documento" class="form-label">Fecha del Documento</label>
+                                {{ form.fecha_documento }}
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="id_serie_respuesta" class="form-label">Serie Documental (opcional)</label>
+                                {{ form.serie }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="id_subserie_respuesta" class="form-label">Subserie Documental (opcional)</label>
+                                {{ form.subserie }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_trd" class="form-label">Código TRD</label>
+                            {{ form.trd }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Destinatario</label>
+                            <div class="d-flex align-items-center gap-2 p-2 border rounded bg-light">
+                                <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary bg-opacity-10 text-primary" style="width:36px;height:36px;flex-shrink:0;">
+                                    <i class="bi bi-person-fill"></i>
+                                </span>
+                                <div class="flex-grow-1">
+                                    <span class="fw-bold text-dark">{{ comunicacion_origen.remitente_nombre }}</span>
+                                    <br><small class="text-muted">{{ comunicacion_origen.remitente_oficina.nombre }}</small>
+                                </div>
+                                <span class="badge bg-info bg-opacity-10 text-info d-inline-flex align-items-center gap-1">
+                                    <i class="bi bi-lock-fill"></i> Asignado automáticamente
+                                </span>
+                            </div>
+                            <div class="form-text text-muted mt-1">
+                                <i class="bi bi-check-circle text-success me-1"></i>El destinatario se asigna automáticamente al remitente original. No requiere selección manual.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_asunto" class="form-label">Asunto</label>
+                            {{ form.asunto }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="id_cuerpo" class="form-label">Contenido de la respuesta</label>
+                            {{ form.cuerpo }}
+                        </div>
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'correspondencia:interna_detalle' comunicacion_origen.pk %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Cancelar
+                            </a>
+                            <div>
+                                <button type="submit" name="save_draft" class="btn btn-outline-primary me-2">
+                                    <i class="bi bi-save me-2"></i>Guardar Borrador
+                                </button>
+                                {% with grupos=request.user.groups.all|join:"," %}
+                                {% if "Lider de Oficina" in grupos %}
+                                <button type="submit" name="save_send" class="btn btn-success">
+                                    <i class="bi bi-check-circle me-2"></i>Aprobar y Distribuir
+                                </button>
+                                {% else %}
+                                <button type="submit" name="save_send" class="btn btn-success">
+                                    <i class="bi bi-send me-2"></i>Enviar a Aprobación
+                                </button>
+                                {% endif %}
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar con información -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Comunicación Original
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">Radicado:</dt>
+                        <dd class="col-sm-7">{{ comunicacion_origen.radicado }}</dd>
+                        
+                        <dt class="col-sm-5">Fecha:</dt>
+                        <dd class="col-sm-7">{{ comunicacion_origen.fecha_documento|date:"d/m/Y" }}</dd>
+                        
+                        <dt class="col-sm-5">Remitente:</dt>
+                        <dd class="col-sm-7">{{ comunicacion_origen.remitente_oficina.nombre }}</dd>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="bi bi-question-circle me-2"></i>Ayuda
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-2">
+                        <strong>Guardar Borrador:</strong> Guarda la respuesta sin enviarla. Podrá editarla después.
+                    </p>
+                    {% with grupos=request.user.groups.all|join:"," %}
+                    {% if "Lider de Oficina" in grupos %}
+                    <p class="small text-muted mb-0">
+                        <strong>Aprobar y Distribuir:</strong> Como líder, la respuesta será aprobada y distribuida directamente.
+                    </p>
+                    {% else %}
+                    <p class="small text-muted mb-0">
+                        <strong>Enviar a Aprobación:</strong> Envía la respuesta al líder de su oficina para revisión y aprobación.
+                    </p>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== FUNCIONALIDAD SERIE/SUBSERIE/TRD PARA RESPUESTA DE COMUNICACIONES INTERNAS =====
+(function() {
+    'use strict';
+    
+    const SUBSERIES_ENDPOINT = '/registros/cargar_subseries/';
+    const SERIES_ENDPOINT = '/registros/cargar_series/';
+    const TRD_SCOPE_QUERY = 'scope=comunicacion_interna';
+    
+    function construirCodigoTRDCompleto(oficinaTrd, serieTrd, subserieTrd) {
+        if (!oficinaTrd || !serieTrd || !subserieTrd) {
+            return '';
+        }
+        return `${oficinaTrd}.${serieTrd}.${subserieTrd}`;
+    }
+    
+    function cargarSeriesRespuesta() {
+        const serieSelect = document.getElementById('id_serie_respuesta');
+        if (!serieSelect) return;
+        
+        fetch(`${SERIES_ENDPOINT}?${TRD_SCOPE_QUERY}`, {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            serieSelect.innerHTML = '<option value="">Seleccione una serie...</option>';
+            if (data && data.length > 0) {
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.nombre;
+                    option.dataset.codigoTrd = item.codigo_trd || '';
+                    serieSelect.appendChild(option);
+                });
+                if (data.length === 1) {
+                    serieSelect.value = String(data[0].id);
+                    cargarSubseriesRespuesta(data[0].id);
+                }
+            }
+        })
+        .catch(error => console.error('[TRD] Error cargando series:', error));
+    }
+    
+    function cargarSubseriesRespuesta(serieId) {
+        const subserieSelect = document.getElementById('id_subserie_respuesta');
+        const trdInput = document.getElementById('id_trd');
+        
+        if (!subserieSelect) return;
+        
+        if (!serieId) {
+            subserieSelect.innerHTML = '<option value="">Seleccione una serie primero...</option>';
+            subserieSelect.disabled = true;
+            if (trdInput) trdInput.value = '';
+            return;
+        }
+        
+        subserieSelect.innerHTML = '<option value="">Cargando...</option>';
+        subserieSelect.disabled = true;
+        
+        fetch(`${SUBSERIES_ENDPOINT}?serie_id=${encodeURIComponent(serieId)}&${TRD_SCOPE_QUERY}`, {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            subserieSelect.innerHTML = '<option value="">Seleccione una subserie...</option>';
+            if (data && data.length > 0) {
+                data.forEach(item => {
+                    const option = document.createElement('option');
+                    option.value = item.id;
+                    option.textContent = item.nombre;
+                    option.dataset.codigoTrd = item.codigo_trd || '';
+                    subserieSelect.appendChild(option);
+                });
+                subserieSelect.disabled = false;
+                if (data.length === 1) {
+                    subserieSelect.value = String(data[0].id);
+                    subserieSelect.dispatchEvent(new Event('change'));
+                }
+            } else {
+                subserieSelect.innerHTML = '<option value="">No hay subseries disponibles</option>';
+            }
+        })
+        .catch(error => {
+            console.error('[TRD] Error cargando subseries:', error);
+            subserieSelect.innerHTML = '<option value="">Error al cargar</option>';
+        });
+    }
+    
+    function inicializarEventosTRDRespuesta() {
+        const serieSelect = document.getElementById('id_serie_respuesta');
+        const subserieSelect = document.getElementById('id_subserie_respuesta');
+        const trdInput = document.getElementById('id_trd');
+        
+        if (!serieSelect || !subserieSelect) return;
+
+        if (serieSelect.dataset.trdBound === '1') return;
+        serieSelect.dataset.trdBound = '1';
+        
+        // Obtener oficina TRD del usuario
+        const usuarioOficinaTrd = '{{ request.user.perfil.oficina.codigo_trd_comunicacion_interna|default:"" }}';
+        const usuarioOficinaTrdDisplay = '{{ request.user.perfil.oficina.codigo_trd_comunicacion_interna_display }}';
+        
+        // Evento cambio serie
+        serieSelect.addEventListener('change', function() {
+            cargarSubseriesRespuesta(this.value);
+        });
+        
+        // Evento cambio subserie - autocompletar TRD
+        subserieSelect.addEventListener('change', function() {
+            const selectedSubserieOption = this.options[this.selectedIndex];
+            const selectedSerieOption = serieSelect.options[serieSelect.selectedIndex];
+            
+            if (trdInput && selectedSubserieOption && selectedSerieOption) {
+                trdInput.value = usuarioOficinaTrd || usuarioOficinaTrdDisplay;
+            }
+        });
+    }
+    
+    // Inicializar cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        cargarSeriesRespuesta();
+        inicializarEventosTRDRespuesta();
+    });
+})();
+</script>
+{% endblock %}

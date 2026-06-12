@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Fichas de Pacientes{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+<link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background: #f8f9fa;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        line-height: 1.6;
+    }
+    .fichas-layout {
+        display: flex;
+        min-height: 100vh;
+    }
+    .fichas-content {
+        flex: 1;
+        padding: 1.5rem 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    .fichas-hero {
+        background: linear-gradient(135deg, #003366 0%, #005599 50%, #0077cc 100%);
+        color: white;
+        padding: 3rem 2.5rem;
+        border-radius: 12px;
+        margin-bottom: 2.5rem;
+        text-align: center;
+        box-shadow: 0 8px 20px rgba(0, 51, 102, 0.3);
+    }
+    .fichas-hero h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    .fichas-hero p {
+        font-size: 1.2rem;
+        opacity: 0.95;
+        margin: 0;
+    }
+    .fichas-actions {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+    .fichas-action-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    .fichas-action-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-color: #0077cc;
+    }
+    .fichas-action-card i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: #0077cc;
+    }
+    .fichas-action-card h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #003366;
+        margin-bottom: 0.75rem;
+    }
+    .fichas-action-card p {
+        font-size: 0.95rem;
+        color: #6a6a6a;
+        margin-bottom: 1.5rem;
+    }
+    .fichas-action-card .btn {
+        width: 100%;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+    .fichas-info-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+    .fichas-info-section h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #003366;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    .fichas-info-section h2 i {
+        font-size: 2rem;
+        color: #0077cc;
+    }
+    .fichas-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    .fichas-info-item {
+        padding: 1.25rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 4px solid #0077cc;
+    }
+    .fichas-info-item h4 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #003366;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .fichas-info-item h4 i {
+        color: #0077cc;
+    }
+    .fichas-info-item p {
+        font-size: 0.9rem;
+        color: #5a6c7d;
+        margin: 0;
+    }
+    .fichas-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+    .fichas-stat-card {
+        background: linear-gradient(135deg, #0077cc 0%, #005599 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 119, 204, 0.3);
+    }
+    .fichas-stat-card i {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+        opacity: 0.9;
+    }
+    .fichas-stat-card .stat-number {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+    }
+    .fichas-stat-card .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}
+
+{% block body_content %}
+<div class="fichas-layout">
+    {% include 'partials/sidebar_nav.html' %}
+    <div class="fichas-content">
+        <!-- Hero Section -->
+        <div class="fichas-hero">
+            <h1><i class="bi bi-file-person-fill me-2"></i>Gestión de Fichas de Pacientes</h1>
+            <p>Sistema integral para la administración y consulta de información de pacientes del Hospital del Sarare</p>
+        </div>
+
+        <!-- Acciones Principales -->
+        <div class="fichas-actions">
+            <div class="fichas-action-card">
+                <i class="bi bi-folder-plus"></i>
+                <h3>Crear Nueva Ficha</h3>
+                <p>Registre la información de un nuevo paciente en el sistema</p>
+                <a href="{% url 'crear_ficha1' %}" class="btn btn-success">
+                    <i class="bi bi-plus-circle me-2"></i>Crear Ficha
+                </a>
+            </div>
+            <div class="fichas-action-card">
+                <i class="bi bi-folder2-open"></i>
+                <h3>Ver Lista de Fichas</h3>
+                <p>Consulte y gestione todas las fichas registradas en el sistema</p>
+                <a href="{% url 'lista_fichas1' %}" class="btn btn-primary">
+                    <i class="bi bi-list-ul me-2"></i>Ver Lista
+                </a>
+            </div>
+            <div class="fichas-action-card">
+                <i class="bi bi-geo-alt"></i>
+                <h3>Preparar Ubicación</h3>
+                <p>Configure la ubicación física de las fichas en el archivo</p>
+                <a href="{% url 'preparar_fichas' %}" class="btn btn-info">
+                    <i class="bi bi-geo-alt-fill me-2"></i>Preparar
+                </a>
+            </div>
+        </div>
+
+        <!-- Información del Sistema -->
+        <div class="fichas-info-section">
+            <h2><i class="bi bi-info-circle"></i>Acerca del Sistema de Fichas</h2>
+            <div class="fichas-info-grid">
+                <div class="fichas-info-item">
+                    <h4><i class="bi bi-shield-check"></i>Seguridad de Datos</h4>
+                    <p>Toda la información de los pacientes está protegida y cumple con los estándares de confidencialidad médica.</p>
+                </div>
+                <div class="fichas-info-item">
+                    <h4><i class="bi bi-search"></i>Búsqueda Avanzada</h4>
+                    <p>Utilice múltiples criterios de búsqueda para encontrar rápidamente la información que necesita.</p>
+                </div>
+                <div class="fichas-info-item">
+                    <h4><i class="bi bi-archive"></i>Organización Física</h4>
+                    <p>Gestione la ubicación física de las fichas con nuestro sistema de gavetas, cajas y carpetas.</p>
+                </div>
+                <div class="fichas-info-item">
+                    <h4><i class="bi bi-clock-history"></i>Historial Completo</h4>
+                    <p>Mantenga un registro detallado de todas las visitas y actualizaciones de cada paciente.</p>
+                </div>
+                <div class="fichas-info-item">
+                    <h4><i class="bi bi-person-badge"></i>Identificación Múltiple</h4>
+                    <p>Soporte para identificación primaria y secundaria, así como número de historia clínica.</p>
+                </div>
+                <div class="fichas-info-item">
+                    <h4><i class="bi bi-file-earmark-text"></i>Información Completa</h4>
+                    <p>Almacene datos personales, información de padres, ubicación física y fechas de visita.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas (Placeholder) -->
+        <div class="fichas-stats">
+            <div class="fichas-stat-card">
+                <i class="bi bi-file-person"></i>
+                <div class="stat-number">—</div>
+                <div class="stat-label">Fichas Registradas</div>
+            </div>
+            <div class="fichas-stat-card">
+                <i class="bi bi-check-circle"></i>
+                <div class="stat-number">—</div>
+                <div class="stat-label">Fichas Activas</div>
+            </div>
+            <div class="fichas-stat-card">
+                <i class="bi bi-archive"></i>
+                <div class="stat-number">—</div>
+                <div class="stat-label">Ubicaciones Configuradas</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

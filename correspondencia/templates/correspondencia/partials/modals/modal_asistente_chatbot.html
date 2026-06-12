@@ -1,0 +1,209 @@
+<div class="modal fade chatbot-modal" id="{{ chatbot_modal_id|default:'modalAsistenteChatbot' }}" tabindex="-1" aria-labelledby="{{ chatbot_modal_id|default:'modalAsistenteChatbot' }}Label" aria-hidden="true"{% if chatbot_auto_open %} data-chatbot-auto-open="true"{% endif %}>
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable chatbot-assistant-dialog">
+        <div class="modal-content">
+            <div class="chatbot-modal-shell" data-chatbot-root
+                 data-conversations-url="{% url 'correspondencia:chatbot_conversations_api' %}"
+                 data-create-url="{% url 'correspondencia:chatbot_create_conversation_api' %}"
+                 data-messages-url-template="{% url 'correspondencia:chatbot_messages_api' 0 %}"
+                 data-ask-url-template="{% url 'correspondencia:chatbot_ask_api' 0 %}"
+                 data-support-conversations-url="{% url 'correspondencia:api-chat-conversaciones' %}"
+                 data-support-create-url="{% url 'correspondencia:api-chat-crear' %}"
+                 data-support-messages-url-template="{% url 'correspondencia:api-chat-mensajes' 0 %}"
+                 data-support-send-url-template="{% url 'correspondencia:api-chat-enviar' 0 %}">
+
+                {# ── Header ── #}
+                <div class="modal-header chatbot-modal-header">
+                    <div class="chatbot-modal-heading">
+                        <div class="chatbot-avatar-sm">
+                            <i class="bi bi-stars"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title chatbot-modal-title" id="{{ chatbot_modal_id|default:'modalAsistenteChatbot' }}Label">{{ chatbot_modal_title|default:'Centro de ayuda' }}</h5>
+                            <span class="chatbot-header-status" data-chat-title>Nueva conversación</span>
+                        </div>
+                    </div>
+                    <div class="chatbot-modal-actions">
+                        <button type="button" class="btn chatbot-modal-action-btn" data-chatbot-sidebar-toggle aria-pressed="false" title="Sesiones">
+                            <i class="bi bi-layout-sidebar-inset"></i>
+                            <span>Sesiones</span>
+                        </button>
+                        <button type="button" class="btn chatbot-modal-action-btn" data-chatbot-expand-toggle aria-pressed="false" title="Expandir">
+                            <i class="bi bi-arrows-angle-expand"></i>
+                            <span>Expandir</span>
+                        </button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                </div>
+
+                {# ── Tab bar ── #}
+                <div class="chatbot-tab-bar" data-chatbot-tab-bar>
+                    <button type="button" class="chatbot-tab-btn is-active" data-chatbot-tab="ai">
+                        <i class="bi bi-stars"></i>
+                        <span>Asistente IA</span>
+                    </button>
+                    <button type="button" class="chatbot-tab-btn" data-chatbot-tab="support">
+                        <i class="bi bi-headset"></i>
+                        <span>Soporte TI</span>
+                        <span class="chatbot-tab-badge" data-support-unread-badge style="display:none">0</span>
+                    </button>
+                </div>
+
+                {# ══════════════════════════════════════════════ #}
+                {# ── TAB: Asistente IA ── #}
+                {# ══════════════════════════════════════════════ #}
+                <div class="modal-body chatbot-modal-body chatbot-tab-content is-active" data-chatbot-tab-content="ai">
+                    <section class="chatbot-shell">
+                        <aside class="chatbot-sidebar">
+                            <div class="chatbot-sidebar-head">
+                                <span class="chatbot-sidebar-label">Historial</span>
+                                <button type="button" class="btn chatbot-new-btn" data-action="new-conversation" title="Nueva conversación">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                            <div class="chatbot-conversations" data-conversation-list>
+                                {% for conversation in chatbot_conversations %}
+                                <button type="button" class="chatbot-conversation-item" data-conversation-id="{{ conversation.id }}">
+                                    <strong>{{ conversation.titulo }}</strong>
+                                    <small>{{ conversation.actualizado_en|date:'d M Y h:i A' }}</small>
+                                </button>
+                                {% empty %}
+                                <div class="chatbot-empty-sidebar">
+                                    <i class="bi bi-chat-left-text"></i>
+                                    <p>Sin conversaciones aún</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </aside>
+
+                        <div class="chatbot-main">
+                            {% if not gemini_configured or chatbot_documents_count == 0 %}
+                            <div class="chatbot-alerts">
+                                {% if not gemini_configured %}
+                                <div class="chatbot-alert-inline">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    Configura <strong>GEMINI_API_KEY</strong> para activar respuestas.
+                                </div>
+                                {% endif %}
+                                {% if chatbot_documents_count == 0 %}
+                                <div class="chatbot-alert-inline">
+                                    <i class="bi bi-info-circle"></i>
+                                    Ejecuta <code>python manage.py indexar_asistente_docs</code> para indexar documentos.
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+
+                            <div class="chatbot-messages" data-message-list>
+                                <div class="chatbot-empty-state">
+                                    <div class="chatbot-welcome-icon"><i class="bi bi-stars"></i></div>
+                                    <h5>¿En qué puedo ayudarte?</h5>
+                                    <p>Pregúntame sobre radicación, distribución, bandejas o procedimientos internos.</p>
+                                    <div class="chatbot-suggestions">
+                                        <button type="button" class="chatbot-suggestion" data-suggestion>
+                                            <i class="bi bi-envelope-paper"></i> Cómo radicar desde correo
+                                        </button>
+                                        <button type="button" class="chatbot-suggestion" data-suggestion>
+                                            <i class="bi bi-question-circle"></i> Qué significa un estado
+                                        </button>
+                                        <button type="button" class="chatbot-suggestion" data-suggestion>
+                                            <i class="bi bi-diagram-3"></i> Cómo funciona una distribución
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <form class="chatbot-form" data-chat-form>
+                                <div class="chatbot-input-row">
+                                    <textarea class="form-control" rows="1" placeholder="Escribe tu pregunta..." data-question-input></textarea>
+                                    <button type="submit" class="chatbot-send-btn" data-submit-button title="Enviar">
+                                        <i class="bi bi-arrow-up"></i>
+                                    </button>
+                                </div>
+                                <small class="chatbot-input-hint" data-chat-status aria-live="polite">Listo para consultar.</small>
+                            </form>
+                        </div>
+                    </section>
+                </div>
+
+                {# ══════════════════════════════════════════════ #}
+                {# ── TAB: Soporte TI ── #}
+                {# ══════════════════════════════════════════════ #}
+                <div class="modal-body chatbot-modal-body chatbot-tab-content" data-chatbot-tab-content="support">
+                    <section class="chatbot-shell">
+                        <aside class="chatbot-sidebar chatbot-support-sidebar">
+                            <div class="chatbot-sidebar-head">
+                                <span class="chatbot-sidebar-label">Mis reportes</span>
+                                <button type="button" class="btn chatbot-new-btn chatbot-new-btn--support" data-action="new-support-conversation" title="Nuevo reporte">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                            </div>
+                            <div class="chatbot-conversations" data-support-conversation-list>
+                                <div class="chatbot-empty-sidebar">
+                                    <i class="bi bi-headset"></i>
+                                    <p>Sin reportes aún</p>
+                                </div>
+                            </div>
+                        </aside>
+
+                        <div class="chatbot-main chatbot-support-main">
+                            {# Mensajes de soporte #}
+                            <div class="chatbot-messages" data-support-message-list>
+                                <div class="chatbot-empty-state">
+                                    <div class="chatbot-welcome-icon chatbot-welcome-icon--support"><i class="bi bi-headset"></i></div>
+                                    <h5>Soporte técnico</h5>
+                                    <p>Reporta errores o consulta al equipo de TI. Selecciona un reporte o crea uno nuevo.</p>
+                                    <button type="button" class="chatbot-suggestion chatbot-suggestion--support" data-action="new-support-conversation-inline">
+                                        <i class="bi bi-plus-circle"></i> Crear nuevo reporte
+                                    </button>
+                                </div>
+                            </div>
+
+                            {# Input de soporte (oculto hasta tener conversación activa abierta) #}
+                            <div class="chatbot-support-input-area" data-support-input-area style="display:none">
+                                <div class="chatbot-support-previews" data-support-previews></div>
+                                <div class="chatbot-input-row">
+                                    <input type="file" accept="image/*" multiple data-support-file-input style="display:none">
+                                    <button type="button" class="chatbot-attach-btn" data-support-attach-btn title="Adjuntar imagen">
+                                        <i class="bi bi-paperclip"></i>
+                                    </button>
+                                    <input type="text" class="form-control chatbot-support-text-input" placeholder="Escribe tu mensaje… (pega capturas con Ctrl+V)" data-support-text-input>
+                                    <button type="button" class="chatbot-send-btn chatbot-send-btn--support" data-support-send-btn title="Enviar">
+                                        <i class="bi bi-arrow-up"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {# Barra de conversación cerrada #}
+                            <div class="chatbot-support-closed-bar" data-support-closed-bar style="display:none">
+                                <i class="bi bi-lock"></i> Esta conversación fue cerrada por un administrador.
+                            </div>
+                        </div>
+                    </section>
+
+                    {# Modal inline: nuevo reporte #}
+                    <div class="chatbot-new-report-overlay" data-support-new-overlay style="display:none">
+                        <div class="chatbot-new-report-box">
+                            <h6>Nuevo reporte</h6>
+                            <form data-support-new-form>
+                                <label>Asunto</label>
+                                <input type="text" placeholder="Describe brevemente el problema" maxlength="200" data-support-new-asunto required>
+                                <label>Prioridad</label>
+                                <select data-support-new-prioridad>
+                                    <option value="normal">Normal</option>
+                                    <option value="urgente">Urgente</option>
+                                </select>
+                                <label>Mensaje</label>
+                                <textarea placeholder="Detalla el error o la consulta…" rows="4" data-support-new-mensaje required></textarea>
+                                <div class="chatbot-new-report-actions">
+                                    <button type="button" class="chatbot-cancel-btn" data-support-new-cancel>Cancelar</button>
+                                    <button type="submit" class="chatbot-send-btn chatbot-send-btn--support" data-support-new-submit>Enviar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

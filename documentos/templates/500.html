@@ -1,0 +1,107 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error del Servidor - Hospital del Sarare</title>
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/correspondencia/vendor/css/bootstrap-icons.min.css">
+    <style>
+        body {
+            background: #f5f7fa;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .error-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .error-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 3rem;
+            text-align: center;
+            border: 2px solid #e1e8ed;
+            max-width: 600px;
+            width: 100%;
+        }
+        .error-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #fd7e14, #e55a00);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            color: white;
+            font-size: 2.5rem;
+        }
+        .error-title {
+            font-weight: 800;
+            font-size: 2.2rem;
+            color: #fd7e14;
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+        }
+        .error-subtitle {
+            font-size: 1.1rem;
+            color: #5a6c7d;
+            margin-bottom: 2rem;
+            font-weight: 500;
+        }
+        .error-description {
+            font-size: 1rem;
+            color: #5a6c7d;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        .btn-home {
+            background: #003366;
+            border: none;
+            border-radius: 6px;
+            padding: 0.8rem 2rem;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-home:hover {
+            background: #005599;
+            transform: translateY(-2px);
+            color: white;
+        }
+        .error-code {
+            font-size: 0.9rem;
+            color: #adb5bd;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-card">
+            <div class="error-icon">
+                <i class="bi bi-gear-fill"></i>
+            </div>
+            <h1 class="error-title">ERROR DEL SERVIDOR</h1>
+            <p class="error-subtitle">Algo salió mal en el servidor</p>
+            <p class="error-description">
+                Lo sentimos, pero ha ocurrido un error interno del servidor. 
+                Nuestro equipo técnico ha sido notificado y está trabajando para solucionarlo.
+            </p>
+            <a href="{% url 'welcome' %}" class="btn-home">
+                <i class="bi bi-house-fill me-2"></i>Volver al Inicio
+            </a>
+            <div class="error-code">
+                Error 500 - Internal Server Error
+            </div>
+        </div>
+    </div>
+</body>
+</html>

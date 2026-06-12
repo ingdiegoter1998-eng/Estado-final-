@@ -1,0 +1,1178 @@
+<!-- Modal para editar comunicación interna -->
+<div class="modal fade" id="modalEditarComunicacionInterna" tabindex="-1" aria-labelledby="modalEditarComunicacionInternaLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" data-usuario-oficina-trd="{{ request.user.perfil.oficina.codigo_trd_comunicacion_interna|default:'' }}" data-usuario-oficina-trd-display="{{ request.user.perfil.oficina.codigo_trd_comunicacion_interna_display }}">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEditarComunicacionInternaLabel">
+                    <i class="bi bi-pencil-fill me-2"></i>
+                    Editar Comunicación Interna
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Loading overlay -->
+                <div id="editar-loading-overlay" class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Cargando datos de la comunicación...</p>
+                </div>
+                
+                <!-- Formulario de edición (oculto hasta que se carguen los datos) -->
+                <form id="formEditarComunicacionInterna" 
+                      method="post"
+                      enctype="multipart/form-data"
+                      style="display: none;"
+                      data-editar-endpoint-base="{% url 'correspondencia:editar_comunicacion_interna_ajax' pk=0 %}"
+                      data-obtener-endpoint-base="{% url 'correspondencia:obtener_comunicacion_interna_ajax' pk=0 %}"
+                      data-usuarios-endpoint="{% url 'correspondencia:usuarios_por_oficina_ajax' %}"
+                      data-oficinas-endpoint="{% url 'correspondencia:oficinas_todas_interna_ajax' %}"
+                      data-procesos-endpoint="{% url 'correspondencia:procesos_todos_ajax' %}"
+                      data-eliminar-anexo-base="{% url 'correspondencia:interna_anexo_eliminar' pk=0 %}">
+                    {% csrf_token %}
+                    <input type="hidden" id="editar_comunicacion_id" name="comunicacion_id" value="">
+                    
+                    <!-- Información no editable -->
+                    <div class="alert alert-info mb-3">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong><i class="bi bi-hash me-1"></i>Radicado:</strong>
+                                <span id="editar_info_radicado">-</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong><i class="bi bi-info-circle me-1"></i>Estado:</strong>
+                                <span id="editar_info_estado" class="badge bg-secondary">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tipo de distribución (solo lectura) -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-diagram-3 me-1"></i>Tipo de Distribución
+                            <span class="badge bg-secondary ms-2">No editable</span>
+                        </label>
+                        <div id="editar_info_tipo_distribucion" class="form-control bg-light" style="cursor: not-allowed;">
+                            -
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Campos editables -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editar_ciudad" class="form-label">Ciudad *</label>
+                            <input type="text" class="form-control" id="editar_ciudad" name="ciudad" value="Saravena" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editar_fecha_documento" class="form-label">Fecha del Documento *</label>
+                            <input type="date" class="form-control" id="editar_fecha_documento" name="fecha_documento" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editar_trd" class="form-label">Código TRD</label>
+                        <input type="text" class="form-control" id="editar_trd" name="trd" placeholder="Código TRD (opcional)">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editar_asunto" class="form-label">Asunto *</label>
+                        <input type="text" class="form-control" id="editar_asunto" name="asunto" required placeholder="Asunto del Oficio">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editar_cuerpo" class="form-label">Contenido de la Comunicación *</label>
+                        <textarea class="form-control" id="editar_cuerpo" name="cuerpo" rows="8" required placeholder="Escriba el contenido del oficio aquí..."></textarea>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Sección de destinatarios -->
+                    <div id="editar_seccion_destinatarios">
+                        <!-- Contenido se carga dinámicamente según el tipo de distribución -->
+                    </div>
+                    
+                    <!-- Campos ocultos para destinatarios -->
+                    <div id="editar_hidden_destinatarios"></div>
+                    
+                    <hr class="my-4">
+                    
+                    <!-- Sección de Anexos -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-paperclip me-1"></i>Anexos
+                        </label>
+                        
+                        <!-- Anexos existentes -->
+                        <div id="editar_anexos_existentes" class="mb-3">
+                            <p class="text-muted small">Cargando anexos existentes...</p>
+                        </div>
+                        
+                        <!-- Agregar nuevos anexos -->
+                        <div class="card border-light">
+                            <div class="card-header bg-light py-2">
+                                <small class="fw-semibold">
+                                    <i class="bi bi-plus-circle me-1"></i>Agregar nuevos anexos
+                                </small>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small mb-2">
+                                    Formatos permitidos: PDF, Word (.doc, .docx), Excel (.xls, .xlsx). 
+                                    Máximo 25MB por archivo y 25MB en total.
+                                </p>
+                                
+                                <div class="input-group mb-2">
+                                    <input type="file" class="form-control" id="editar_anexos_nuevos" name="anexos" 
+                                           multiple accept=".pdf,.doc,.docx,.xls,.xlsx">
+                                    <button class="btn btn-outline-secondary" type="button" id="editar_btn_limpiar_anexos">
+                                        <i class="bi bi-x-circle"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Preview de archivos nuevos -->
+                                <div id="editar_preview_anexos_nuevos" class="d-none">
+                                    <ul class="list-group list-group-flush" id="editar_anexos_nuevos_list" style="max-height: 120px; overflow-y: auto;">
+                                    </ul>
+                                    <small class="text-muted">
+                                        Total: <span id="editar_anexos_nuevos_count">0</span> archivo(s) 
+                                        (<span id="editar_anexos_nuevos_size">0 KB</span>)
+                                    </small>
+                                </div>
+                                
+                                <!-- Alertas de validación -->
+                                <div id="editar_anexos_error" class="alert alert-danger mt-2 d-none" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    <span id="editar_anexos_error_msg"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
+                <button type="submit" form="formEditarComunicacionInterna" class="btn btn-primary" id="editar_btn_guardar" disabled>
+                    <i class="bi bi-save me-1"></i>Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * JavaScript para el modal de edición de comunicación interna.
+ */
+(function() {
+    'use strict';
+    
+    const modalElement = document.getElementById('modalEditarComunicacionInterna');
+    if (!modalElement) return;
+    
+    const form = document.getElementById('formEditarComunicacionInterna');
+    const loadingOverlay = document.getElementById('editar-loading-overlay');
+    const btnGuardar = document.getElementById('editar_btn_guardar');
+    
+    let comunicacionId = null;
+    let tipoDistribucion = null;
+    let destinatariosSeleccionados = {
+        usuarios: new Map(),
+        oficinas: new Map()
+    };
+    
+    // Evento cuando se va a mostrar el modal
+    modalElement.addEventListener('show.bs.modal', function(event) {
+        const button = event.relatedTarget;
+        if (button) {
+            comunicacionId = button.dataset.comunicacionPk;
+            if (comunicacionId) {
+                // Resetear estado
+                destinatariosSeleccionados.usuarios.clear();
+                destinatariosSeleccionados.oficinas.clear();
+                
+                // Mostrar loading, ocultar formulario
+                loadingOverlay.style.display = 'block';
+                form.style.display = 'none';
+                btnGuardar.disabled = true;
+                
+                // Establecer ID
+                document.getElementById('editar_comunicacion_id').value = comunicacionId;
+            }
+        }
+    });
+    
+    // Evento cuando el modal está completamente visible
+    modalElement.addEventListener('shown.bs.modal', function() {
+        if (comunicacionId) {
+            cargarDatosComunicacion(comunicacionId);
+        }
+    });
+    
+    // Evento cuando se cierra el modal
+    modalElement.addEventListener('hidden.bs.modal', function() {
+        // Resetear todo
+        comunicacionId = null;
+        tipoDistribucion = null;
+        destinatariosSeleccionados.usuarios.clear();
+        destinatariosSeleccionados.oficinas.clear();
+        form.reset();
+        loadingOverlay.style.display = 'block';
+        form.style.display = 'none';
+        btnGuardar.disabled = true;
+        document.getElementById('editar_seccion_destinatarios').innerHTML = '';
+        document.getElementById('editar_hidden_destinatarios').innerHTML = '';
+        document.getElementById('editar_anexos_existentes').innerHTML = '<p class="text-muted small">Cargando anexos existentes...</p>';
+        limpiarAnexosNuevos();
+    });
+    
+    // Función para cargar datos de la comunicación
+    function cargarDatosComunicacion(pk) {
+        const obtenerEndpointBase = form.dataset.obtenerEndpointBase;
+        const url = obtenerEndpointBase.replace('/0/', `/${pk}/`);
+        
+        console.log('Cargando datos de comunicación desde:', url);
+        
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.comunicacion) {
+                rellenarFormulario(data.comunicacion);
+                // Ocultar loading, mostrar formulario
+                loadingOverlay.style.display = 'none';
+                form.style.display = 'block';
+                btnGuardar.disabled = false;
+            } else {
+                console.error('Error al obtener datos:', data.error);
+                alert('Error al cargar los datos: ' + (data.error || 'Error desconocido'));
+                // Cerrar modal
+                bootstrap.Modal.getInstance(modalElement).hide();
+            }
+        })
+        .catch(error => {
+            console.error('Error de conexión:', error);
+            alert('Error de conexión al cargar los datos');
+            bootstrap.Modal.getInstance(modalElement).hide();
+        });
+    }
+    
+    // Función para rellenar el formulario
+    function rellenarFormulario(comunicacion) {
+        console.log('Rellenando formulario con:', comunicacion);
+        
+        tipoDistribucion = comunicacion.tipo_distribucion || 'USUARIO';
+        
+        // Información no editable
+        document.getElementById('editar_info_radicado').textContent = comunicacion.radicado || 'BORRADOR';
+        
+        const estadoBadge = document.getElementById('editar_info_estado');
+        estadoBadge.textContent = comunicacion.estado || '-';
+        estadoBadge.className = 'badge ' + (
+            comunicacion.estado === 'BORRADOR' ? 'bg-secondary' :
+            comunicacion.estado === 'PENDIENTE_APROBACION' ? 'bg-warning text-dark' :
+            'bg-info'
+        );
+        
+        const tipoTextos = {
+            'USUARIO': 'Usuario Específico',
+            'OFICINA': 'Oficina Completa (Subproceso)',
+            'PROCESO': 'Proceso Completo',
+            'ENTIDAD': 'Toda la Entidad'
+        };
+        document.getElementById('editar_info_tipo_distribucion').innerHTML = 
+            `<i class="bi bi-diagram-3 me-1"></i>${tipoTextos[tipoDistribucion] || tipoDistribucion}`;
+        
+        // Campos editables
+        document.getElementById('editar_ciudad').value = comunicacion.ciudad || 'Saravena';
+        document.getElementById('editar_fecha_documento').value = comunicacion.fecha_documento || '';
+        document.getElementById('editar_trd').value = comunicacion.trd || '';
+        document.getElementById('editar_asunto').value = comunicacion.asunto || '';
+        document.getElementById('editar_cuerpo').value = comunicacion.cuerpo || '';
+        
+        // Cargar sección de destinatarios según tipo
+        cargarSeccionDestinatarios(comunicacion);
+        
+        // Cargar anexos existentes
+        console.log('Anexos recibidos:', comunicacion.anexos);
+        cargarAnexosExistentes(comunicacion.anexos || []);
+    }
+    
+    // Función para cargar la sección de destinatarios
+    function cargarSeccionDestinatarios(comunicacion) {
+        const seccion = document.getElementById('editar_seccion_destinatarios');
+        
+        if (tipoDistribucion === 'ENTIDAD') {
+            seccion.innerHTML = `
+                <div class="alert alert-primary">
+                    <i class="bi bi-people-fill me-2"></i>
+                    <strong>Distribución a toda la entidad</strong><br>
+                    <small>Esta comunicación se enviará a todos los usuarios del sistema.</small>
+                </div>
+            `;
+            return;
+        }
+        
+        if (tipoDistribucion === 'PROCESO') {
+            // Cargar procesos y mostrar selector
+            seccion.innerHTML = `
+                <div class="mb-3">
+                    <label for="editar_destinatario_proceso" class="form-label">
+                        <i class="bi bi-diagram-3-fill me-1"></i>Proceso Destino *
+                    </label>
+                    <select class="form-select" id="editar_destinatario_proceso" name="destinatario_proceso" required>
+                        <option value="">Cargando procesos...</option>
+                    </select>
+                </div>
+            `;
+            
+            // Cargar procesos
+            fetch(form.dataset.procesosEndpoint)
+                .then(response => response.json())
+                .then(data => {
+                    const select = document.getElementById('editar_destinatario_proceso');
+                    select.innerHTML = '<option value="">Seleccionar Proceso...</option>';
+                    if (Array.isArray(data)) {
+                        data.forEach(proceso => {
+                            const option = document.createElement('option');
+                            option.value = proceso.id;
+                            option.textContent = proceso.text;
+                            if (comunicacion.destinatario_proceso_id == proceso.id) {
+                                option.selected = true;
+                            }
+                            select.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error cargando procesos:', error));
+            return;
+        }
+        
+        if (tipoDistribucion === 'USUARIO') {
+            // Cargar usuarios seleccionados
+            if (comunicacion.destinatarios_usuarios) {
+                comunicacion.destinatarios_usuarios.forEach(usuario => {
+                    destinatariosSeleccionados.usuarios.set(String(usuario.id), {
+                        id: String(usuario.id),
+                        nombre: usuario.nombre,
+                        oficina_nombre: usuario.oficina || null
+                    });
+                });
+            }
+            
+            seccion.innerHTML = `
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        <i class="bi bi-people me-1"></i>Usuarios Destinatarios *
+                    </label>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white py-2">
+                                    <i class="bi bi-funnel me-1"></i> Filtrar por Oficina
+                                </div>
+                                <div class="card-body">
+                                    <select class="form-select form-select-sm" id="editar_filtro_oficina">
+                                        <option value="">Todas las oficinas</option>
+                                    </select>
+                                    <button type="button" class="btn btn-sm btn-outline-danger mt-2 w-100" id="editar_btn_limpiar_usuarios">
+                                        <i class="bi bi-trash me-1"></i>Limpiar Todo
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header bg-light py-2">
+                                    <i class="bi bi-person me-1"></i> <strong>Usuarios Disponibles</strong>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div id="editar_lista_usuarios" class="row g-2" style="max-height: 200px; overflow-y: auto;">
+                                        <div class="col-12 text-center text-muted py-3">
+                                            <i class="bi bi-info-circle me-1"></i> Seleccione una oficina para ver usuarios
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-check2-square me-1"></i> Usuarios Seleccionados
+                            <span class="badge bg-primary" id="editar_contador_usuarios">${destinatariosSeleccionados.usuarios.size}</span>
+                        </label>
+                        <div id="editar_chips_usuarios" class="border border-2 border-dashed rounded-3 p-3" style="min-height: 60px; background-color: #f8f9fa;">
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Cargar oficinas para el filtro
+            cargarOficinasParaFiltro();
+            actualizarChipsUsuarios();
+            
+            // Event listeners
+            document.getElementById('editar_filtro_oficina').addEventListener('change', function() {
+                cargarUsuariosPorOficina(this.value);
+            });
+            
+            document.getElementById('editar_btn_limpiar_usuarios').addEventListener('click', function() {
+                destinatariosSeleccionados.usuarios.clear();
+                actualizarChipsUsuarios();
+                actualizarTarjetasUsuarios();
+            });
+            
+            return;
+        }
+        
+        if (tipoDistribucion === 'OFICINA') {
+            // Cargar oficinas seleccionadas
+            if (comunicacion.destinatarios_oficinas) {
+                comunicacion.destinatarios_oficinas.forEach(oficina => {
+                    destinatariosSeleccionados.oficinas.set(String(oficina.id), {
+                        id: String(oficina.id),
+                        nombre: oficina.nombre
+                    });
+                });
+            }
+            
+            seccion.innerHTML = `
+                <div class="mb-3">
+                    <label class="form-label fw-bold">
+                        <i class="bi bi-building me-1"></i>Oficinas Destinatarias *
+                    </label>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card border-info">
+                                <div class="card-header bg-info text-white py-2">
+                                    <i class="bi bi-info-circle me-1"></i> Información
+                                </div>
+                                <div class="card-body">
+                                    <p class="small mb-2">Seleccione las oficinas completas a las que desea enviar.</p>
+                                    <button type="button" class="btn btn-sm btn-outline-danger w-100" id="editar_btn_limpiar_oficinas">
+                                        <i class="bi bi-trash me-1"></i>Limpiar Todo
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header bg-light py-2">
+                                    <i class="bi bi-building me-1"></i> <strong>Oficinas Disponibles</strong>
+                                </div>
+                                <div class="card-body p-2">
+                                    <div id="editar_lista_oficinas" class="row g-2" style="max-height: 200px; overflow-y: auto;">
+                                        <div class="col-12 text-center text-muted py-3">
+                                            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                            Cargando oficinas...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-check2-square me-1"></i> Oficinas Seleccionadas
+                            <span class="badge bg-info" id="editar_contador_oficinas">${destinatariosSeleccionados.oficinas.size}</span>
+                        </label>
+                        <div id="editar_chips_oficinas" class="border border-2 border-dashed rounded-3 p-3" style="min-height: 60px; background-color: #f8f9fa;">
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Cargar oficinas
+            cargarTodasLasOficinas();
+            actualizarChipsOficinas();
+            
+            // Event listener
+            document.getElementById('editar_btn_limpiar_oficinas').addEventListener('click', function() {
+                destinatariosSeleccionados.oficinas.clear();
+                actualizarChipsOficinas();
+                actualizarTarjetasOficinas();
+            });
+            
+            return;
+        }
+    }
+    
+    // Funciones auxiliares para cargar oficinas y usuarios
+    function cargarOficinasParaFiltro() {
+        const select = document.getElementById('editar_filtro_oficina');
+        if (!select) return;
+        
+        fetch(form.dataset.oficinasEndpoint)
+            .then(response => response.json())
+            .then(data => {
+                select.innerHTML = '<option value="">Todas las oficinas</option>';
+                if (Array.isArray(data)) {
+                    data.forEach(oficina => {
+                        const option = document.createElement('option');
+                        option.value = oficina.id;
+                        option.textContent = oficina.text;
+                        select.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => console.error('Error cargando oficinas:', error));
+    }
+    
+    function cargarUsuariosPorOficina(oficinaId) {
+        const lista = document.getElementById('editar_lista_usuarios');
+        if (!lista) return;
+        
+        if (!oficinaId) {
+            lista.innerHTML = `
+                <div class="col-12 text-center text-muted py-3">
+                    <i class="bi bi-info-circle me-1"></i> Seleccione una oficina para ver usuarios
+                </div>
+            `;
+            return;
+        }
+        
+        lista.innerHTML = `
+            <div class="col-12 text-center text-muted py-3">
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                Cargando usuarios...
+            </div>
+        `;
+        
+        fetch(`${form.dataset.usuariosEndpoint}?oficina_id=${oficinaId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (Array.isArray(data) && data.length > 0) {
+                    lista.innerHTML = '';
+                    data.forEach(user => {
+                        const seleccionado = destinatariosSeleccionados.usuarios.has(String(user.id));
+                        const col = document.createElement('div');
+                        col.className = 'col-12';
+                        col.innerHTML = `
+                            <div class="card user-card ${seleccionado ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary'}" 
+                                 style="cursor: pointer;" data-user-id="${user.id}" data-user-nombre="${user.nombre}">
+                                <div class="card-body py-2 px-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-check me-2">
+                                            <input class="form-check-input" type="checkbox" ${seleccionado ? 'checked' : ''} disabled>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <i class="bi bi-person-fill me-1"></i>
+                                            <span class="fw-semibold">${user.nombre}</span>
+                                        </div>
+                                        ${seleccionado ? '<i class="bi bi-check-circle-fill text-primary"></i>' : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        col.querySelector('.user-card').addEventListener('click', function() {
+                            toggleUsuario(user);
+                        });
+                        
+                        lista.appendChild(col);
+                    });
+                } else {
+                    lista.innerHTML = `
+                        <div class="col-12 text-center text-muted py-3">
+                            <i class="bi bi-inbox me-1"></i> No hay usuarios en esta oficina
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error cargando usuarios:', error);
+                lista.innerHTML = `
+                    <div class="col-12 text-center text-danger py-3">
+                        <i class="bi bi-exclamation-triangle me-1"></i> Error cargando usuarios
+                    </div>
+                `;
+            });
+    }
+    
+    function cargarTodasLasOficinas() {
+        const lista = document.getElementById('editar_lista_oficinas');
+        if (!lista) return;
+        
+        fetch(form.dataset.oficinasEndpoint)
+            .then(response => response.json())
+            .then(data => {
+                if (Array.isArray(data) && data.length > 0) {
+                    lista.innerHTML = '';
+                    data.forEach(oficina => {
+                        const seleccionada = destinatariosSeleccionados.oficinas.has(String(oficina.id));
+                        const col = document.createElement('div');
+                        col.className = 'col-12';
+                        col.innerHTML = `
+                            <div class="card oficina-card ${seleccionada ? 'border-info bg-info bg-opacity-10' : 'border-secondary'}" 
+                                 style="cursor: pointer;" data-oficina-id="${oficina.id}" data-oficina-nombre="${oficina.text}">
+                                <div class="card-body py-2 px-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="form-check me-2">
+                                            <input class="form-check-input" type="checkbox" ${seleccionada ? 'checked' : ''} disabled>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <i class="bi bi-building-fill me-1"></i>
+                                            <span class="fw-semibold">${oficina.text}</span>
+                                        </div>
+                                        ${seleccionada ? '<i class="bi bi-check-circle-fill text-info"></i>' : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        col.querySelector('.oficina-card').addEventListener('click', function() {
+                            toggleOficina(oficina);
+                        });
+                        
+                        lista.appendChild(col);
+                    });
+                } else {
+                    lista.innerHTML = `
+                        <div class="col-12 text-center text-muted py-3">
+                            <i class="bi bi-inbox me-1"></i> No hay oficinas disponibles
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error cargando oficinas:', error);
+                lista.innerHTML = `
+                    <div class="col-12 text-center text-danger py-3">
+                        <i class="bi bi-exclamation-triangle me-1"></i> Error cargando oficinas
+                    </div>
+                `;
+            });
+    }
+    
+    function toggleUsuario(user) {
+        const userId = String(user.id);
+        const filtroOficina = document.getElementById('editar_filtro_oficina');
+        const oficinaNombre = filtroOficina?.selectedOptions[0]?.textContent || null;
+        
+        if (destinatariosSeleccionados.usuarios.has(userId)) {
+            destinatariosSeleccionados.usuarios.delete(userId);
+        } else {
+            destinatariosSeleccionados.usuarios.set(userId, {
+                id: userId,
+                nombre: user.nombre,
+                oficina_nombre: oficinaNombre
+            });
+        }
+        
+        actualizarChipsUsuarios();
+        actualizarTarjetasUsuarios();
+    }
+    
+    function toggleOficina(oficina) {
+        const oficinaId = String(oficina.id);
+        
+        if (destinatariosSeleccionados.oficinas.has(oficinaId)) {
+            destinatariosSeleccionados.oficinas.delete(oficinaId);
+        } else {
+            destinatariosSeleccionados.oficinas.set(oficinaId, {
+                id: oficinaId,
+                nombre: oficina.text
+            });
+        }
+        
+        actualizarChipsOficinas();
+        actualizarTarjetasOficinas();
+    }
+    
+    function actualizarChipsUsuarios() {
+        const chips = document.getElementById('editar_chips_usuarios');
+        const contador = document.getElementById('editar_contador_usuarios');
+        const hidden = document.getElementById('editar_hidden_destinatarios');
+        
+        if (!chips) return;
+        
+        chips.innerHTML = '';
+        if (hidden) hidden.innerHTML = '';
+        
+        destinatariosSeleccionados.usuarios.forEach((usuario, id) => {
+            const chip = document.createElement('span');
+            chip.className = 'badge bg-primary me-1 mb-1 p-2';
+            chip.innerHTML = `
+                <i class="bi bi-person-fill me-1"></i>
+                ${usuario.nombre}${usuario.oficina_nombre ? ` <small>(${usuario.oficina_nombre})</small>` : ''}
+                <button type="button" class="btn-close btn-close-white ms-2" style="font-size: 0.65em;"></button>
+            `;
+            
+            chip.querySelector('.btn-close').addEventListener('click', function(e) {
+                e.stopPropagation();
+                destinatariosSeleccionados.usuarios.delete(id);
+                actualizarChipsUsuarios();
+                actualizarTarjetasUsuarios();
+            });
+            
+            chips.appendChild(chip);
+            
+            // Campo hidden
+            if (hidden) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'destinatarios_usuarios';
+                input.value = id;
+                hidden.appendChild(input);
+            }
+        });
+        
+        if (destinatariosSeleccionados.usuarios.size === 0) {
+            chips.innerHTML = '<div class="text-center text-muted"><i class="bi bi-inbox me-1"></i> No hay usuarios seleccionados</div>';
+        }
+        
+        if (contador) contador.textContent = destinatariosSeleccionados.usuarios.size;
+    }
+    
+    function actualizarChipsOficinas() {
+        const chips = document.getElementById('editar_chips_oficinas');
+        const contador = document.getElementById('editar_contador_oficinas');
+        const hidden = document.getElementById('editar_hidden_destinatarios');
+        
+        if (!chips) return;
+        
+        chips.innerHTML = '';
+        if (hidden) hidden.innerHTML = '';
+        
+        destinatariosSeleccionados.oficinas.forEach((oficina, id) => {
+            const chip = document.createElement('span');
+            chip.className = 'badge bg-info me-1 mb-1 p-2';
+            chip.innerHTML = `
+                <i class="bi bi-building-fill me-1"></i>
+                ${oficina.nombre}
+                <button type="button" class="btn-close btn-close-white ms-2" style="font-size: 0.65em;"></button>
+            `;
+            
+            chip.querySelector('.btn-close').addEventListener('click', function(e) {
+                e.stopPropagation();
+                destinatariosSeleccionados.oficinas.delete(id);
+                actualizarChipsOficinas();
+                actualizarTarjetasOficinas();
+            });
+            
+            chips.appendChild(chip);
+            
+            // Campo hidden
+            if (hidden) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'destinatarios_oficinas';
+                input.value = id;
+                hidden.appendChild(input);
+            }
+        });
+        
+        if (destinatariosSeleccionados.oficinas.size === 0) {
+            chips.innerHTML = '<div class="text-center text-muted"><i class="bi bi-inbox me-1"></i> No hay oficinas seleccionadas</div>';
+        }
+        
+        if (contador) contador.textContent = destinatariosSeleccionados.oficinas.size;
+    }
+    
+    function actualizarTarjetasUsuarios() {
+        document.querySelectorAll('#editar_lista_usuarios .user-card').forEach(card => {
+            const userId = card.dataset.userId;
+            const seleccionado = destinatariosSeleccionados.usuarios.has(userId);
+            
+            card.className = `card user-card ${seleccionado ? 'border-primary bg-primary bg-opacity-10' : 'border-secondary'}`;
+            
+            const checkbox = card.querySelector('.form-check-input');
+            if (checkbox) checkbox.checked = seleccionado;
+            
+            const iconCheck = card.querySelector('.bi-check-circle-fill');
+            if (seleccionado && !iconCheck) {
+                const icon = document.createElement('i');
+                icon.className = 'bi bi-check-circle-fill text-primary';
+                card.querySelector('.card-body > div').appendChild(icon);
+            } else if (!seleccionado && iconCheck) {
+                iconCheck.remove();
+            }
+        });
+    }
+    
+    function actualizarTarjetasOficinas() {
+        document.querySelectorAll('#editar_lista_oficinas .oficina-card').forEach(card => {
+            const oficinaId = card.dataset.oficinaId;
+            const seleccionada = destinatariosSeleccionados.oficinas.has(oficinaId);
+            
+            card.className = `card oficina-card ${seleccionada ? 'border-info bg-info bg-opacity-10' : 'border-secondary'}`;
+            
+            const checkbox = card.querySelector('.form-check-input');
+            if (checkbox) checkbox.checked = seleccionada;
+            
+            const iconCheck = card.querySelector('.bi-check-circle-fill');
+            if (seleccionada && !iconCheck) {
+                const icon = document.createElement('i');
+                icon.className = 'bi bi-check-circle-fill text-info';
+                card.querySelector('.card-body > div').appendChild(icon);
+            } else if (!seleccionada && iconCheck) {
+                iconCheck.remove();
+            }
+        });
+    }
+    
+    // ===== FUNCIONALIDAD DE ANEXOS =====
+    const MAX_ANEXOS = 10;
+    const MAX_SIZE_PER_FILE = 25 * 1024 * 1024; // 25MB
+    const MAX_TOTAL_SIZE = 25 * 1024 * 1024; // 25MB
+    const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.xls', '.xlsx'];
+    
+    let anexosExistentes = [];
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    function getFileIcon(filename) {
+        const ext = filename.toLowerCase().split('.').pop();
+        const icons = {
+            'pdf': 'bi-file-earmark-pdf text-danger',
+            'doc': 'bi-file-earmark-word text-primary',
+            'docx': 'bi-file-earmark-word text-primary',
+            'xls': 'bi-file-earmark-excel text-success',
+            'xlsx': 'bi-file-earmark-excel text-success'
+        };
+        return icons[ext] || 'bi-file-earmark text-secondary';
+    }
+    
+    function cargarAnexosExistentes(anexos) {
+        anexosExistentes = anexos || [];
+        const container = document.getElementById('editar_anexos_existentes');
+        
+        if (!container) return;
+        
+        if (anexosExistentes.length === 0) {
+            container.innerHTML = '<p class="text-muted small"><i class="bi bi-info-circle me-1"></i>No hay anexos adjuntos.</p>';
+            return;
+        }
+        
+        let html = `
+            <div class="card border-secondary">
+                <div class="card-header bg-light py-2">
+                    <small class="fw-semibold">
+                        <i class="bi bi-files me-1"></i>
+                        Anexos actuales: ${anexosExistentes.length}
+                    </small>
+                </div>
+                <ul class="list-group list-group-flush" style="max-height: 150px; overflow-y: auto;">
+        `;
+        
+        anexosExistentes.forEach(anexo => {
+            html += `
+                <li class="list-group-item py-2 d-flex justify-content-between align-items-center" data-anexo-id="${anexo.id}">
+                    <span>
+                        <i class="bi ${getFileIcon(anexo.nombre)} me-2"></i>
+                        <a href="${anexo.url}" target="_blank" class="text-decoration-none">
+                            ${anexo.nombre}
+                        </a>
+                    </span>
+                    <div>
+                        <span class="badge bg-secondary me-2">${anexo.tipo}</span>
+                        <button type="button" class="btn btn-sm btn-outline-danger btn-eliminar-anexo" data-anexo-id="${anexo.id}" title="Eliminar anexo">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </li>
+            `;
+        });
+        
+        html += '</ul></div>';
+        container.innerHTML = html;
+        
+        // Agregar eventos de eliminación
+        container.querySelectorAll('.btn-eliminar-anexo').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const anexoId = this.dataset.anexoId;
+                eliminarAnexo(anexoId);
+            });
+        });
+    }
+    
+    function eliminarAnexo(anexoId) {
+        if (!confirm('¿Está seguro de eliminar este anexo?')) return;
+        
+        const eliminarEndpointBase = form.dataset.eliminarAnexoBase;
+        const url = eliminarEndpointBase.replace('/0/', `/${anexoId}/`);
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Eliminar del DOM
+                const li = document.querySelector(`[data-anexo-id="${anexoId}"]`);
+                if (li) li.remove();
+                
+                // Actualizar lista local
+                anexosExistentes = anexosExistentes.filter(a => a.id != anexoId);
+                
+                // Si no quedan anexos, mostrar mensaje
+                if (anexosExistentes.length === 0) {
+                    document.getElementById('editar_anexos_existentes').innerHTML = 
+                        '<p class="text-muted small"><i class="bi bi-info-circle me-1"></i>No hay anexos adjuntos.</p>';
+                } else {
+                    // Actualizar contador
+                    const header = document.querySelector('#editar_anexos_existentes .card-header small');
+                    if (header) {
+                        header.innerHTML = `<i class="bi bi-files me-1"></i>Anexos actuales: ${anexosExistentes.length}`;
+                    }
+                }
+            } else {
+                alert('Error al eliminar: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error de conexión al eliminar el anexo');
+        });
+    }
+    
+    function validarAnexosNuevos(files) {
+        const errors = [];
+        const totalExistentes = anexosExistentes.length;
+        
+        if (totalExistentes + files.length > MAX_ANEXOS) {
+            errors.push(`Máximo ${MAX_ANEXOS} archivos. Ya tiene ${totalExistentes} y desea agregar ${files.length}.`);
+        }
+        
+        let totalSize = 0;
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const ext = '.' + file.name.toLowerCase().split('.').pop();
+            
+            if (!ALLOWED_EXTENSIONS.includes(ext)) {
+                errors.push(`"${file.name}" tiene formato no permitido.`);
+            }
+            
+            if (file.size > MAX_SIZE_PER_FILE) {
+                errors.push(`"${file.name}" excede 25MB.`);
+            }
+            
+            totalSize += file.size;
+        }
+        
+        if (totalSize > MAX_TOTAL_SIZE) {
+            errors.push(`Tamaño total (${formatFileSize(totalSize)}) excede 25MB.`);
+        }
+        
+        return errors;
+    }
+    
+    function actualizarPreviewAnexosNuevos() {
+        const input = document.getElementById('editar_anexos_nuevos');
+        const preview = document.getElementById('editar_preview_anexos_nuevos');
+        const list = document.getElementById('editar_anexos_nuevos_list');
+        const countSpan = document.getElementById('editar_anexos_nuevos_count');
+        const sizeSpan = document.getElementById('editar_anexos_nuevos_size');
+        const errorContainer = document.getElementById('editar_anexos_error');
+        const errorMsg = document.getElementById('editar_anexos_error_msg');
+        
+        if (!input) return;
+        
+        const files = input.files;
+        
+        if (files.length === 0) {
+            if (preview) preview.classList.add('d-none');
+            if (errorContainer) errorContainer.classList.add('d-none');
+            return;
+        }
+        
+        // Validar
+        const errors = validarAnexosNuevos(files);
+        if (errors.length > 0) {
+            errorContainer.classList.remove('d-none');
+            errorMsg.innerHTML = errors.join('<br>');
+        } else {
+            errorContainer.classList.add('d-none');
+        }
+        
+        // Mostrar preview
+        preview.classList.remove('d-none');
+        list.innerHTML = '';
+        
+        let totalSize = 0;
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            totalSize += file.size;
+            
+            const li = document.createElement('li');
+            li.className = 'list-group-item py-2 d-flex justify-content-between align-items-center';
+            li.innerHTML = `
+                <span>
+                    <i class="bi ${getFileIcon(file.name)} me-2"></i>
+                    <span class="text-truncate" style="max-width: 250px; display: inline-block; vertical-align: middle;">${file.name}</span>
+                </span>
+                <span class="badge bg-secondary">${formatFileSize(file.size)}</span>
+            `;
+            list.appendChild(li);
+        }
+        
+        countSpan.textContent = files.length;
+        sizeSpan.textContent = formatFileSize(totalSize);
+    }
+    
+    function limpiarAnexosNuevos() {
+        const input = document.getElementById('editar_anexos_nuevos');
+        const preview = document.getElementById('editar_preview_anexos_nuevos');
+        const errorContainer = document.getElementById('editar_anexos_error');
+        
+        if (input) input.value = '';
+        if (preview) preview.classList.add('d-none');
+        if (errorContainer) errorContainer.classList.add('d-none');
+    }
+    
+    // Event listeners para anexos
+    const anexosNuevosInput = document.getElementById('editar_anexos_nuevos');
+    const btnLimpiarAnexos = document.getElementById('editar_btn_limpiar_anexos');
+    
+    if (anexosNuevosInput) {
+        anexosNuevosInput.addEventListener('change', actualizarPreviewAnexosNuevos);
+    }
+    
+    if (btnLimpiarAnexos) {
+        btnLimpiarAnexos.addEventListener('click', limpiarAnexosNuevos);
+    }
+    
+    // Manejar envío del formulario
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Validaciones
+        const asunto = document.getElementById('editar_asunto').value.trim();
+        const cuerpo = document.getElementById('editar_cuerpo').value.trim();
+        
+        if (!asunto || !cuerpo) {
+            alert('El asunto y el contenido son obligatorios.');
+            return;
+        }
+        
+        // Validar destinatarios según tipo
+        if (tipoDistribucion === 'USUARIO' && destinatariosSeleccionados.usuarios.size === 0) {
+            alert('Debe seleccionar al menos un usuario.');
+            return;
+        }
+        
+        if (tipoDistribucion === 'OFICINA' && destinatariosSeleccionados.oficinas.size === 0) {
+            alert('Debe seleccionar al menos una oficina.');
+            return;
+        }
+        
+        if (tipoDistribucion === 'PROCESO') {
+            const proceso = document.getElementById('editar_destinatario_proceso');
+            if (!proceso || !proceso.value) {
+                alert('Debe seleccionar un proceso.');
+                return;
+            }
+        }
+        
+        // Validar anexos nuevos
+        const anexosNuevos = document.getElementById('editar_anexos_nuevos');
+        if (anexosNuevos && anexosNuevos.files.length > 0) {
+            const errores = validarAnexosNuevos(anexosNuevos.files);
+            if (errores.length > 0) {
+                alert('Error en anexos:\n' + errores.join('\n'));
+                return;
+            }
+        }
+        
+        // Deshabilitar botón
+        btnGuardar.disabled = true;
+        btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Guardando...';
+        
+        // Preparar FormData desde el formulario para incluir CSRF y destinatarios
+        const formData = new FormData(form);
+        
+        // Reemplazar anexos explícitamente para asegurar envío correcto
+        formData.delete('anexos');
+        const anexosInput = document.getElementById('editar_anexos_nuevos');
+        if (anexosInput && anexosInput.files.length > 0) {
+            console.log(`Agregando ${anexosInput.files.length} archivo(s) al FormData`);
+            for (let i = 0; i < anexosInput.files.length; i++) {
+                const file = anexosInput.files[i];
+                console.log(`  Archivo ${i + 1}: ${file.name} (${file.size} bytes)`);
+                formData.append('anexos', file);
+            }
+        } else {
+            console.log('No hay anexos para agregar');
+        }
+
+        // Enviar cuántos anexos seleccionó el cliente para detectar si se pierden en el servidor
+        formData.append('anexos_count_client', anexosInput ? anexosInput.files.length : 0);
+        
+        // DEBUG: Verificar qué hay en FormData
+        console.log('FormData entries:');
+        for (let [key, value] of formData.entries()) {
+            if (value instanceof File) {
+                console.log(`  ${key}: File(${value.name}, ${value.size} bytes)`);
+            } else {
+                console.log(`  ${key}: ${value}`);
+            }
+        }
+        
+        // Construir endpoint
+        const editarEndpointBase = form.dataset.editarEndpointBase;
+        const endpoint = editarEndpointBase.replace('/0/', `/${comunicacionId}/`);
+        
+        fetch(endpoint, {
+            method: 'POST',
+            body: formData,
+            headers: { 
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (window.queueComunicacionInternaFlash) {
+                    window.queueComunicacionInternaFlash({
+                        level: 'success',
+                        title: 'Comunicación actualizada',
+                        message: data.message || 'Comunicación actualizada exitosamente.'
+                    });
+                }
+                bootstrap.Modal.getInstance(modalElement).hide();
+                window.location.reload();
+            } else {
+                if (window.showComunicacionInternaFlash) {
+                    window.showComunicacionInternaFlash({
+                        level: 'error',
+                        title: 'No se pudo actualizar la comunicación',
+                        message: data.error || 'Ocurrió un error desconocido.'
+                    });
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (window.showComunicacionInternaFlash) {
+                window.showComunicacionInternaFlash({
+                    level: 'error',
+                    title: 'Error de conexión',
+                    message: 'No fue posible guardar los cambios en este momento.'
+                });
+            }
+        })
+        .finally(() => {
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = '<i class="bi bi-save me-1"></i>Guardar Cambios';
+        });
+    });
+    
+})();
+</script>
+

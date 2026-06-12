@@ -1,0 +1,106 @@
+/* Panel seguimiento entrega / rebotes */
+.se-panel-hero {
+  background: linear-gradient(135deg, #0f4c5c 0%, #1b6b7a 45%, #2d8f9e 100%);
+  color: #f8fafc;
+  border-radius: 1rem;
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 12px 40px rgba(15, 76, 92, 0.25);
+}
+
+.se-panel-hero h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.se-panel-hero p {
+  margin: 0.5rem 0 0;
+  opacity: 0.92;
+  max-width: 52rem;
+  font-size: 0.95rem;
+}
+
+.se-kpi {
+  border: none;
+  border-radius: 0.85rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.se-kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.se-kpi .card-body {
+  padding: 1.1rem 1.25rem;
+}
+
+.se-kpi-value {
+  font-size: 1.85rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.se-kpi-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.se-kpi--ok .se-kpi-value { color: #0d9488; }
+.se-kpi--warn .se-kpi-value { color: #d97706; }
+.se-kpi--danger .se-kpi-value { color: #dc2626; }
+.se-kpi--info .se-kpi-value { color: #0369a1; }
+
+.badge-evidencia-COMPLETA { background: #0d9488; }
+.badge-evidencia-ENVIADO_SIN_CONFIRMACION { background: #0369a1; }
+.badge-evidencia-REBOTE { background: #b45309; }
+.badge-evidencia-FALLO { background: #dc2626; }
+.badge-evidencia-PENDIENTE { background: #64748b; }
+
+.se-legal-box {
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  font-size: 0.88rem;
+  color: #134e4a;
+}
+
+.se-legal-box h6 {
+  color: #0f766e;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.se-timeline {
+  border-left: 3px solid #cbd5e1;
+  margin-left: 0.5rem;
+  padding-left: 1.25rem;
+}
+
+.se-timeline-item {
+  position: relative;
+  padding-bottom: 1rem;
+}
+
+.se-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -1.55rem;
+  top: 0.35rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #0f766e;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px #99f6e4;
+}
+
+.se-timeline-item--bounce::before { background: #b45309; box-shadow: 0 0 0 2px #fde68a; }
+.se-timeline-item--fail::before { background: #dc2626; box-shadow: 0 0 0 2px #fecaca; }
+

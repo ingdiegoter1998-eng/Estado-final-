@@ -1,0 +1,325 @@
+{% extends 'correspondencia/bases/base_correspondencia.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'correspondencia/css/historial_compacto.css' %}">
+<style>
+    .table td, .table th {
+        font-size: 0.88rem;
+        color: #343a40;
+        vertical-align: middle;
+    }
+
+    .btn-sm.btn-primary {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: #fff;
+        font-weight: 500;
+        font-size: 0.80rem;
+        padding: 0.4rem 0.8rem;
+    }
+
+    .btn-sm.btn-primary:hover {
+        background-color: #0b5ed7;
+        border-color: #0a58ca;
+    }
+
+    .badge.estado {
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.35em 0.6em;
+        display: inline-block;
+    }
+
+    .badge.aprobada     { background-color: #198754; color: white; }
+    .badge.rechazada    { background-color: #dc3545; color: white; }
+    .badge.pendiente    { background-color: #ffc107; color: #212529; }
+    .badge.enviada      { background-color: #0d6efd; color: white; }
+    .badge.errorenvio   { background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
+    .badge.entrega-ok { background-color: #d1e7dd; color: #0f5132; }
+    .badge.entrega-fallo { background-color: #f8d7da; color: #842029; }
+    .badge.entrega-rebote { background-color: #fff3cd; color: #664d03; }
+    .badge.entrega-pendiente { background-color: #cff4fc; color: #055160; }
+
+    .resumen-entrega {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+    }
+
+    /* Estado por defecto si no coincide con ninguno anterior */
+    .badge.estado:not([class*="badge.aprobada"]):not([class*="badge.rechazada"])
+    :not([class*="badge.pendiente"]):not([class*="badge.enviada"]):not([class*="badge.errorenvio"]) {
+        background-color: #e2e3e5;
+        color: #41464b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Pestañas para Pendientes y Aprobadas -->
+<ul class="nav nav-tabs mb-4">
+    <li class="nav-item">
+        <a class="nav-link {% if tab == 'pendientes' %}active{% endif %}" href="?tab=pendientes">
+            <i class="bi bi-clock-history me-2"></i>Pendientes de Aprobación
+            <span class="badge bg-warning text-dark ms-2">{{ total_pendientes }}</span>
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if tab == 'aprobadas' %}active{% endif %}" href="?tab=aprobadas">
+            <i class="bi bi-check-circle me-2"></i>Correspondencia de Salida Aprobada
+            <span class="badge bg-success ms-2">{{ total_aprobadas }}</span>
+        </a>
+    </li>
+</ul>
+
+<!-- Botón Aprobar Todo (solo en pestaña pendientes) -->
+{% if tab == 'pendientes' and total_pendientes > 0 %}
+<div class="mb-3">
+    <button type="button" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#modalAprobarTodas">
+        <i class="bi bi-check-all me-2"></i>Aprobar y Enviar Todas ({{ total_pendientes }})
+    </button>
+</div>
+
+<!-- Modal de Confirmación para Aprobar Todas -->
+<div class="modal fade" id="modalAprobarTodas" tabindex="-1" aria-labelledby="modalAprobarTodasLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAprobarTodasLabel">
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                    Confirmar Aprobación Masiva
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>¡Atención!</strong> Está a punto de aprobar y enviar <strong>{{ total_pendientes }}</strong> respuestas pendientes.
+                </div>
+                <p class="mb-3">Esta acción:</p>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-check-circle text-success me-2"></i>Enviará todos los correos electrónicos pendientes</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>Marcará las respuestas como aprobadas y enviadas</li>
+                    <li><i class="bi bi-x-circle text-danger me-2"></i><strong>No se puede deshacer</strong></li>
+                </ul>
+                <p class="text-muted small mb-0">¿Está seguro de continuar con esta acción?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-2"></i>Cancelar
+                </button>
+                <form method="post" action="{% url 'correspondencia:aprobar_todas_respuestas' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-all me-2"></i>Sí, Aprobar Todas
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="filtros-modernos mb-4">
+    <div class="filtros-header">
+        <div class="filtros-controls">
+            <i class="bi bi-funnel-fill text-primary me-2"></i>
+            <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#filtrosCollapse" aria-expanded="{% if request.GET %}true{% else %}false{% endif %}" aria-controls="filtrosCollapse">
+                <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+    </div>
+    <div class="collapse {% if request.GET %}show{% endif %}" id="filtrosCollapse">
+        <div class="filtros-content">
+            <form method="get" action="" id="historial-filter-form">
+                <div class="filtros-seccion">
+                    <div class="filtros-seccion-titulo">
+                        <i class="bi bi-search text-info"></i>
+                        <span>Búsqueda Principal</span>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <div class="form-group">
+                                <label for="id_search_term" class="form-label">
+                                    <i class="bi bi-text-paragraph me-1"></i>Buscar
+                                </label>
+                                <input type="text" name="search_term" placeholder="Asunto, radicado, redactor..." class="form-control" id="id_search_term" value="{{ request.GET.search_term }}">
+                            </div>
+                        </div>
+                        <div class="col-lg-3">
+                            <div class="form-group">
+                                <label for="id_usuario" class="form-label">
+                                    <i class="bi bi-person me-1"></i>Usuario redactor
+                                </label>
+                                <input type="text" name="usuario" placeholder="Buscar usuario..." class="form-control" id="id_usuario" value="{{ request.GET.usuario }}">
+                            </div>
+                        </div>
+                        <div class="col-lg-3">
+                            <div class="form-group">
+                                <label for="id_destinatario" class="form-label">
+                                    <i class="bi bi-person-check me-1"></i>Destinatario
+                                </label>
+                                <input type="text" name="destinatario" placeholder="Buscar destinatario..." class="form-control" id="id_destinatario" value="{{ request.GET.destinatario }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filtros-seccion">
+                    <div class="filtros-seccion-titulo">
+                        <i class="bi bi-calendar-check text-success"></i>
+                        <span>Estados y Fechas</span>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-lg-4">
+                            <div class="form-group">
+                                <label for="id_estado_salida" class="form-label">
+                                    <i class="bi bi-arrow-up-circle me-1"></i>Estado Salida
+                                </label>
+                                <select name="estado_salida" class="form-select" id="id_estado_salida">
+                                    <option value="" {% if not request.GET.estado_salida %}selected{% endif %}>Todos los estados</option>
+                                    <option value="BORRADOR" {% if request.GET.estado_salida == 'BORRADOR' %}selected{% endif %}>Borrador</option>
+                                    <option value="PENDIENTE_APROBACION" {% if request.GET.estado_salida == 'PENDIENTE_APROBACION' %}selected{% endif %}>Pendiente Aprobación</option>
+                                    <option value="APROBADA" {% if request.GET.estado_salida == 'APROBADA' %}selected{% endif %}>Aprobada</option>
+                                    <option value="RECHAZADA" {% if request.GET.estado_salida == 'RECHAZADA' %}selected{% endif %}>Rechazada</option>
+                                    <option value="ENVIADA" {% if request.GET.estado_salida == 'ENVIADA' %}selected{% endif %}>Enviada</option>
+                                    <option value="ERROR_ENVIO" {% if request.GET.estado_salida == 'ERROR_ENVIO' %}selected{% endif %}>Error de Envío</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="form-group">
+                                <label for="id_fecha_inicio" class="form-label">
+                                    <i class="bi bi-calendar-date me-1"></i>Desde
+                                </label>
+                                <input type="date" name="fecha_inicio" class="form-control" id="id_fecha_inicio" value="{{ request.GET.fecha_inicio }}">
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="form-group">
+                                <label for="id_fecha_fin" class="form-label">
+                                    <i class="bi bi-calendar-date me-1"></i>Hasta
+                                </label>
+                                <input type="date" name="fecha_fin" class="form-control" id="id_fecha_fin" value="{{ request.GET.fecha_fin }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filtros-acciones">
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <button type="submit" name="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search me-2"></i>Aplicar Filtros
+                            </button>
+                        </div>
+                        <div class="col-lg-6">
+                            <input type="button" name="reset" value="Limpiar Filtros" class="btn btn-outline-secondary w-100" />
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+            {% if tab == 'aprobadas' %}
+                Correspondencia de Salida Aprobada y Enviada
+            {% else %}
+                Respuestas Pendientes de Aprobación
+            {% endif %}
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover datatable-correspondencia align-middle" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th class="col-fecha">Fecha Creación</th>
+                        <th>Radicado Original</th>
+                        <th>Redactor</th>
+                        <th>Destinatario</th>
+                        <th class="col-asunto">Asunto Respuesta</th>
+                        <th>Estado</th>
+                        <th>Entrega</th>
+                        <th class="col-acciones">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for respuesta in respuestas %}
+                    <tr>
+                        <td><small>{{ respuesta.fecha_creacion|date:"Y-m-d H:i" }}</small></td>
+                        <td>
+                            {% if respuesta.respuesta_a %}
+                                <a href="{% url 'correspondencia:detalle_correspondencia' respuesta.respuesta_a.pk %}" target="_blank" title="Ver correspondencia original">
+                                    {{ respuesta.respuesta_a.numero_radicado }}
+                                </a>
+                            {% else %}
+                                <a href="{% url 'correspondencia:detalle_respuesta_salida' respuesta_id=respuesta.pk %}" target="_blank" title="Ver salida">
+                                    {{ respuesta.numero_radicado_salida }}
+                                </a>
+                            {% endif %}
+                        </td>
+                        <td>{{ respuesta.usuario_redactor.get_full_name|default:respuesta.usuario_redactor.username }}</td>
+                        <td>{{ respuesta.destinatario_contacto.nombre_completo|default:"-" }}</td>
+                        <td>{{ respuesta.asunto|truncatechars:70 }}</td>
+                        <td>
+                            <span class="badge estado {{ respuesta.estado|lower|cut:'_' }}">
+                                {{ respuesta.get_estado_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="resumen-entrega">
+                                <span class="badge entrega-ok">OK: {{ respuesta.destinatarios_ok|default:0 }}</span>
+                                {% if respuesta.destinatarios_fallo %}
+                                    <span class="badge entrega-fallo">Fallo: {{ respuesta.destinatarios_fallo }}</span>
+                                {% endif %}
+                                {% if respuesta.destinatarios_rebote %}
+                                    <span class="badge entrega-rebote">Rebote: {{ respuesta.destinatarios_rebote }}</span>
+                                {% endif %}
+                                {% if respuesta.destinatarios_pendiente %}
+                                    <span class="badge entrega-pendiente">Pend.: {{ respuesta.destinatarios_pendiente }}</span>
+                                {% endif %}
+                                <span class="text-muted small">/ {{ respuesta.destinatarios_total|default:0 }}</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            {% if tab == 'aprobadas' %}
+                                <a href="{% url 'correspondencia:detalle_respuesta_salida' respuesta_id=respuesta.pk %}" class="btn btn-sm btn-info" title="Ver Detalle">
+                                    <i class="bi bi-eye"></i> Ver
+                                </a>
+                            {% else %}
+                                <a href="{% url 'correspondencia:revisar_respuesta' respuesta.pk %}" class="btn btn-sm btn-primary" title="Revisar y Aprobar/Rechazar">
+                                    <i class="bi bi-pencil-square"></i> Revisar
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center">
+                            {% if tab == 'aprobadas' %}
+                                No hay correspondencia de salida aprobada.
+                            {% else %}
+                                No hay respuestas pendientes de aprobación.
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{{ block.super }}
+<script src="{% static 'correspondencia/js/historial_compacto.js' %}"></script>
+{% endblock %}

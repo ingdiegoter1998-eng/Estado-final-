@@ -1,0 +1,803 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static humanize %}
+
+{% block title %}Directorio de Usuarios{% endblock %}
+
+{% block extra_css %}
+<style>
+    .directory-page {
+        --directory-surface: #ffffff;
+        --directory-surface-muted: #f8fafc;
+        --directory-border: #e2e8f0;
+        --directory-muted: #64748b;
+        --directory-title: #0f172a;
+        --directory-primary: var(--bs-primary, #0d6efd);
+        --directory-shadow: 0 18px 40px -28px rgba(15, 23, 42, 0.26);
+        --directory-radius: 22px;
+    }
+
+    .directory-page .directory-shell {
+        width: 95%;
+        margin: 0 auto 2rem;
+    }
+
+    .directory-page .directory-hero {
+        background:
+            radial-gradient(circle at top right, rgba(13, 110, 253, 0.14), transparent 34%),
+            linear-gradient(135deg, #ffffff 0%, #f8fbff 48%, #f4f8ff 100%);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 28px;
+        padding: 1.15rem 1.2rem;
+        box-shadow: var(--directory-shadow);
+        margin-bottom: 1.5rem;
+    }
+
+    .directory-page .directory-hero-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .directory-page .hero-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.36rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(13, 110, 253, 0.1);
+        color: var(--directory-primary);
+        font-weight: 700;
+        font-size: 0.75rem;
+        margin-bottom: 0.55rem;
+    }
+
+    .directory-page .directory-hero h1 {
+        font-size: clamp(1.35rem, 2vw, 1.7rem);
+        line-height: 1.15;
+        font-weight: 800;
+        color: var(--directory-title);
+        margin-bottom: 0.35rem;
+    }
+
+    .directory-page .directory-hero p {
+        margin: 0;
+        max-width: 72ch;
+        color: var(--directory-muted);
+        font-size: 0.92rem;
+    }
+
+    .directory-page .hero-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.65rem 0.95rem;
+        border-radius: 16px;
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        background: rgba(255, 255, 255, 0.88);
+        color: #1e293b;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .directory-page .hero-toggle i:last-child {
+        transition: transform .2s ease;
+    }
+
+    .directory-page .hero-toggle[aria-expanded="true"] i:last-child {
+        transform: rotate(180deg);
+    }
+
+    .directory-page .directory-hero-body {
+        padding-top: 0.95rem;
+    }
+
+    .directory-page .hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 0;
+    }
+
+    .directory-page .hero-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.58rem 0.85rem;
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 16px;
+        color: #1e293b;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .directory-page .summary-card,
+    .directory-page .filter-card,
+    .directory-page .office-card,
+    .directory-page .pagination-card,
+    .directory-page .empty-card,
+    .directory-page .directory-modal .modal-content,
+    .directory-page .user-card {
+        border: 1px solid var(--directory-border);
+        border-radius: var(--directory-radius);
+        background: var(--directory-surface);
+        box-shadow: var(--directory-shadow);
+    }
+
+    .directory-page .summary-card {
+        height: 100%;
+        padding: 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .directory-page .summary-card::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: linear-gradient(180deg, rgba(var(--bs-primary-rgb, 13, 110, 253), 0.9), rgba(var(--bs-info-rgb, 13, 202, 240), 0.65));
+    }
+
+    .directory-page .summary-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(13, 110, 253, 0.1);
+        color: var(--directory-primary);
+        font-size: 1.05rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .directory-page .summary-value {
+        font-size: 1.45rem;
+        line-height: 1;
+        font-weight: 800;
+        color: var(--directory-title);
+        margin-bottom: 0.3rem;
+    }
+
+    .directory-page .summary-label {
+        color: var(--directory-muted);
+        font-weight: 600;
+        font-size: 0.88rem;
+    }
+
+    .directory-page .hero-stats-grid {
+        margin-top: 0.9rem;
+    }
+
+    .directory-page .filter-card,
+    .directory-page .pagination-card,
+    .directory-page .empty-card {
+        padding: 1.4rem;
+        margin-top: 1.5rem;
+    }
+
+    .directory-page .section-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .directory-page .section-heading h2,
+    .directory-page .section-heading h3 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: var(--directory-title);
+    }
+
+    .directory-page .section-heading p {
+        margin: 0.2rem 0 0;
+        color: var(--directory-muted);
+    }
+
+    .directory-page .filter-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .directory-page .office-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .directory-page .office-card {
+        --office-accent: rgba(13, 110, 253, 0.14);
+        --office-accent-strong: #0d6efd;
+        --office-soft: rgba(13, 110, 253, 0.08);
+        --office-soft-strong: #0b5ed7;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        width: 100%;
+        padding: 1.15rem;
+        text-align: left;
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        overflow: hidden;
+        border-color: color-mix(in srgb, var(--office-accent-strong) 20%, #e2e8f0);
+        background: linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--office-accent) 30%, #ffffff) 100%);
+    }
+
+    .directory-page .office-card:hover {
+        transform: translateY(-4px);
+        border-color: color-mix(in srgb, var(--office-accent-strong) 28%, #cbd5e1);
+        box-shadow: 0 22px 42px -30px rgba(15, 23, 42, 0.32);
+    }
+
+    .directory-page .office-card.theme-ocean {
+        --office-accent: rgba(13, 110, 253, 0.16);
+        --office-accent-strong: #0d6efd;
+        --office-soft: rgba(13, 110, 253, 0.08);
+        --office-soft-strong: #0b5ed7;
+    }
+
+    .directory-page .office-card.theme-emerald {
+        --office-accent: rgba(25, 135, 84, 0.16);
+        --office-accent-strong: #198754;
+        --office-soft: rgba(25, 135, 84, 0.08);
+        --office-soft-strong: #157347;
+    }
+
+    .directory-page .office-card.theme-violet {
+        --office-accent: rgba(111, 66, 193, 0.16);
+        --office-accent-strong: #6f42c1;
+        --office-soft: rgba(111, 66, 193, 0.08);
+        --office-soft-strong: #5f35ad;
+    }
+
+    .directory-page .office-card.theme-amber {
+        --office-accent: rgba(255, 193, 7, 0.2);
+        --office-accent-strong: #b58105;
+        --office-soft: rgba(255, 193, 7, 0.1);
+        --office-soft-strong: #8f6a00;
+    }
+
+    .directory-page .office-card.theme-rose {
+        --office-accent: rgba(220, 53, 69, 0.16);
+        --office-accent-strong: #dc3545;
+        --office-soft: rgba(220, 53, 69, 0.08);
+        --office-soft-strong: #bb2d3b;
+    }
+
+    .directory-page .office-card.theme-cyan {
+        --office-accent: rgba(13, 202, 240, 0.18);
+        --office-accent-strong: #0dcaf0;
+        --office-soft: rgba(13, 202, 240, 0.08);
+        --office-soft-strong: #0aa2c0;
+    }
+
+    .directory-page .office-card.is-own-office {
+        box-shadow: 0 24px 48px -30px rgba(11, 79, 151, 0.35);
+    }
+
+    .directory-page .office-card-head {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        width: 100%;
+    }
+
+    .directory-page .office-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--office-soft);
+        color: var(--office-soft-strong);
+        font-size: 1.15rem;
+        flex-shrink: 0;
+    }
+
+    .directory-page .office-title {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .directory-page .office-title h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--directory-title);
+        overflow-wrap: anywhere;
+    }
+
+    .directory-page .office-subtitle {
+        margin-top: 0.25rem;
+        color: var(--directory-muted);
+        font-size: 0.86rem;
+        line-height: 1.45;
+    }
+
+    .directory-page .office-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .directory-page .office-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-radius: 999px;
+        padding: 0.46rem 0.78rem;
+        background: var(--office-soft);
+        color: var(--office-soft-strong);
+        font-weight: 700;
+        font-size: 0.76rem;
+    }
+
+    .directory-page .office-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        width: 100%;
+        margin-top: auto;
+        color: var(--directory-muted);
+        font-size: 0.84rem;
+        font-weight: 600;
+    }
+
+    .directory-page .office-footer .bi {
+        color: var(--office-soft-strong);
+    }
+
+    .directory-page .directory-modal .modal-dialog {
+        max-width: 1120px;
+    }
+
+    .directory-page .directory-modal .modal-content {
+        overflow: hidden;
+    }
+
+    .directory-page .directory-modal .modal-header,
+    .directory-page .directory-modal .modal-footer {
+        position: sticky;
+        z-index: 2;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        border-color: rgba(226, 232, 240, 0.9);
+    }
+
+    .directory-page .directory-modal .modal-header {
+        top: 0;
+        padding: 1.2rem 1.35rem 1rem;
+    }
+
+    .directory-page .directory-modal .modal-footer {
+        bottom: 0;
+        padding: 0.95rem 1.35rem 1.1rem;
+    }
+
+    .directory-page .directory-modal .modal-body {
+        padding: 1.25rem 1.35rem 1.35rem;
+        background: linear-gradient(180deg, #fbfdff 0%, #f8fafc 100%);
+    }
+
+    .directory-page .modal-office-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        margin-top: 0.85rem;
+    }
+
+    .directory-page .modal-meta-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        border-radius: 999px;
+        padding: 0.54rem 0.86rem;
+        background: rgba(13, 110, 253, 0.08);
+        color: #1d4ed8;
+        font-weight: 700;
+        font-size: 0.8rem;
+    }
+
+    .directory-page .modal-users-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .directory-page .user-card {
+        padding: 1rem;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+
+    .directory-page .user-card-head {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .directory-page .user-avatar {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #0b5cb3 0%, #0b4b8a 100%);
+        color: #ffffff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+    }
+
+    .directory-page .user-name {
+        color: var(--directory-title);
+        font-size: 1rem;
+        font-weight: 800;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .directory-page .user-role {
+        color: var(--directory-muted);
+        font-size: 0.92rem;
+        margin-top: 0.18rem;
+        overflow-wrap: anywhere;
+    }
+
+    .directory-page .user-meta {
+        display: grid;
+        gap: 0.65rem;
+    }
+
+    .directory-page .meta-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.7rem;
+        color: #334155;
+        line-height: 1.45;
+    }
+
+    .directory-page .meta-row i {
+        color: #0b5ed7;
+        margin-top: 0.15rem;
+    }
+
+    .directory-page .meta-row > div {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .directory-page .meta-label {
+        display: block;
+        color: var(--directory-muted);
+        font-size: 0.73rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.15rem;
+    }
+
+    .directory-page .meta-value {
+        overflow-wrap: anywhere;
+    }
+
+    .directory-page .activity-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-radius: 999px;
+        padding: 0.42rem 0.8rem;
+        font-weight: 700;
+        font-size: 0.76rem;
+    }
+
+    .directory-page .activity-pill.is-recent {
+        background: rgba(34, 197, 94, 0.12);
+        color: #166534;
+    }
+
+    .directory-page .activity-pill.is-moderate {
+        background: rgba(245, 158, 11, 0.18);
+        color: #92400e;
+    }
+
+    .directory-page .activity-pill.is-old {
+        background: rgba(148, 163, 184, 0.18);
+        color: #475569;
+    }
+
+    .directory-page .activity-pill.is-never {
+        background: rgba(239, 68, 68, 0.12);
+        color: #991b1b;
+    }
+
+    .directory-page .pagination-card .pagination {
+        margin-bottom: 0;
+    }
+
+    @media (max-width: 1599.98px) {
+        .directory-page .office-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 1399.98px) {
+        .directory-page .office-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .directory-page .directory-hero {
+            padding: 1rem;
+            border-radius: 24px;
+        }
+
+        .directory-page .directory-hero-head,
+        .directory-page .section-heading,
+        .directory-page .filter-actions,
+        .directory-page .office-footer {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .directory-page .hero-toggle {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .directory-page .office-grid,
+        .directory-page .modal-users-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .directory-page .directory-shell {
+            width: 100%;
+        }
+
+        .directory-page .office-grid,
+        .directory-page .modal-users-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .directory-page .filter-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="directory-page">
+    <div class="directory-shell">
+        <section class="directory-hero">
+            <div class="directory-hero-head">
+                <div>
+                    <span class="hero-eyebrow"><i class="bi bi-people-fill"></i> Directorio institucional</span>
+                    <h1>Usuarios por oficina</h1>
+                    <p>Consulta rápida por bloques y detalle en modal.</p>
+                </div>
+                <button class="hero-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#directoryHeroSummary" aria-expanded="false" aria-controls="directoryHeroSummary">
+                    <span><i class="bi bi-layout-text-window-reverse me-1"></i>Resumen</span>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+            </div>
+            <div class="collapse" id="directoryHeroSummary">
+                <div class="directory-hero-body">
+                    <div class="hero-meta">
+                        <span class="hero-chip"><i class="bi bi-person-lines-fill"></i> {{ total_usuarios|intcomma }} usuario{{ total_usuarios|pluralize }}</span>
+                        <span class="hero-chip"><i class="bi bi-buildings"></i> {{ oficinas_visibles|intcomma }} oficina{{ oficinas_visibles|pluralize }}</span>
+                        {% if mi_oficina %}
+                        <span class="hero-chip"><i class="bi bi-house-door"></i> {{ total_mi_oficina|intcomma }} en {{ mi_oficina.nombre|truncatechars:32 }}</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-3 hero-stats-grid">
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <div class="summary-card">
+                                <div class="summary-icon"><i class="bi bi-people"></i></div>
+                                <div class="summary-value">{{ total_usuarios|intcomma }}</div>
+                                <div class="summary-label">Usuarios activos visibles</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <div class="summary-card">
+                                <div class="summary-icon"><i class="bi bi-buildings"></i></div>
+                                <div class="summary-value">{{ oficinas_visibles|intcomma }}</div>
+                                <div class="summary-label">Oficinas con resultados</div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <div class="summary-card">
+                                <div class="summary-icon"><i class="bi bi-house-check"></i></div>
+                                <div class="summary-value">{{ total_mi_oficina|intcomma }}</div>
+                                <div class="summary-label">Usuarios en tu oficina</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="filter-card">
+            <div class="section-heading">
+                <div>
+                    <h2><i class="bi bi-search me-2"></i>Buscar entre oficinas y usuarios</h2>
+                    <p>Puedes buscar por oficina, nombre, apellido, cargo o usuario. El resultado seguirá agrupado por oficina.</p>
+                </div>
+            </div>
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-12 col-lg-8">
+                    <label for="buscar" class="form-label">Búsqueda</label>
+                    <input type="text" id="buscar" name="q" value="{{ filtro_q }}" class="form-control" placeholder="Oficina, nombre, apellido, cargo o usuario">
+                </div>
+                <div class="col-12 col-lg-4">
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search me-2"></i>Aplicar filtros
+                        </button>
+                        <a href="{% url 'correspondencia:directorio_usuarios' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-counterclockwise me-2"></i>Restablecer
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        {% if oficinas_page.object_list %}
+            <section class="office-grid-section">
+                <div class="office-grid">
+                    {% for bloque in oficinas_page.object_list %}
+                    <button type="button" class="office-card {% cycle 'theme-ocean' 'theme-emerald' 'theme-violet' 'theme-amber' 'theme-rose' 'theme-cyan' %} {% if mi_oficina and bloque.oficina.id == mi_oficina.id %}is-own-office{% endif %}" data-bs-toggle="modal" data-bs-target="#{{ bloque.modal_id }}">
+                        <div class="office-card-head">
+                            <span class="office-icon"><i class="bi bi-building"></i></span>
+                            <div class="office-title">
+                                <h3>{{ bloque.oficina.nombre }}</h3>
+                                <div class="office-subtitle">Haz clic para ver el detalle de usuarios de esta oficina.</div>
+                            </div>
+                        </div>
+                        <div class="office-badges">
+                            <span class="office-badge"><i class="bi bi-people-fill"></i> {{ bloque.total }} usuario{{ bloque.total|pluralize }}</span>
+                            {% if mi_oficina and bloque.oficina.id == mi_oficina.id %}
+                            <span class="office-badge"><i class="bi bi-star-fill"></i> Tu oficina</span>
+                            {% endif %}
+                        </div>
+                        <div class="office-footer">
+                            <span><i class="bi bi-grid-3x3-gap-fill me-1"></i> Bloque consultable</span>
+                            <span><i class="bi bi-box-arrow-up-right me-1"></i> Abrir detalle</span>
+                        </div>
+                    </button>
+                    {% endfor %}
+                </div>
+            </section>
+
+            {% if oficinas_page.has_other_pages %}
+            <div class="pagination-card">
+                <div class="section-heading mb-3">
+                    <div>
+                        <h3><i class="bi bi-arrow-left-right me-2"></i>Navegación</h3>
+                        <p>Se muestran hasta 25 oficinas por página en bloques uniformes.</p>
+                    </div>
+                </div>
+                <nav aria-label="Paginación del directorio de usuarios">
+                    <ul class="pagination justify-content-center">
+                        {% if oficinas_page.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ oficinas_page.previous_page_number }}{% if querystring %}&{{ querystring }}{% endif %}" aria-label="Anterior">&laquo;</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                        {% endif %}
+
+                        <li class="page-item disabled">
+                            <span class="page-link">Página {{ oficinas_page.number }} de {{ oficinas_page.paginator.num_pages }}</span>
+                        </li>
+
+                        {% if oficinas_page.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ oficinas_page.next_page_number }}{% if querystring %}&{{ querystring }}{% endif %}" aria-label="Siguiente">&raquo;</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+
+            {% for bloque in oficinas_page.object_list %}
+            <div class="modal fade directory-modal" id="{{ bloque.modal_id }}" tabindex="-1" aria-labelledby="{{ bloque.modal_id }}Label" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <div>
+                                <h2 class="modal-title h4 mb-0" id="{{ bloque.modal_id }}Label">{{ bloque.oficina.nombre }}</h2>
+                                <div class="modal-office-meta">
+                                    <span class="modal-meta-chip"><i class="bi bi-people-fill"></i> {{ bloque.total }} usuario{{ bloque.total|pluralize }}</span>
+                                    {% if mi_oficina and bloque.oficina.id == mi_oficina.id %}
+                                    <span class="modal-meta-chip"><i class="bi bi-house-check"></i> Esta es tu oficina</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="modal-users-grid">
+                                {% for usuario in bloque.usuarios %}
+                                <article class="user-card">
+                                    <div class="user-card-head">
+                                        <div class="user-avatar">{{ usuario.iniciales }}</div>
+                                        <div>
+                                            <div class="user-name">{{ usuario.nombre_completo }}</div>
+                                            <div class="user-role">{{ usuario.cargo }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="user-meta">
+                                        <div class="meta-row">
+                                            <i class="bi bi-building"></i>
+                                            <div>
+                                                <span class="meta-label">Oficina</span>
+                                                <div class="meta-value">{{ bloque.oficina.nombre }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="meta-row">
+                                            <i class="bi bi-clock-history"></i>
+                                            <div>
+                                                <span class="meta-label">Última vez en el sistema</span>
+                                                {% if usuario.obj.last_login %}
+                                                <div class="meta-value">
+                                                    <span class="activity-pill {{ usuario.actividad_clase }}">
+                                                        <i class="bi bi-circle-fill" style="font-size:0.45rem;"></i>
+                                                        {{ usuario.obj.last_login|timesince }} atrás
+                                                    </span>
+                                                </div>
+                                                <div class="meta-value text-muted mt-1">{{ usuario.obj.last_login|date:"d M Y, H:i" }}</div>
+                                                {% else %}
+                                                <div class="meta-value">
+                                                    <span class="activity-pill {{ usuario.actividad_clase }}">
+                                                        <i class="bi bi-x-circle"></i>
+                                                        Nunca ingresó
+                                                    </span>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-card">
+                <div class="section-heading mb-2">
+                    <div>
+                        <h3><i class="bi bi-search me-2"></i>Sin resultados</h3>
+                        <p>No se encontraron oficinas o usuarios que coincidan con la búsqueda aplicada.</p>
+                    </div>
+                </div>
+                <a href="{% url 'correspondencia:directorio_usuarios' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-counterclockwise me-2"></i>Limpiar filtros
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

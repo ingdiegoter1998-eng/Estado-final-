@@ -1,0 +1,678 @@
+{% extends 'correspondencia/bases/base_correspondencia_usuario.html' %}
+{% load static %}
+
+{% block title %}{{ titulo_pagina }}{% endblock %}
+{% block page_title %}{{ titulo_pagina }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-page.detail-page-errores {
+        --detail-surface: #ffffff;
+        --detail-surface-muted: #f8fafc;
+        --detail-border: #e2e8f0;
+        --detail-muted: #64748b;
+        --detail-title: #0f172a;
+        --detail-primary: #0f6c7a;
+        --detail-primary-rgb: 15, 108, 122;
+        --detail-shadow: 0 18px 40px -26px rgba(15, 23, 42, 0.28);
+    }
+
+    .container-fluid.detail-page.detail-page-errores {
+        max-width: none;
+        width: 100%;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .main-content:has(.detail-page.detail-page-errores) {
+        padding: 0;
+    }
+
+    .detail-page.detail-page-errores .detail-shell {
+        width: 95%;
+        margin: 0 auto 2rem;
+    }
+
+    .detail-page.detail-page-errores .detail-content-row {
+        --bs-gutter-x: 1.5rem;
+        --bs-gutter-y: 1.5rem;
+        width: 100%;
+        margin: 0;
+    }
+
+    .detail-page.detail-page-errores .detail-hero {
+        padding: 1.8rem 1.9rem;
+        margin-bottom: 1.5rem;
+        border-radius: 28px;
+        border: 1px solid rgba(220, 38, 38, 0.12);
+        background: linear-gradient(180deg, #ffffff 0%, rgba(220, 38, 38, 0.04) 100%);
+        box-shadow: var(--detail-shadow);
+    }
+
+    .detail-page.detail-page-errores .detail-breadcrumb {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.45rem;
+        margin-bottom: 0.85rem;
+        color: var(--detail-muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+
+    .detail-page.detail-page-errores .detail-hero h2 {
+        margin: 0;
+        color: var(--detail-title);
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+    }
+
+    .detail-page.detail-page-errores .detail-hero p {
+        margin: 0.55rem 0 0;
+        color: var(--detail-muted);
+        font-size: 0.95rem;
+        max-width: 72ch;
+    }
+
+    .detail-page.detail-page-errores .detail-hero-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin-top: 1rem;
+    }
+
+    .detail-page.detail-page-errores .detail-meta-chip,
+    .detail-page.detail-page-errores .detail-inline-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.5rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 800;
+    }
+
+    .detail-page.detail-page-errores .detail-meta-chip {
+        background: rgba(var(--detail-primary-rgb), 0.06);
+        border: 1px solid rgba(var(--detail-primary-rgb), 0.1);
+        color: #334155;
+    }
+
+    .detail-page.detail-page-errores .card {
+        border: 1px solid var(--detail-border);
+        border-radius: 24px;
+        overflow: hidden;
+        background: var(--detail-surface);
+        box-shadow: var(--detail-shadow);
+    }
+
+    .detail-page.detail-page-errores .detail-card-accent {
+        position: relative;
+    }
+
+    .detail-page.detail-page-errores .detail-card-accent::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        border-radius: 24px;
+        background: #dc2626;
+    }
+
+    .detail-page.detail-page-errores .card-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--detail-border);
+        background: linear-gradient(180deg, #ffffff 0%, var(--detail-surface-muted) 100%);
+        color: var(--detail-title);
+        font-size: 0.92rem;
+        font-weight: 800;
+    }
+
+    .detail-page.detail-page-errores .card-body {
+        padding: 1.35rem;
+    }
+
+    .detail-page.detail-page-errores .section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--detail-title);
+    }
+
+    .detail-page.detail-page-errores .section-title i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 12px;
+        background: rgba(220, 38, 38, 0.1);
+        color: #dc2626;
+        font-size: 1rem;
+    }
+
+    .detail-page.detail-page-errores .section-link {
+        color: var(--detail-primary);
+        font-size: 0.76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        text-decoration: none;
+    }
+
+    .detail-page.detail-page-errores .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    .detail-page.detail-page-errores .kpi-item {
+        padding: 1rem 1.05rem;
+        border: 1px solid #edf2f7;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+
+    .detail-page.detail-page-errores .detail-overline {
+        margin-bottom: 0.38rem;
+        color: #94a3b8;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .detail-page.detail-page-errores .detail-value,
+    .detail-page.detail-page-errores .detail-value a,
+    .detail-page.detail-page-errores code {
+        color: var(--detail-title);
+        font-size: 0.96rem;
+        font-weight: 700;
+        line-height: 1.5;
+        word-break: break-word;
+        text-decoration: none;
+    }
+
+    .detail-page.detail-page-errores .detail-subtext {
+        margin-top: 0.25rem;
+        color: var(--detail-muted);
+        font-size: 0.78rem;
+    }
+
+    .detail-page.detail-page-errores .table thead th {
+        border-bottom: 1px solid var(--detail-border);
+        color: #475569;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .detail-page.detail-page-errores .table > :not(caption) > * > * {
+        padding-top: 0.85rem;
+        padding-bottom: 0.85rem;
+        vertical-align: top;
+    }
+
+    .detail-page.detail-page-errores .row-rebote {
+        background: #fffbeb;
+    }
+
+    .detail-page.detail-page-errores .row-fallo {
+        background: #fef2f2;
+    }
+
+    .detail-page.detail-page-errores .error-summary-box {
+        padding: 0.95rem 1rem;
+        border: 1px solid #fecaca;
+        border-radius: 18px;
+        background: #fff7f7;
+    }
+
+    .detail-page.detail-page-errores details summary {
+        cursor: pointer;
+        color: var(--detail-primary);
+        font-weight: 700;
+    }
+
+    .detail-page.detail-page-errores details pre {
+        margin: 0.8rem 0 0;
+        white-space: pre-wrap;
+        font-family: var(--bs-font-sans-serif);
+        color: #334155;
+        line-height: 1.6;
+    }
+
+    .detail-page.detail-page-errores .detail-info-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .detail-page.detail-page-errores .detail-info-item {
+        padding: 1rem 1.05rem;
+        border: 1px solid #edf2f7;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+
+    .detail-page.detail-page-errores .detail-timeline {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        padding-left: 1.55rem;
+    }
+
+    .detail-page.detail-page-errores .detail-timeline::before {
+        content: "";
+        position: absolute;
+        top: 0.3rem;
+        bottom: 0.3rem;
+        left: 0.45rem;
+        width: 1px;
+        background: #dbe5f1;
+    }
+
+    .detail-page.detail-page-errores .detail-timeline-item {
+        position: relative;
+    }
+
+    .detail-page.detail-page-errores .detail-timeline-dot {
+        position: absolute;
+        left: -1.55rem;
+        top: 0.2rem;
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        box-shadow: 0 0 0 5px #fff;
+    }
+
+    .detail-page.detail-page-errores .detail-timeline-title {
+        color: var(--detail-title);
+        font-size: 0.85rem;
+        font-weight: 800;
+    }
+
+    .detail-page.detail-page-errores .detail-timeline-time,
+    .detail-page.detail-page-errores .detail-timeline-text {
+        color: var(--detail-muted);
+        font-size: 0.8rem;
+        line-height: 1.5;
+    }
+
+    .detail-page.detail-page-errores .detail-primary-cta {
+        margin-top: 1rem;
+        min-height: 48px;
+        border-radius: 16px;
+        background: rgba(var(--detail-primary-rgb), 0.09);
+        border: 1px solid rgba(var(--detail-primary-rgb), 0.12);
+        color: var(--detail-primary);
+        width: 100%;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+    }
+
+    .detail-page.detail-page-errores .ok-box {
+        border: 1px solid rgba(25, 135, 84, 0.18);
+        background: linear-gradient(180deg, rgba(234, 250, 242, 0.96), rgba(246, 252, 248, 0.96));
+        color: #166534;
+        font-weight: 700;
+        padding: 1.1rem 1.15rem;
+        border-radius: 22px;
+        text-align: center;
+    }
+
+    .detail-page.detail-page-errores .detail-note {
+        margin-top: 0.9rem;
+        padding: 0.9rem 1rem;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 0.82rem;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 1199.98px) {
+        .detail-page.detail-page-errores .kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .detail-page.detail-page-errores .detail-hero {
+            padding: 1.4rem;
+            border-radius: 22px;
+        }
+
+        .detail-page.detail-page-errores .detail-hero h2 {
+            font-size: 1.55rem;
+        }
+
+        .detail-page.detail-page-errores .kpi-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 detail-page detail-page-errores">
+    <div class="detail-shell">
+        <div class="detail-hero">
+            <div class="detail-breadcrumb">
+                <i class="bi bi-bug"></i>
+                <span>Auditoría de entrega</span>
+                <i class="bi bi-dot"></i>
+                <span>Errores y rebotes</span>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <h2>{{ respuesta.numero_radicado_salida }}</h2>
+                <span class="detail-inline-pill text-danger-emphasis bg-danger-subtle">Seguimiento de fallos</span>
+            </div>
+            <p>Consulta fallos y rebotes reales, confirmaciones de entrega del servidor y destinatarios enviados sin confirmación final.</p>
+            <div class="detail-hero-meta">
+                <span class="detail-meta-chip"><i class="bi bi-people"></i>{{ total_destinatarios }} destinatarios</span>
+                <span class="detail-meta-chip"><i class="bi bi-check-circle"></i>{{ total_enviados }} enviados</span>
+                <span class="detail-meta-chip"><i class="bi bi-shield-check"></i>{{ total_entregas_confirmadas }} entregas confirmadas</span>
+                <span class="detail-meta-chip"><i class="bi bi-x-circle"></i>{{ total_fallos }} fallos</span>
+                <span class="detail-meta-chip"><i class="bi bi-arrow-repeat"></i>{{ total_rebotes }} rebotes</span>
+            </div>
+        </div>
+
+        <div class="row g-4 detail-content-row">
+            <div class="col-12 col-xl-8">
+                <div class="card shadow-sm mb-4 detail-card-accent">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="section-title"><i class="bi bi-person-x"></i> Fallos y rebotes</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if errores_destinatarios %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Estado</th>
+                                        <th>SMTP</th>
+                                        <th>DSN</th>
+                                        <th>Último evento</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for d in errores_destinatarios %}
+                                    <tr class="{% if d.estado == 'REBOTE' %}row-rebote{% elif d.estado == 'FALLO' %}row-fallo{% endif %}">
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ d.nombre_snapshot|default:d.contacto.nombre_completo|default:"-" }}</td>
+                                        <td><code>{{ d.email_snapshot }}</code></td>
+                                        <td>
+                                            <span class="detail-inline-pill {% if d.estado == 'REBOTE' %}text-warning-emphasis bg-warning-subtle{% elif d.estado == 'FALLO' %}text-danger-emphasis bg-danger-subtle{% else %}text-secondary-emphasis bg-secondary-subtle{% endif %}">{{ d.get_estado_display }}</span>
+                                        </td>
+                                        <td>{{ d.smtp_code|default:"-" }}</td>
+                                        <td>{{ d.dsn_status|default:"-" }}</td>
+                                        <td>{{ d.ultimo_evento_at|date:"d M Y - h:i A"|default:"-" }}</td>
+                                    </tr>
+                                    {% if d.detalle_error %}
+                                    <tr>
+                                        <td colspan="7">
+                                            <div class="error-summary-box mb-3">
+                                                <div class="detail-overline">Resumen interpretado</div>
+                                                <div class="detail-value">{{ d.detalle_error_resumen|default:"Se presentó un problema de entrega con este destinatario." }}</div>
+                                                {% if d.detalle_error_repeticiones > 1 %}
+                                                <div class="detail-subtext">El mismo rebote fue reportado {{ d.detalle_error_repeticiones }} veces.</div>
+                                                {% endif %}
+                                            </div>
+                                            <details>
+                                                <summary>Ver detalle técnico</summary>
+                                                <pre>{{ d.detalle_error_compacto|default:d.detalle_error }}</pre>
+                                            </details>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                            {% if hubo_rebotes_historicos and todos_destinatarios %}
+                            <div class="alert alert-info border-0 d-flex align-items-start gap-3 mb-4" style="border-radius: 18px; background: linear-gradient(180deg, rgba(13,110,253,0.08), rgba(13,110,253,0.03));">
+                                <i class="bi bi-info-circle-fill text-info fs-4 mt-1"></i>
+                                <div>
+                                    <strong>Historial de rebotes</strong>
+                                    <p class="mb-0 mt-1" style="font-size: 0.88rem; color: #475569;">
+                                        Se detectaron rebotes en envíos anteriores. Actualmente todos los destinatarios figuran como enviados. Revisa el historial de eventos para verificar el detalle cronológico.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Nombre</th>
+                                            <th>Email</th>
+                                            <th>Estado actual</th>
+                                            <th>Último evento</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for d in todos_destinatarios %}
+                                        <tr>
+                                            <td>{{ forloop.counter }}</td>
+                                            <td>{{ d.nombre_snapshot|default:"-" }}</td>
+                                            <td><code>{{ d.email_snapshot }}</code></td>
+                                            <td>
+                                                <span class="detail-inline-pill text-success-emphasis bg-success-subtle">
+                                                    <i class="bi bi-check-circle-fill me-1"></i>{{ d.get_estado_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ d.ultimo_evento_at|date:"d M Y - h:i A"|default:"-" }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="ok-box"><i class="bi bi-check-circle me-2"></i>No se encontraron fallos ni rebotes para esta salida.</div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if entregas_confirmadas %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="section-title"><i class="bi bi-shield-check"></i> Entrega confirmada por el servidor</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-success border-0 d-flex align-items-start gap-3 mb-4" style="border-radius: 18px;">
+                            <i class="bi bi-check-circle-fill fs-4 mt-1"></i>
+                            <div>
+                                <strong>Aceptación SMTP registrada</strong>
+                                <p class="mb-0 mt-1" style="font-size: 0.88rem;">
+                                    El servidor del destinatario aceptó el mensaje (código SMTP 250).
+                                    Esto confirma la entrega al servidor de correo, no necesariamente que la persona lo haya leído en su bandeja.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Estado</th>
+                                        <th>Último evento</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for d in entregas_confirmadas %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ d.nombre_snapshot|default:d.contacto.nombre_completo|default:"-" }}</td>
+                                        <td><code>{{ d.email_snapshot }}</code></td>
+                                        <td>
+                                            <span class="detail-inline-pill text-success-emphasis bg-success-subtle">{{ d.get_estado_display }}</span>
+                                        </td>
+                                        <td>{{ d.ultimo_evento_at|date:"d M Y - h:i A"|default:"-" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="5">
+                                            <div class="detail-info-item mb-2">
+                                                <div class="detail-overline">Resumen</div>
+                                                <div class="detail-value">{{ d.entrega_resumen }}</div>
+                                            </div>
+                                            <details>
+                                                <summary>Ver detalle técnico</summary>
+                                                <pre>{{ d.entrega_detalle_tecnico }}</pre>
+                                            </details>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if enviados_sin_confirmacion %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="section-title"><i class="bi bi-hourglass-split"></i> Enviados sin confirmación de entrega</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-secondary border-0 d-flex align-items-start gap-3 mb-4" style="border-radius: 18px;">
+                            <i class="bi bi-info-circle-fill fs-4 mt-1"></i>
+                            <div>
+                                <strong>Sin confirmación final del servidor destino</strong>
+                                <p class="mb-0 mt-1" style="font-size: 0.88rem;">
+                                    El sistema registró el envío, pero aún no hay confirmación SMTP 250 ni evidencia de entrega en el servidor destino para estos destinatarios.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Estado</th>
+                                        <th>Último evento</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for d in enviados_sin_confirmacion %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ d.nombre_snapshot|default:d.contacto.nombre_completo|default:"-" }}</td>
+                                        <td><code>{{ d.email_snapshot }}</code></td>
+                                        <td>
+                                            <span class="detail-inline-pill text-secondary-emphasis bg-secondary-subtle">{{ d.get_estado_display }}</span>
+                                        </td>
+                                        <td>{{ d.ultimo_evento_at|date:"d M Y - h:i A"|default:d.fecha_envio|date:"d M Y - h:i A"|default:"-" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="col-12 col-xl-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="section-title"><i class="bi bi-bar-chart"></i> Resumen de la salida</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="kpi-grid mb-4">
+                            <div class="kpi-item">
+                                <div class="detail-overline">Total</div>
+                                <div class="detail-value">{{ total_destinatarios }}</div>
+                            </div>
+                            <div class="kpi-item">
+                                <div class="detail-overline">Enviados</div>
+                                <div class="detail-value text-success">{{ total_enviados }}</div>
+                            </div>
+                            <div class="kpi-item">
+                                <div class="detail-overline">Fallos</div>
+                                <div class="detail-value text-danger">{{ total_fallos }}</div>
+                            </div>
+                            <div class="kpi-item">
+                                <div class="detail-overline">Rebotes</div>
+                                <div class="detail-value text-warning">{{ total_rebotes }}</div>
+                            </div>
+                        </div>
+
+                        <div class="detail-info-grid">
+                            <div class="detail-info-item">
+                                <div class="detail-overline">Radicado</div>
+                                <div class="detail-value">{{ respuesta.numero_radicado_salida }}</div>
+                            </div>
+                            <div class="detail-info-item">
+                                <div class="detail-overline">Asunto</div>
+                                <div class="detail-value">{{ respuesta.asunto }}</div>
+                            </div>
+                            <div class="detail-info-item">
+                                <div class="detail-overline">Estado</div>
+                                <div class="detail-value">{{ respuesta.get_estado_display }}</div>
+                            </div>
+                            {% if respuesta.id_mensaje_enviado %}
+                            <div class="detail-info-item">
+                                <div class="detail-overline">Message-ID</div>
+                                <div class="detail-value"><code>{{ respuesta.id_mensaje_enviado }}</code></div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <a href="{% url 'correspondencia:detalle_respuesta_salida' respuesta.id %}" class="detail-primary-cta">
+                            <i class="bi bi-arrow-left-circle me-2"></i>Volver al detalle principal
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <h5 class="section-title"><i class="bi bi-clock-history"></i> Eventos de envío</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if historial_respuesta %}
+                        <div class="detail-timeline">
+                            {% for evento in historial_respuesta %}
+                            <div class="detail-timeline-item">
+                                <span class="detail-timeline-dot {% if evento.tipo_evento == 'ENVIO_FALLIDO' or evento.tipo_evento == 'RECHAZO' %}bg-danger{% elif evento.tipo_evento == 'ENVIO_EXITOSO' %}bg-success{% else %}bg-primary{% endif %}"></span>
+                                <div class="detail-timeline-title">{{ evento.get_tipo_evento_display }}</div>
+                                <div class="detail-timeline-time">{{ evento.fecha_hora|date:"d M Y - h:i A" }}</div>
+                                {% if evento.descripcion %}
+                                <div class="detail-timeline-text">{{ evento.descripcion }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="detail-note mt-0">Sin eventos de envío registrados.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

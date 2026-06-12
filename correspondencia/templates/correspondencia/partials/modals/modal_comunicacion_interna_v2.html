@@ -1,0 +1,1582 @@
+<style>
+    .ci-v2-modal {
+        --ci-v2-ink: #16324f;
+        --ci-v2-muted: #5f7287;
+        --ci-v2-line: rgba(22, 50, 79, 0.12);
+        --ci-v2-soft-line: rgba(22, 50, 79, 0.08);
+        --ci-v2-surface: #ffffff;
+        --ci-v2-panel: linear-gradient(180deg, #f7fbff 0%, #eef5fb 100%);
+        --ci-v2-panel-strong: linear-gradient(145deg, #16324f 0%, #24527a 100%);
+        --ci-v2-accent: #0f6cbd;
+        --ci-v2-accent-soft: rgba(15, 108, 189, 0.14);
+        --ci-v2-success: #1f845a;
+        --ci-v2-warning: #a15c00;
+        --ci-v2-shadow: 0 28px 70px rgba(15, 39, 66, 0.24);
+    }
+
+    .ci-v2-modal .modal-dialog {
+        max-width: 1240px;
+    }
+
+    .ci-v2-modal .modal-content {
+        border: 0;
+        border-radius: 28px;
+        overflow: hidden;
+        background: var(--ci-v2-surface);
+        box-shadow: var(--ci-v2-shadow);
+        min-height: min(88vh, 920px);
+    }
+
+    .ci-v2-modal .modal-header,
+    .ci-v2-modal .modal-footer {
+        border: 0;
+        position: sticky;
+        z-index: 3;
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(12px);
+    }
+
+    .ci-v2-modal .modal-header {
+        top: 0;
+        padding: 1.4rem 1.6rem 1rem;
+        border-bottom: 1px solid var(--ci-v2-soft-line);
+    }
+
+    .ci-v2-modal .modal-footer {
+        bottom: 0;
+        padding: 1rem 1.6rem 1.4rem;
+        border-top: 1px solid var(--ci-v2-soft-line);
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .ci-v2-modal .modal-body {
+        padding: 1.5rem 1.6rem 1.6rem;
+        background:
+            radial-gradient(circle at top right, rgba(15, 108, 189, 0.1), transparent 24%),
+            linear-gradient(180deg, #f9fbfd 0%, #f3f7fb 100%);
+    }
+
+    .ci-v2-header-copy {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .ci-v2-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        align-self: flex-start;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--ci-v2-accent);
+        background: var(--ci-v2-accent-soft);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .ci-v2-modal .modal-title {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        margin: 0;
+        color: var(--ci-v2-ink);
+        font-size: 1.4rem;
+        font-weight: 800;
+    }
+
+    .ci-v2-close {
+        border-radius: 999px;
+        padding: 0.7rem;
+        background-color: rgba(22, 50, 79, 0.06);
+        opacity: 1;
+    }
+
+    .ci-v2-layout {
+        display: grid;
+        gap: 1.1rem;
+    }
+
+    .ci-v2-stepper {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.85rem;
+    }
+
+    .ci-v2-step-tab {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        padding: 0.95rem 1rem;
+        border-radius: 22px;
+        border: 1px solid rgba(22, 50, 79, 0.1);
+        background: rgba(255, 255, 255, 0.78);
+        box-shadow: 0 10px 24px rgba(20, 46, 73, 0.06);
+        transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+    }
+
+    .ci-v2-step-tab.is-active {
+        border-color: rgba(15, 108, 189, 0.28);
+        background: linear-gradient(180deg, rgba(230, 241, 251, 0.94), rgba(246, 250, 253, 0.96));
+        transform: translateY(-1px);
+    }
+
+    .ci-v2-step-tab.is-complete {
+        border-color: rgba(31, 132, 90, 0.24);
+        background: linear-gradient(180deg, rgba(233, 247, 240, 0.94), rgba(247, 251, 248, 0.96));
+    }
+
+    .ci-v2-step-index {
+        width: 2.5rem;
+        height: 2.5rem;
+        flex: 0 0 2.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 16px;
+        background: rgba(15, 108, 189, 0.1);
+        color: #0f6cbd;
+        font-size: 0.92rem;
+        font-weight: 800;
+    }
+
+    .ci-v2-step-tab.is-complete .ci-v2-step-index {
+        background: rgba(31, 132, 90, 0.12);
+        color: #1f845a;
+    }
+
+    .ci-v2-step-text {
+        min-width: 0;
+        display: grid;
+        gap: 0.18rem;
+    }
+
+    .ci-v2-step-label {
+        color: var(--ci-v2-ink);
+        font-size: 0.9rem;
+        font-weight: 800;
+    }
+
+    .ci-v2-step-note {
+        color: var(--ci-v2-muted);
+        font-size: 0.8rem;
+        line-height: 1.35;
+    }
+
+    .ci-v2-page {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .ci-v2-page[hidden] {
+        display: none !important;
+    }
+
+    .ci-v2-prewrite {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        align-items: start;
+    }
+
+    .ci-v2-panel,
+    .ci-v2-attachments {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid var(--ci-v2-soft-line);
+        border-radius: 24px;
+        box-shadow: 0 16px 34px rgba(20, 46, 73, 0.08);
+    }
+
+    .ci-v2-panel {
+        padding: 1.15rem;
+    }
+
+    .ci-v2-panel-head,
+    .ci-v2-attachments-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .ci-v2-panel-title {
+        margin: 0;
+        color: var(--ci-v2-ink);
+        font-size: 1.05rem;
+        font-weight: 800;
+    }
+
+    .ci-v2-panel-copy,
+    .ci-v2-helper-text,
+    .ci-v2-footer-copy {
+        margin: 0;
+        color: var(--ci-v2-muted);
+        font-size: 0.92rem;
+    }
+
+    .ci-v2-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.9rem;
+    }
+
+    .ci-v2-field,
+    .ci-v2-field-full {
+        display: grid;
+        gap: 0.45rem;
+    }
+
+    .ci-v2-field-full {
+        grid-column: 1 / -1;
+    }
+
+    .ci-v2-modal .form-label {
+        margin-bottom: 0;
+        color: var(--ci-v2-ink);
+        font-weight: 700;
+        font-size: 0.89rem;
+    }
+
+    .ci-v2-modal .form-control,
+    .ci-v2-modal .form-select,
+    .ci-v2-modal .input-group-text {
+        border-radius: 16px;
+        border: 1px solid var(--ci-v2-line);
+        min-height: 3rem;
+    }
+
+    .ci-v2-modal textarea.form-control {
+        min-height: 10.5rem;
+        resize: vertical;
+    }
+
+    .ci-v2-modal .form-control,
+    .ci-v2-modal .form-select {
+        color: var(--ci-v2-ink);
+        box-shadow: none;
+    }
+
+    .ci-v2-modal .form-control:focus,
+    .ci-v2-modal .form-select:focus {
+        border-color: rgba(15, 108, 189, 0.48);
+        box-shadow: 0 0 0 0.25rem rgba(15, 108, 189, 0.12);
+    }
+
+    .ci-v2-readonly {
+        background: #edf3f8;
+        color: #35506d;
+        font-weight: 600;
+    }
+
+    .ci-v2-section-shell {
+        display: grid;
+        gap: 0.9rem;
+    }
+
+    .ci-v2-dynamic-shell {
+        padding: 1rem;
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(244, 248, 252, 0.95), rgba(240, 245, 250, 0.9));
+        border: 1px dashed rgba(22, 50, 79, 0.18);
+    }
+
+    .ci-v2-attachments {
+        padding: 1.15rem;
+    }
+
+    .ci-v2-hint-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+    }
+
+    .ci-v2-hint-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.45rem 0.75rem;
+        border-radius: 999px;
+        color: var(--ci-v2-ink);
+        background: rgba(22, 50, 79, 0.06);
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    .ci-v2-hint-chip--count {
+        color: #0b5da8;
+        background: rgba(11, 93, 168, 0.1);
+    }
+
+    .ci-v2-input-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .ci-v2-preview {
+        padding: 0.9rem 1rem;
+        border-radius: 18px;
+        background: rgba(22, 50, 79, 0.04);
+        border: 1px solid rgba(22, 50, 79, 0.08);
+    }
+
+    .ci-v2-preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+        color: var(--ci-v2-ink);
+        font-weight: 700;
+    }
+
+    .ci-v2-preview-list {
+        max-height: 170px;
+        overflow-y: auto;
+        border-radius: 14px;
+    }
+
+    .ci-v2-preview-list .list-group-item {
+        border-left: 0;
+        border-right: 0;
+        border-color: rgba(22, 50, 79, 0.08);
+        background: transparent;
+    }
+
+    .ci-v2-dynamic-shell .alert {
+        margin-bottom: 0;
+        border-radius: 18px;
+        border: 1px solid rgba(15, 108, 189, 0.14);
+        background: rgba(15, 108, 189, 0.08);
+        color: var(--ci-v2-ink);
+    }
+
+    .ci-v2-dynamic-shell .badge {
+        border-radius: 999px;
+        font-weight: 700;
+    }
+
+    .ci-v2-dynamic-shell .card {
+        border-radius: 18px;
+        border: 1px solid rgba(22, 50, 79, 0.08);
+        box-shadow: none;
+        transition: transform 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+    }
+
+    .ci-v2-dynamic-shell .card:hover {
+        transform: translateY(-1px);
+        border-color: rgba(15, 108, 189, 0.3);
+    }
+
+    .ci-v2-dynamic-shell .border-dashed {
+        border-style: dashed !important;
+    }
+
+    .ci-v2-choice-card {
+        position: relative;
+        height: 100%;
+        border-radius: 20px;
+        border: 1px solid rgba(22, 50, 79, 0.12);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 252, 0.96));
+        box-shadow: 0 12px 26px rgba(18, 43, 68, 0.08);
+        overflow: hidden;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .ci-v2-choice-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(15, 108, 189, 0.26);
+        box-shadow: 0 18px 34px rgba(18, 43, 68, 0.12);
+    }
+
+    .ci-v2-choice-card.is-selected {
+        border-color: rgba(15, 108, 189, 0.4);
+        background: linear-gradient(180deg, rgba(228, 240, 251, 0.98), rgba(241, 247, 252, 0.96));
+        box-shadow: 0 18px 36px rgba(15, 108, 189, 0.14);
+    }
+
+    .ci-v2-choice-card.is-selected::after {
+        content: '';
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 4px;
+        background: linear-gradient(90deg, #0f6cbd 0%, #4a8fc9 100%);
+    }
+
+    .ci-v2-choice-card-body {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.85rem;
+        padding: 0.95rem 1rem;
+        text-align: left;
+    }
+
+    .ci-v2-choice-icon {
+        width: 2.7rem;
+        height: 2.7rem;
+        flex: 0 0 2.7rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 16px;
+        color: #0f6cbd;
+        background: rgba(15, 108, 189, 0.12);
+        box-shadow: inset 0 0 0 1px rgba(15, 108, 189, 0.08);
+        font-size: 1rem;
+    }
+
+    .ci-v2-choice-content {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .ci-v2-choice-title {
+        display: block;
+        color: var(--ci-v2-ink);
+        font-size: 0.93rem;
+        font-weight: 700;
+        line-height: 1.35;
+        word-break: break-word;
+    }
+
+    .ci-v2-choice-meta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        margin-top: 0.4rem;
+        padding: 0.22rem 0.55rem;
+        border-radius: 999px;
+        color: var(--ci-v2-muted);
+        background: rgba(22, 50, 79, 0.06);
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+
+    .ci-v2-choice-check {
+        width: 1.8rem;
+        height: 1.8rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        color: rgba(22, 50, 79, 0.32);
+        background: rgba(22, 50, 79, 0.06);
+        font-size: 0.9rem;
+        flex: 0 0 1.8rem;
+        transition: all 0.18s ease;
+    }
+
+    .ci-v2-choice-card.is-selected .ci-v2-choice-check {
+        color: #ffffff;
+        background: #0f6cbd;
+        box-shadow: 0 10px 18px rgba(15, 108, 189, 0.24);
+    }
+
+    .ci-v2-search-box {
+        display: grid;
+        gap: 0.55rem;
+    }
+
+    .ci-v2-search-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        color: var(--ci-v2-muted);
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    .ci-v2-footer-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        margin-left: auto;
+    }
+
+    .ci-v2-btn-nav[hidden],
+    .ci-v2-btn-submit[hidden] {
+        display: none !important;
+    }
+
+    .ci-v2-btn-primary,
+    .ci-v2-btn-secondary,
+    .ci-v2-btn-ghost {
+        min-height: 3rem;
+        border-radius: 16px;
+        padding: 0.72rem 1.15rem;
+        font-weight: 700;
+        border: 1px solid transparent;
+    }
+
+    .ci-v2-btn-primary {
+        color: #fff;
+        background: linear-gradient(135deg, #0f6cbd 0%, #16558f 100%);
+        box-shadow: 0 14px 24px rgba(15, 108, 189, 0.24);
+    }
+
+    .ci-v2-btn-secondary {
+        color: var(--ci-v2-ink);
+        background: rgba(22, 50, 79, 0.07);
+        border-color: rgba(22, 50, 79, 0.1);
+    }
+
+    .ci-v2-btn-ghost {
+        color: var(--ci-v2-muted);
+        background: transparent;
+        border-color: rgba(22, 50, 79, 0.12);
+    }
+
+    .ci-v2-modal .btn-outline-secondary {
+        border-radius: 16px;
+        border-color: var(--ci-v2-line);
+    }
+
+    .ci-v2-modal .btn-outline-secondary:hover {
+        background: rgba(22, 50, 79, 0.06);
+        color: var(--ci-v2-ink);
+    }
+
+    .ci-v2-search-result-empty {
+        padding: 1rem;
+        border-radius: 16px;
+        background: rgba(22, 50, 79, 0.05);
+        color: var(--ci-v2-muted);
+        text-align: center;
+    }
+
+    @media (max-width: 991.98px) {
+        .ci-v2-modal .modal-dialog {
+            margin: 0.75rem;
+        }
+
+        .ci-v2-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .ci-v2-stepper {
+            grid-template-columns: 1fr;
+        }
+
+        .ci-v2-modal .modal-content {
+            min-height: auto;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .ci-v2-modal .modal-header,
+        .ci-v2-modal .modal-body,
+        .ci-v2-modal .modal-footer {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        .ci-v2-footer-actions {
+            width: 100%;
+        }
+
+        .ci-v2-footer-actions .btn {
+            flex: 1 1 100%;
+        }
+
+        .ci-v2-input-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="modal fade ci-v2-modal" id="modalComunicacionInternaV2" tabindex="-1" aria-labelledby="modalComunicacionInternaV2Label" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false" data-usuario-oficina-trd="{{ request.user.perfil.oficina.codigo_trd_comunicacion_interna|default:'' }}" data-usuario-oficina-trd-display="{{ request.user.perfil.oficina.codigo_trd_comunicacion_interna_display }}" data-usuario-oficina-codigo-sis="{{ request.user.perfil.oficina.get_codigo_sis|default:'' }}">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="ci-v2-header-copy">
+                    <span class="ci-v2-eyebrow">
+                        <i class="bi bi-send-check"></i>
+                        Flujo interno
+                    </span>
+                    <h5 class="modal-title" id="modalComunicacionInternaV2Label">
+                        <i class="bi bi-file-earmark-plus"></i>
+                        Nueva comunicación interna
+                    </h5>
+                </div>
+                <button type="button" class="btn-close ci-v2-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formComunicacionInternaV2"
+                      method="post"
+                      enctype="multipart/form-data"
+                      data-endpoint="{% url 'correspondencia:crear_comunicacion_interna_ajax' %}"
+                      data-oficinas-endpoint="{% url 'correspondencia:oficinas_todas_interna_ajax' %}"
+                      data-usuarios-endpoint="{% url 'correspondencia:usuarios_por_oficina_ajax' %}"
+                      data-series-endpoint="/registros/cargar_series/"
+                      data-subseries-endpoint="/registros/cargar_subseries/"
+                      data-procesos-endpoint="{% url 'correspondencia:procesos_todos_ajax' %}"
+                      data-correspondencia-procesos-endpoint="/registros/correspondencia/procesos-todos-ajax/">
+                    {% csrf_token %}
+
+                    <div class="ci-v2-layout">
+                        <section class="ci-v2-stepper" aria-label="Pasos del formulario">
+                            <div class="ci-v2-step-tab is-active" id="v2_step_indicator_1">
+                                <span class="ci-v2-step-index">1</span>
+                                <div class="ci-v2-step-text">
+                                    <span class="ci-v2-step-label">Preparación</span>
+                                    <span class="ci-v2-step-note">Datos del documento y destinatarios</span>
+                                </div>
+                            </div>
+                            <div class="ci-v2-step-tab" id="v2_step_indicator_2">
+                                <span class="ci-v2-step-index">2</span>
+                                <div class="ci-v2-step-text">
+                                    <span class="ci-v2-step-label">Contenido</span>
+                                    <span class="ci-v2-step-note">Redacción y anexos</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="ci-v2-page" id="v2_page_1">
+                            <section class="ci-v2-panel">
+                                <div class="ci-v2-panel-head">
+                                    <div>
+                                        <h6 class="ci-v2-panel-title">1. Datos del documento</h6>
+                                    </div>
+                                </div>
+
+                                <div class="ci-v2-grid">
+                                    <div class="ci-v2-field-full">
+                                        <label class="form-label" for="v2_codigo_sis">Código SIS</label>
+                                        <input type="text" class="form-control ci-v2-readonly" id="v2_codigo_sis" name="codigo_sis" placeholder="Se carga automáticamente con la oficina remitente" readonly>
+                                        <p class="ci-v2-helper-text">Visible desde el inicio del flujo y calculado con la dependencia del usuario remitente.</p>
+                                    </div>
+                                    <div class="ci-v2-field">
+                                        <label class="form-label" for="v2_ciudad">Ciudad *</label>
+                                        <input type="text" class="form-control" id="v2_ciudad" name="ciudad" value="Saravena" required>
+                                    </div>
+                                    <div class="ci-v2-field">
+                                        <label class="form-label" for="v2_fecha_documento">Fecha del documento *</label>
+                                        <input type="date" class="form-control" id="v2_fecha_documento" name="fecha_documento" required>
+                                    </div>
+                                    <div class="ci-v2-field">
+                                        <label class="form-label" for="v2_serie">Serie documental</label>
+                                        <select class="form-select" id="v2_serie" name="serie">
+                                            <option value="">Cargando series...</option>
+                                        </select>
+                                    </div>
+                                    <div class="ci-v2-field">
+                                        <label class="form-label" for="v2_subserie">Subserie asociada</label>
+                                        <select class="form-select" id="v2_subserie" name="subserie">
+                                            <option value="">Seleccione serie primero...</option>
+                                        </select>
+                                    </div>
+                                    <div class="ci-v2-field-full">
+                                        <label class="form-label" for="v2_trd">Código TRD</label>
+                                        <input type="text" class="form-control ci-v2-readonly" id="v2_trd" name="trd" placeholder="Se autocompleta con la serie y subserie elegidas" readonly>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="ci-v2-panel">
+                                <div class="ci-v2-panel-head">
+                                    <div>
+                                        <h6 class="ci-v2-panel-title">2. Distribución y destinatarios</h6>
+                                    </div>
+                                </div>
+
+                                <div class="ci-v2-section-shell">
+                                <div class="ci-v2-field-full">
+                                    <label class="form-label" for="v2_tipo_distribucion">Tipo de distribución *</label>
+                                    <select class="form-select" id="v2_tipo_distribucion" name="tipo_distribucion" required>
+                                        <option value="USUARIO">Usuario específico</option>
+                                        <option value="OFICINA">Oficina completa</option>
+                                        <option value="PROCESO">Proceso completo</option>
+                                        <option value="ENTIDAD">Toda la entidad</option>
+                                    </select>
+                                </div>
+
+                                <div class="ci-v2-dynamic-shell">
+                                    <div id="v2_seccion_destinatarios"></div>
+                                </div>
+                                </div>
+                            </section>
+                        </section>
+
+                        <section class="ci-v2-page" id="v2_page_2" hidden>
+                        <section class="ci-v2-panel">
+                            <div class="ci-v2-panel-head">
+                                <div>
+                                    <h6 class="ci-v2-panel-title">3. Redacción</h6>
+                                </div>
+                                <div class="ci-v2-hint-list">
+                                    <span class="ci-v2-hint-chip"><i class="bi bi-chat-left-text"></i>Asunto corto y claro</span>
+                                    <span class="ci-v2-hint-chip"><i class="bi bi-journal-text"></i>Detalle operativo en el cuerpo</span>
+                                </div>
+                            </div>
+
+                            <div class="ci-v2-grid">
+                                <div class="ci-v2-field-full">
+                                    <label class="form-label" for="v2_asunto">Asunto *</label>
+                                    <input type="text" class="form-control" id="v2_asunto" name="asunto" required>
+                                </div>
+                                <div class="ci-v2-field-full">
+                                    <label class="form-label" for="v2_cuerpo">Contenido *</label>
+                                    <textarea class="form-control" id="v2_cuerpo" name="cuerpo" rows="7" required></textarea>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="ci-v2-attachments">
+                            <div class="ci-v2-attachments-head">
+                                <div>
+                                    <h6 class="ci-v2-panel-title"><i class="bi bi-paperclip me-2"></i>4. Anexos opcionales</h6>
+                                    <p class="ci-v2-panel-copy">Adjunta soportes sin salir del flujo. El sistema permite hasta 10 archivos, con validación por formato, peso individual y peso total.</p>
+                                </div>
+                                <div class="ci-v2-hint-list">
+                                    <span class="ci-v2-hint-chip ci-v2-hint-chip--count"><i class="bi bi-folder2-open"></i><span id="v2_count_header">0</span> archivos</span>
+                                    <span class="ci-v2-hint-chip"><i class="bi bi-file-earmark-pdf"></i>PDF</span>
+                                    <span class="ci-v2-hint-chip"><i class="bi bi-file-earmark-word"></i>DOC / DOCX</span>
+                                    <span class="ci-v2-hint-chip"><i class="bi bi-file-earmark-excel"></i>XLS / XLSX</span>
+                                </div>
+                            </div>
+
+                            <div class="ci-v2-input-row">
+                                <input type="file" class="form-control" id="v2_anexos" name="anexos" multiple accept=".pdf,.doc,.docx,.xls,.xlsx">
+                                <button class="btn btn-outline-secondary" type="button" id="v2_btn_limpiar_anexos">
+                                    <i class="bi bi-x-circle me-1"></i>Limpiar
+                                </button>
+                            </div>
+
+                            <p class="ci-v2-helper-text mt-3">Hasta 10 archivos. Máximo 2 MB por archivo y 10 MB acumulados.</p>
+
+                            <div id="v2_preview" class="ci-v2-preview d-none mt-3">
+                                <div class="ci-v2-preview-header">
+                                    <span>Seleccionados: <span id="v2_count">0</span></span>
+                                    <span>Total: <span id="v2_size">0 KB</span></span>
+                                </div>
+                                <ul class="list-group list-group-flush ci-v2-preview-list" id="v2_list"></ul>
+                            </div>
+
+                            <div id="v2_anexos_error" class="alert alert-danger mt-3 d-none"></div>
+                        </section>
+                        </section>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <div class="ci-v2-footer-actions">
+                    <button type="button" class="btn ci-v2-btn-ghost" id="v2_btn_reset">Limpiar formulario</button>
+                    <button type="button" class="btn ci-v2-btn-secondary ci-v2-btn-nav" id="v2_btn_prev" hidden>
+                        <i class="bi bi-arrow-left me-1"></i>Volver
+                    </button>
+                    <button type="button" class="btn ci-v2-btn-secondary ci-v2-btn-nav" id="v2_btn_next">
+                        Siguiente<i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                    <button type="button" class="btn ci-v2-btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn ci-v2-btn-primary ci-v2-btn-submit" id="v2_btn_enviar" hidden>
+                        <i class="bi bi-send-fill me-1"></i>Enviar comunicación
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    const modal = document.getElementById('modalComunicacionInternaV2');
+    if (!modal) return;
+
+    const form = document.getElementById('formComunicacionInternaV2');
+    const btnEnviar = document.getElementById('v2_btn_enviar');
+    const btnReset = document.getElementById('v2_btn_reset');
+    const btnNext = document.getElementById('v2_btn_next');
+    const btnPrev = document.getElementById('v2_btn_prev');
+    const page1 = document.getElementById('v2_page_1');
+    const page2 = document.getElementById('v2_page_2');
+    const stepIndicator1 = document.getElementById('v2_step_indicator_1');
+    const stepIndicator2 = document.getElementById('v2_step_indicator_2');
+    
+    // Elementos de serie/subserie/TRD
+    const selSerie = document.getElementById('v2_serie');
+    const selSubserie = document.getElementById('v2_subserie');
+    const inputTrd = document.getElementById('v2_trd');
+    const inputCodigoSis = document.getElementById('v2_codigo_sis');
+    const selTipoDistribucion = document.getElementById('v2_tipo_distribucion');
+    const seccionDestinatarios = document.getElementById('v2_seccion_destinatarios');
+    
+    // Elementos de anexos
+    const inputAnexos = document.getElementById('v2_anexos');
+    const btnLimpiarAnexos = document.getElementById('v2_btn_limpiar_anexos');
+    const preview = document.getElementById('v2_preview');
+    const list = document.getElementById('v2_list');
+    const countSpan = document.getElementById('v2_count');
+    const sizeSpan = document.getElementById('v2_size');
+    const errorDiv = document.getElementById('v2_anexos_error');
+    const countHeader = document.getElementById('v2_count_header');
+    
+    // Estado de destinatarios
+    let destinatariosSeleccionados = {
+        usuarios: new Map(),
+        oficinas: new Map()
+    };
+    const trdScopeQuery = 'scope=comunicacion_interna';
+    let oficinasCache = [];
+    let oficinasFiltradas = [];
+    let pasoActual = 1;
+
+    function getTodayLocalDate() {
+        const now = new Date();
+        const offset = now.getTimezoneOffset();
+        const local = new Date(now.getTime() - offset * 60000);
+        return local.toISOString().slice(0, 10);
+    }
+
+    function obtenerCodigoSisUsuario() {
+        return String(modal.dataset.usuarioOficinaCodigoSis || '').trim().toUpperCase();
+    }
+
+    function resetearFormularioBase() {
+        form.reset();
+        document.getElementById('v2_ciudad').value = 'Saravena';
+        document.getElementById('v2_fecha_documento').value = getTodayLocalDate();
+        if (inputCodigoSis) inputCodigoSis.value = obtenerCodigoSisUsuario();
+        destinatariosSeleccionados.usuarios.clear();
+        destinatariosSeleccionados.oficinas.clear();
+        if (selSubserie) {
+            selSubserie.innerHTML = '<option value="">Seleccione serie primero...</option>';
+            selSubserie.disabled = true;
+        }
+        if (inputTrd) inputTrd.value = '';
+        if (selTipoDistribucion) selTipoDistribucion.value = 'USUARIO';
+        limpiarAnexos();
+        pasoActual = 1;
+        sincronizarPaso();
+    }
+
+    modal.addEventListener('show.bs.modal', () => {
+        resetearFormularioBase();
+        cargarSeries();
+        cargarOficinas();
+        mostrarSeccionDestinatarios('USUARIO');
+    });
+
+    if (btnReset) {
+        btnReset.addEventListener('click', () => {
+            resetearFormularioBase();
+            cargarSeries();
+            mostrarSeccionDestinatarios(selTipoDistribucion.value);
+        });
+    }
+
+    if (btnNext) {
+        btnNext.addEventListener('click', () => {
+            if (!validarPasoUno()) {
+                return;
+            }
+            pasoActual = 2;
+            sincronizarPaso();
+        });
+    }
+
+    if (btnPrev) {
+        btnPrev.addEventListener('click', () => {
+            pasoActual = 1;
+            sincronizarPaso();
+        });
+    }
+
+    if (btnLimpiarAnexos) {
+        btnLimpiarAnexos.addEventListener('click', limpiarAnexos);
+    }
+
+    if (inputAnexos) {
+        inputAnexos.addEventListener('change', actualizarPreview);
+    }
+
+    if (selSerie) {
+        selSerie.addEventListener('change', () => {
+            cargarSubseries(selSerie.value);
+        });
+    }
+
+    if (selSubserie) {
+        selSubserie.addEventListener('change', actualizarTrd);
+    }
+
+    if (selTipoDistribucion) {
+        selTipoDistribucion.addEventListener('change', (e) => {
+            mostrarSeccionDestinatarios(e.target.value);
+        });
+    }
+
+    if (btnEnviar) {
+        btnEnviar.addEventListener('click', enviarFormulario);
+    }
+
+    function sincronizarPaso() {
+        const enPasoDos = pasoActual === 2;
+        page1.hidden = enPasoDos;
+        page2.hidden = !enPasoDos;
+        btnPrev.hidden = !enPasoDos;
+        btnNext.hidden = enPasoDos;
+        btnEnviar.hidden = !enPasoDos;
+
+        stepIndicator1.classList.toggle('is-active', pasoActual === 1);
+        stepIndicator1.classList.toggle('is-complete', pasoActual === 2);
+        stepIndicator2.classList.toggle('is-active', pasoActual === 2);
+        stepIndicator2.classList.toggle('is-complete', false);
+    }
+
+    function validarPasoUno() {
+        const ciudad = document.getElementById('v2_ciudad').value.trim();
+        const fecha = document.getElementById('v2_fecha_documento').value;
+        const tipo = selTipoDistribucion.value;
+
+        if (!ciudad || !fecha) {
+            mostrarErrorLocal('Complete ciudad y fecha del documento antes de continuar.');
+            return false;
+        }
+
+        if (!document.getElementById('v2_serie').value || !document.getElementById('v2_subserie').value) {
+            mostrarErrorLocal('Seleccione serie y subserie antes de continuar.');
+            return false;
+        }
+
+        if (tipo === 'USUARIO' && destinatariosSeleccionados.usuarios.size === 0) {
+            mostrarErrorLocal('Seleccione al menos un usuario.');
+            return false;
+        }
+
+        if (tipo === 'OFICINA' && destinatariosSeleccionados.oficinas.size === 0) {
+            mostrarErrorLocal('Seleccione al menos una oficina.');
+            return false;
+        }
+
+        if (tipo === 'PROCESO' && !document.getElementById('v2_proceso')?.value) {
+            mostrarErrorLocal('Seleccione un proceso.');
+            return false;
+        }
+
+        return true;
+    }
+
+    function mostrarErrorLocal(mensaje) {
+        if (typeof window.showError === 'function') {
+            window.showError(mensaje);
+        } else {
+            alert(mensaje);
+        }
+    }
+
+    function cargarSeries() {
+        const endpoint = form.dataset.seriesEndpoint;
+        selSerie.innerHTML = '<option value="">Cargando series...</option>';
+        fetch(`${endpoint}?${trdScopeQuery}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => {
+                selSerie.innerHTML = '<option value="">Seleccione una serie...</option>';
+                if (Array.isArray(data)) {
+                    data.forEach(item => {
+                        const opt = document.createElement('option');
+                        opt.value = item.id;
+                        opt.textContent = item.nombre;
+                        opt.dataset.codigoTrd = item.codigo_trd || '';
+                        selSerie.appendChild(opt);
+                    });
+                    if (data.length === 1) {
+                        selSerie.value = String(data[0].id);
+                        cargarSubseries(data[0].id);
+                    }
+                }
+            })
+            .catch(e => {
+                console.error('Error cargando series:', e);
+                selSerie.innerHTML = '<option value="">Error cargando series</option>';
+            });
+    }
+
+    function cargarSubseries(serieId) {
+        if (!serieId) {
+            selSubserie.innerHTML = '<option value="">Seleccione serie primero...</option>';
+            selSubserie.disabled = true;
+            if (inputTrd) inputTrd.value = '';
+            return;
+        }
+        selSubserie.innerHTML = '<option value="">Cargando...</option>';
+        selSubserie.disabled = true;
+        const endpoint = `${form.dataset.subseriesEndpoint}?serie_id=${encodeURIComponent(serieId)}&${trdScopeQuery}`;
+        fetch(endpoint, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => {
+                selSubserie.innerHTML = '<option value="">Seleccione subserie...</option>';
+                if (Array.isArray(data)) {
+                    data.forEach(item => {
+                        const opt = document.createElement('option');
+                        opt.value = item.id;
+                        opt.textContent = item.nombre;
+                        opt.dataset.codigoTrd = item.codigo_trd || '';
+                        selSubserie.appendChild(opt);
+                    });
+                    selSubserie.disabled = false;
+                    if (data.length === 1) {
+                        selSubserie.value = String(data[0].id);
+                        actualizarTrd();
+                    }
+                }
+            })
+            .catch(e => {
+                console.error('Error cargando subseries:', e);
+                selSubserie.innerHTML = '<option value="">Error</option>';
+            });
+    }
+
+    function actualizarTrd() {
+        const usuarioOficinaTrd = modal.dataset.usuarioOficinaTrd;
+        const usuarioOficinaTrdDisplay = modal.dataset.usuarioOficinaTrdDisplay || 'sin trd por falta de mapeo';
+
+        inputTrd.value = usuarioOficinaTrd || usuarioOficinaTrdDisplay;
+    }
+
+    function cargarOficinas() {
+        const endpoint = form.dataset.oficinasEndpoint;
+        fetch(endpoint)
+            .then(r => r.json())
+            .then(data => {
+                oficinasCache = Array.isArray(data) ? data : [];
+                oficinasFiltradas = oficinasCache.slice();
+                window.v2_oficinas = oficinasCache;
+                mostrarSeccionDestinatarios(selTipoDistribucion.value);
+            })
+            .catch(e => console.error('Error cargando oficinas:', e));
+    }
+
+    function renderOpcionesOficina(select, oficinas) {
+        select.innerHTML = '<option value="">Seleccione una oficina...</option>';
+        oficinas.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item.id;
+            opt.textContent = item.text;
+            select.appendChild(opt);
+        });
+    }
+
+    function cargarUsuarios(oficinaId) {
+        if (!oficinaId) return Promise.resolve([]);
+        const endpoint = `${form.dataset.usuariosEndpoint}?oficina_id=${encodeURIComponent(oficinaId)}`;
+        return fetch(endpoint)
+            .then(r => r.json())
+            .then(data => {
+                if (!Array.isArray(data)) return [];
+                // Normaliza nombres para evitar "undefined"
+                return data.map(u => ({
+                    id: u.id,
+                    text: u.text || u.nombre || `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username || 'Sin nombre'
+                }));
+            })
+            .catch(e => { console.error('Error cargando usuarios:', e); return []; });
+    }
+
+    function mostrarSeccionDestinatarios(tipo) {
+        seccionDestinatarios.innerHTML = '';
+
+        if (tipo === 'ENTIDAD') {
+            seccionDestinatarios.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="bi bi-people-fill me-2"></i>
+                    <strong>Distribución a toda la entidad</strong><br>
+                    <small>Esta comunicación se enviará a todos los usuarios del sistema.</small>
+                </div>
+            `;
+            return;
+        }
+
+        if (tipo === 'PROCESO') {
+            seccionDestinatarios.innerHTML = `
+                <div class="mb-3">
+                    <label class="form-label">Proceso Destino *</label>
+                    <select class="form-select" id="v2_proceso" name="destinatario_proceso" required>
+                        <option value="">Cargando procesos...</option>
+                    </select>
+                </div>
+            `;
+            fetch(form.dataset.procesosEndpoint)
+                .then(r => r.json())
+                .then(data => {
+                    const sel = document.getElementById('v2_proceso');
+                    sel.innerHTML = '<option value="">Seleccionar Proceso...</option>';
+                    if (Array.isArray(data)) {
+                        data.forEach(item => {
+                            const opt = document.createElement('option');
+                            opt.value = item.id;
+                            opt.textContent = item.text;
+                            sel.appendChild(opt);
+                        });
+                    }
+                });
+            return;
+        }
+
+        if (tipo === 'USUARIO') {
+            seccionDestinatarios.innerHTML = `
+                <div class="mb-3">
+                    <label class="form-label">Oficina *</label>
+                    <div class="input-group mb-2">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="v2_buscar_oficina" placeholder="Buscar oficina por nombre..." autocomplete="off">
+                        <button class="btn btn-outline-secondary" type="button" id="v2_limpiar_busqueda_oficina" title="Limpiar búsqueda">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    </div>
+                    <p class="ci-v2-helper-text mb-2">Filtra oficinas antes de listar usuarios para reducir el ruido operativo.</p>
+                    <select class="form-select" id="v2_dest_oficina">
+                        <option value="">Seleccione una oficina...</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Usuarios disponibles</label>
+                    <div id="v2_usuarios_disponibles" class="row g-2" style="max-height: 200px; overflow-y: auto;"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Seleccionados <span class="badge bg-primary" id="v2_contador_usuarios">0</span></label>
+                    <div id="v2_usuarios_chips" class="border border-2 border-dashed rounded p-3 border-dashed" style="min-height: 60px; background-color: #f8f9fa;">
+                        <div class="text-center text-muted py-2"><i class="bi bi-inbox me-1"></i>No hay usuarios seleccionados</div>
+                    </div>
+                </div>
+            `;
+            
+            const selOficina = document.getElementById('v2_dest_oficina');
+            const inputBuscar = document.getElementById('v2_buscar_oficina');
+            const btnLimpiarBusqueda = document.getElementById('v2_limpiar_busqueda_oficina');
+            
+            if (oficinasCache && oficinasCache.length > 0) {
+                renderOpcionesOficina(selOficina, oficinasFiltradas);
+
+                selOficina.addEventListener('change', () => {
+                    destinatariosSeleccionados.usuarios.clear();
+                    actualizarChipsUsuarios();
+                    mostrarUsuariosDisponibles(selOficina.value);
+                });
+                
+                if (inputBuscar) {
+                    inputBuscar.addEventListener('input', (e) => {
+                        const terminoLower = e.target.value.trim().toLowerCase();
+                        oficinasFiltradas = terminoLower
+                            ? oficinasCache.filter(item => item.text.toLowerCase().includes(terminoLower))
+                            : oficinasCache.slice();
+                        renderOpcionesOficina(selOficina, oficinasFiltradas);
+
+                        if (oficinasFiltradas.length === 1) {
+                            selOficina.value = String(oficinasFiltradas[0].id);
+                            selOficina.dispatchEvent(new Event('change'));
+                        } else {
+                            document.getElementById('v2_usuarios_disponibles').innerHTML = '<div class="col-12 ci-v2-search-result-empty">Selecciona una oficina para ver usuarios disponibles.</div>';
+                        }
+                    });
+                }
+                
+                if (btnLimpiarBusqueda) {
+                    btnLimpiarBusqueda.addEventListener('click', () => {
+                        inputBuscar.value = '';
+                        oficinasFiltradas = oficinasCache.slice();
+                        renderOpcionesOficina(selOficina, oficinasFiltradas);
+                        selOficina.value = '';
+                        document.getElementById('v2_usuarios_disponibles').innerHTML = '<div class="col-12 ci-v2-search-result-empty">Selecciona una oficina para ver usuarios disponibles.</div>';
+                    });
+                }
+
+                document.getElementById('v2_usuarios_disponibles').innerHTML = '<div class="col-12 ci-v2-search-result-empty">Selecciona una oficina para ver usuarios disponibles.</div>';
+            }
+            return;
+        }
+
+        if (tipo === 'OFICINA') {
+            seccionDestinatarios.innerHTML = `
+                <div class="mb-3">
+                    <label class="form-label">Buscar oficina</label>
+                    <div class="ci-v2-search-box mb-3">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" class="form-control" id="v2_buscar_oficina_full" placeholder="Buscar oficina por nombre..." autocomplete="off">
+                            <button class="btn btn-outline-secondary" type="button" id="v2_limpiar_busqueda_oficina_full" title="Limpiar búsqueda">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </div>
+                        <div class="ci-v2-search-meta">
+                            <span>Filtra el listado antes de seleccionar las oficinas destino.</span>
+                            <span id="v2_total_oficinas_filtradas">0 oficinas</span>
+                        </div>
+                    </div>
+                    <label class="form-label">Oficinas disponibles</label>
+                    <div id="v2_oficinas_disponibles" class="row g-2" style="max-height: 200px; overflow-y: auto;"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Seleccionadas <span class="badge bg-info" id="v2_contador_oficinas">0</span></label>
+                    <div id="v2_oficinas_chips" class="border border-2 border-dashed rounded p-3 border-dashed" style="min-height: 60px; background-color: #f8f9fa;">
+                        <div class="text-center text-muted py-2"><i class="bi bi-inbox me-1"></i>No hay oficinas seleccionadas</div>
+                    </div>
+                </div>
+            `;
+
+            if (oficinasCache && oficinasCache.length > 0) {
+                const container = document.getElementById('v2_oficinas_disponibles');
+                const inputBuscarOficina = document.getElementById('v2_buscar_oficina_full');
+                const btnLimpiarBusquedaOficina = document.getElementById('v2_limpiar_busqueda_oficina_full');
+                const totalOficinas = document.getElementById('v2_total_oficinas_filtradas');
+
+                const renderOficinasDisponibles = (oficinas) => {
+                    container.innerHTML = '';
+                    if (totalOficinas) {
+                        totalOficinas.textContent = `${oficinas.length} oficina${oficinas.length === 1 ? '' : 's'}`;
+                    }
+
+                    if (oficinas.length === 0) {
+                        container.innerHTML = '<div class="col-12 ci-v2-search-result-empty">No hay oficinas que coincidan con la búsqueda.</div>';
+                        return;
+                    }
+
+                    oficinas.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'col-md-6 cursor-pointer';
+                    card.style.cursor = 'pointer';
+                    const estaSeleccionada = destinatariosSeleccionados.oficinas.has(String(item.id));
+                    card.innerHTML = `
+                        <div class="card ci-v2-choice-card h-100 ${estaSeleccionada ? 'is-selected' : ''}" data-oficina-id="${item.id}" data-oficina-text="${item.text}">
+                            <div class="card-body ci-v2-choice-card-body">
+                                <span class="ci-v2-choice-icon"><i class="bi bi-building"></i></span>
+                                <div class="ci-v2-choice-content">
+                                    <span class="ci-v2-choice-title">${item.text}</span>
+                                    <span class="ci-v2-choice-meta"><i class="bi bi-diagram-2"></i>Selección por oficina</span>
+                                </div>
+                                <span class="ci-v2-choice-check"><i class="bi bi-check-lg"></i></span>
+                            </div>
+                        </div>
+                    `;
+                    card.addEventListener('click', () => {
+                        toggleOficina(item.id, item.text);
+                        renderOficinasDisponibles(oficinasFiltradas);
+                    });
+                    container.appendChild(card);
+                    });
+                };
+
+                oficinasFiltradas = oficinasCache.slice();
+                renderOficinasDisponibles(oficinasFiltradas);
+
+                if (inputBuscarOficina) {
+                    inputBuscarOficina.addEventListener('input', (e) => {
+                        const terminoLower = e.target.value.trim().toLowerCase();
+                        oficinasFiltradas = terminoLower
+                            ? oficinasCache.filter(item => item.text.toLowerCase().includes(terminoLower))
+                            : oficinasCache.slice();
+                        renderOficinasDisponibles(oficinasFiltradas);
+                    });
+                }
+
+                if (btnLimpiarBusquedaOficina) {
+                    btnLimpiarBusquedaOficina.addEventListener('click', () => {
+                        inputBuscarOficina.value = '';
+                        oficinasFiltradas = oficinasCache.slice();
+                        renderOficinasDisponibles(oficinasFiltradas);
+                    });
+                }
+            }
+        }
+    }
+
+    function mostrarUsuariosDisponibles(oficinaId) {
+        const container = document.getElementById('v2_usuarios_disponibles');
+        container.innerHTML = '<div class="col-12 text-center text-muted py-3">Cargando usuarios...</div>';
+        cargarUsuarios(oficinaId).then(usuarios => {
+            container.innerHTML = '';
+            if (usuarios.length === 0) {
+                container.innerHTML = '<div class="col-12 ci-v2-search-result-empty">No hay usuarios disponibles para la oficina seleccionada.</div>';
+                return;
+            }
+            usuarios.forEach(item => {
+                const nombre = item.text || 'Sin nombre';
+                const card = document.createElement('div');
+                card.className = 'col-md-6 cursor-pointer';
+                card.style.cursor = 'pointer';
+                card.innerHTML = `
+                    <div class="card h-100 border-light" data-usuario-id="${item.id}" data-usuario-text="${nombre}">
+                        <div class="card-body p-2 text-center">
+                            <i class="bi bi-person me-1"></i>${nombre}
+                        </div>
+                    </div>
+                `;
+                card.addEventListener('click', () => {
+                    toggleUsuario(item.id, nombre);
+                    card.querySelector('.card').classList.toggle('border-primary');
+                    card.querySelector('.card').classList.toggle('bg-light');
+                });
+                container.appendChild(card);
+            });
+        });
+    }
+
+    function toggleUsuario(id, texto) {
+        if (destinatariosSeleccionados.usuarios.has(String(id))) {
+            destinatariosSeleccionados.usuarios.delete(String(id));
+        } else {
+            destinatariosSeleccionados.usuarios.set(String(id), texto);
+        }
+        actualizarChipsUsuarios();
+    }
+
+    function toggleOficina(id, texto) {
+        if (destinatariosSeleccionados.oficinas.has(String(id))) {
+            destinatariosSeleccionados.oficinas.delete(String(id));
+        } else {
+            destinatariosSeleccionados.oficinas.set(String(id), texto);
+        }
+        actualizarChipsOficinas();
+    }
+
+    function actualizarChipsUsuarios() {
+        const container = document.getElementById('v2_usuarios_chips');
+        const contador = document.getElementById('v2_contador_usuarios');
+        container.innerHTML = '';
+        if (destinatariosSeleccionados.usuarios.size === 0) {
+            container.innerHTML = '<div class="text-center text-muted py-2"><i class="bi bi-inbox me-1"></i>No hay usuarios seleccionados</div>';
+            contador.textContent = '0';
+        } else {
+            contador.textContent = destinatariosSeleccionados.usuarios.size;
+            destinatariosSeleccionados.usuarios.forEach((texto, id) => {
+                const chip = document.createElement('span');
+                chip.className = 'badge bg-primary me-1 mb-1 p-2';
+                chip.innerHTML = `${texto} <i class="bi bi-x ms-1" style="cursor: pointer;"></i>`;
+                chip.querySelector('i').addEventListener('click', () => {
+                    toggleUsuario(id, texto);
+                });
+                container.appendChild(chip);
+            });
+        }
+    }
+
+    function actualizarChipsOficinas() {
+        const container = document.getElementById('v2_oficinas_chips');
+        const contador = document.getElementById('v2_contador_oficinas');
+        container.innerHTML = '';
+        if (destinatariosSeleccionados.oficinas.size === 0) {
+            container.innerHTML = '<div class="text-center text-muted py-2"><i class="bi bi-inbox me-1"></i>No hay oficinas seleccionadas</div>';
+            contador.textContent = '0';
+        } else {
+            contador.textContent = destinatariosSeleccionados.oficinas.size;
+            destinatariosSeleccionados.oficinas.forEach((texto, id) => {
+                const chip = document.createElement('span');
+                chip.className = 'badge bg-info me-1 mb-1 p-2';
+                chip.innerHTML = `${texto} <i class="bi bi-x ms-1" style="cursor: pointer;"></i>`;
+                chip.querySelector('i').addEventListener('click', () => {
+                    toggleOficina(id, texto);
+                });
+                container.appendChild(chip);
+            });
+        }
+    }
+
+    function formatSize(bytes) {
+        if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return bytes + ' B';
+    }
+
+    function validarAnexos(files) {
+        const errors = [];
+        if (files.length > 10) errors.push('Máximo 10 archivos.');
+        let total = 0;
+        Array.from(files).forEach(f => {
+            const ext = '.' + f.name.toLowerCase().split('.').pop();
+            if (!['.pdf', '.doc', '.docx', '.xls', '.xlsx'].includes(ext)) {
+                errors.push(`"${f.name}" formato no permitido.`);
+            }
+            if (f.size > 25 * 1024 * 1024) {
+                errors.push(`"${f.name}" excede 25MB.`);
+            }
+            total += f.size;
+        });
+        if (total > 25 * 1024 * 1024) errors.push('Total excede 25MB.');
+        return errors;
+    }
+
+    function limpiarAnexos() {
+        if (inputAnexos) inputAnexos.value = '';
+        if (preview) preview.classList.add('d-none');
+        if (list) list.innerHTML = '';
+        if (countSpan) countSpan.textContent = '0';
+        if (countHeader) countHeader.textContent = '0';
+        if (sizeSpan) sizeSpan.textContent = '0 KB';
+        if (errorDiv) errorDiv.classList.add('d-none');
+    }
+
+    function actualizarPreview() {
+        const files = inputAnexos.files;
+        if (!files || files.length === 0) {
+            limpiarAnexos();
+            return;
+        }
+        const errors = validarAnexos(files);
+        if (errors.length > 0) {
+            errorDiv.classList.remove('d-none');
+            errorDiv.textContent = errors.join(' ');
+        } else {
+            errorDiv.classList.add('d-none');
+        }
+        list.innerHTML = '';
+        let total = 0;
+        Array.from(files).forEach(f => {
+            total += f.size;
+            const li = document.createElement('li');
+            li.className = 'list-group-item py-1 d-flex justify-content-between';
+            li.innerHTML = `<span>${f.name}</span><span class="badge bg-light text-dark">${formatSize(f.size)}</span>`;
+            list.appendChild(li);
+        });
+        countSpan.textContent = files.length;
+        if (countHeader) countHeader.textContent = files.length;
+        sizeSpan.textContent = formatSize(total);
+        preview.classList.remove('d-none');
+    }
+
+    function enviarFormulario() {
+        const tipo = selTipoDistribucion.value;
+        const asunto = document.getElementById('v2_asunto').value.trim();
+        const cuerpo = document.getElementById('v2_cuerpo').value.trim();
+
+        if (!asunto || !cuerpo) {
+            if (typeof window.showError === 'function') {
+                window.showError('Asunto y contenido son obligatorios.');
+            } else {
+                alert('Asunto y contenido son obligatorios.');
+            }
+            return;
+        }
+
+        if (tipo === 'USUARIO' && destinatariosSeleccionados.usuarios.size === 0) {
+            if (typeof window.showError === 'function') {
+                window.showError('Seleccione al menos un usuario.');
+            } else {
+                alert('Seleccione al menos un usuario.');
+            }
+            return;
+        }
+        if (tipo === 'OFICINA' && destinatariosSeleccionados.oficinas.size === 0) {
+            if (typeof window.showError === 'function') {
+                window.showError('Seleccione al menos una oficina.');
+            } else {
+                alert('Seleccione al menos una oficina.');
+            }
+            return;
+        }
+        if (tipo === 'PROCESO' && !document.getElementById('v2_proceso')?.value) {
+            if (typeof window.showError === 'function') {
+                window.showError('Seleccione un proceso.');
+            } else {
+                alert('Seleccione un proceso.');
+            }
+            return;
+        }
+
+        const anexoErrors = validarAnexos(inputAnexos?.files || []);
+        if (anexoErrors.length > 0) {
+            if (typeof window.showError === 'function') {
+                window.showError('Errores en anexos: ' + anexoErrors.join(', '));
+            } else {
+                alert('Errores en anexos:\n' + anexoErrors.join('\n'));
+            }
+            return;
+        }
+
+        btnEnviar.disabled = true;
+        btnEnviar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enviando...';
+
+        const fd = new FormData();
+        fd.append('ciudad', document.getElementById('v2_ciudad').value);
+        fd.append('fecha_documento', document.getElementById('v2_fecha_documento').value);
+        fd.append('serie', document.getElementById('v2_serie').value);
+        fd.append('subserie', document.getElementById('v2_subserie').value);
+        fd.append('trd', document.getElementById('v2_trd').value);
+        fd.append('tipo_distribucion', tipo);
+        fd.append('asunto', asunto);
+        fd.append('cuerpo', cuerpo);
+
+        if (tipo === 'USUARIO') {
+            destinatariosSeleccionados.usuarios.forEach((_, id) => {
+                fd.append('destinatarios_usuarios', id);
+            });
+        } else if (tipo === 'OFICINA') {
+            destinatariosSeleccionados.oficinas.forEach((_, id) => {
+                fd.append('destinatarios_oficinas', id);
+            });
+        } else if (tipo === 'PROCESO') {
+            fd.append('destinatario_proceso', document.getElementById('v2_proceso').value);
+        } else if (tipo === 'ENTIDAD') {
+            fd.append('es_a_toda_entidad', '1');
+        }
+
+        if (inputAnexos?.files?.length > 0) {
+            Array.from(inputAnexos.files).forEach(f => fd.append('anexos', f));
+        }
+        fd.append('anexos_count_client', inputAnexos?.files?.length || 0);
+
+        console.log('[V2 Full] Enviando:', tipo, Array.from(fd.keys()));
+
+        // Obtener CSRF token del DOM o cookie
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                         document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
+
+        fetch(form.dataset.endpoint, {
+            method: 'POST',
+            headers: { 
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrftoken
+            },
+            body: fd
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Mostrar mensaje de éxito con toast
+                const successMsg = data.message || 'Comunicación creada.';
+                if (typeof window.showSuccess === 'function') {
+                    window.showSuccess(successMsg);
+                } else {
+                    alert(successMsg);
+                }
+                // Cerrar modal y redirigir
+                bootstrap.Modal.getInstance(modal)?.hide();
+                setTimeout(() => {
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        window.location.reload();
+                    }
+                }, 800);
+            } else {
+                const errorMsg = 'Error: ' + (data.error || 'Desconocido');
+                if (typeof window.showError === 'function') {
+                    window.showError(errorMsg);
+                } else {
+                    alert(errorMsg);
+                }
+            }
+        })
+        .catch(e => {
+            console.error('Error:', e);
+            if (typeof window.showError === 'function') {
+                window.showError('Error de conexión. Intente nuevamente.');
+            } else {
+                alert('Error de conexión.');
+            }
+        })
+        .finally(() => {
+            btnEnviar.disabled = false;
+            btnEnviar.innerHTML = '<i class="bi bi-send-fill me-1"></i>Enviar';
+        });
+    }
+})();
+</script>
