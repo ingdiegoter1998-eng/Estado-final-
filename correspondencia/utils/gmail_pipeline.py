@@ -15,7 +15,13 @@ from django.utils import timezone
 
 from correspondencia.models import EstadoSincronizacionCorreos
 from correspondencia.utils.email_sync_helpers import get_email_ingestion_sync_source
-from correspondencia.utils.gmail_rate_limit import get_gmail_rate_limit_until, gmail_rate_limit_message
+from correspondencia.utils.gmail_rate_limit import (
+    celery_gmail_api_tasks_paused,
+    get_gmail_rate_limit_until,
+    gmail_rate_limit_message,
+    is_gmail_rate_limit_error,
+    remember_gmail_rate_limit,
+)
 from correspondencia.utils.postmark_outbound import build_postmark_outbound_status
 
 
@@ -78,6 +84,8 @@ def _gmail_profile_email() -> tuple[str, str]:
         profile = client.get_service().users().getProfile(userId='me').execute()
         return profile.get('emailAddress', '') or '', ''
     except Exception as exc:
+        if is_gmail_rate_limit_error(exc):
+            remember_gmail_rate_limit(exc)
         return '', str(exc)
 
 
@@ -125,6 +133,7 @@ def build_operational_status() -> dict:
         'gmail_profile_email': gmail_profile_email,
         'gmail_profile_error': gmail_profile_error,
         'gmail_rate_limit_until': rate_limit_until.isoformat() if rate_limit_until else '',
+        'celery_gmail_api_tasks_paused': celery_gmail_api_tasks_paused(),
         **runtime,
     }
 

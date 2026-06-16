@@ -95,6 +95,12 @@ def intentar_radicacion_automatica(sender, instance, created, **kwargs):
 
 def buscar_o_crear_contacto_auto(email_remitente):
     """Lógica (simplificada) para encontrar o crear un contacto basado en email."""
+    from correspondencia.utils.blocked_recipients import normalizar_email_destinatario
+
+    email_remitente = normalizar_email_destinatario(email_remitente)
+    if not email_remitente:
+        return None
+
     try:
         # Intenta encontrar por email exacto (ignorar mayúsculas/minúsculas)
         contacto = Contacto.objects.get(correo_electronico__iexact=email_remitente)

@@ -61,8 +61,8 @@
                     <p class="mb-0">
                         El remitente <strong>{{ correo.remitente }}</strong> corresponde al contacto registrado: 
                         <strong>{{ contacto_sugerido.nombres }} {{ contacto_sugerido.apellidos }}</strong>
-                        {% if contacto_sugerido.entidad %}
-                            de <em>{{ contacto_sugerido.entidad.nombre }}</em>
+                        {% if contacto_sugerido.entidad_externa %}
+                            de <em>{{ contacto_sugerido.entidad_externa.nombre }}</em>
                         {% endif %}
                     </p>
                 </div>

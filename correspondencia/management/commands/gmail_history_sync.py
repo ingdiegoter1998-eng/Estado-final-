@@ -208,9 +208,16 @@ class Command(BaseCommand):
                 for added in entry.get('messagesAdded', []) or []:
                     message = added.get('message', {}) or {}
                     message_id = str(message.get('id') or '')
-                    if message_id and message_id not in seen_ids:
+                    if not message_id or message_id in seen_ids:
+                        continue
+                    # Solo bandeja de entrada: los enviados por el buzón (Fwd manuales
+                    # del personal, notificaciones) no son correos entrantes.
+                    label_ids = set(message.get('labelIds') or [])
+                    if 'SENT' in label_ids and 'INBOX' not in label_ids:
                         seen_ids.add(message_id)
-                        discovered_ids.append(message_id)
+                        continue
+                    seen_ids.add(message_id)
+                    discovered_ids.append(message_id)
             page_token = response.get('nextPageToken')
             if not page_token:
                 break

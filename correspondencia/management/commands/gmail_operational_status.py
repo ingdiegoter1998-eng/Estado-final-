@@ -30,6 +30,11 @@ class Command(BaseCommand):
                 self.stdout.write(
                     self.style.WARNING('Corrija OUTBOUND_EMAIL_ADDRESS (Sender Signature) y reinicie Gunicorn/Celery.')
                 )
+        if payload.get('celery_gmail_api_tasks_paused'):
+            self.stdout.write(self.style.WARNING(
+                'Celery: tareas Gmail API pausadas (CELERY_PAUSE_GMAIL_API_TASKS=true). '
+                'Use SMTP/IMAP manual; reactive cuando pase el rate limit.'
+            ))
         if payload.get('watch_missing'):
             self.stdout.write(self.style.WARNING('Watch no inicializado o incompleto → ejecutar gmail_watch_start'))
         if payload.get('watch_expires_soon'):

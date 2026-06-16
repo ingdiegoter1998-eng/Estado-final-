@@ -326,6 +326,12 @@ urlpatterns = [
         api_monitoreo.api_monitoreo_salidas_correo_detalle,
         name='api-monitoreo-salidas-correo-detalle',
     ),
+    path('api/monitoreo/entradas-correo/', api_monitoreo.api_monitoreo_entradas_correo, name='api-monitoreo-entradas-correo'),
+    path(
+        'api/monitoreo/entradas-correo/<int:correo_id>/detalle/',
+        api_monitoreo.api_monitoreo_entradas_correo_detalle,
+        name='api-monitoreo-entradas-correo-detalle',
+    ),
     path('api/monitoreo/imap/', api_monitoreo.api_monitoreo_imap, name='api-monitoreo-imap'),
     path('api/monitoreo/email-sync/', api_monitoreo.api_monitoreo_imap, name='api-monitoreo-email-sync'),
     path(

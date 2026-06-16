@@ -43,6 +43,25 @@ Si no existe, trabajar normalmente y considerar si el trabajo amerita crear una 
 
 ---
 
+### 1b. gmail-api-rate-limit
+
+**Ruta:** `.github/skills/gmail-api-rate-limit/SKILL.md`
+
+**Usar cuando:**
+- aparece `HttpError 429` / `User-rate limit exceeded` en envios o sync
+- la cuota parece arrastrarse hacia adelante (`Retry after` que se mueve)
+- hay que pausar Celery Gmail API y operar por SMTP/IMAP
+- reactivacion segura tras cooldown
+
+**Palabras clave:** 429, rate limit, rateLimitExceeded, Retry after, cuota Gmail API, CELERY_PAUSE_GMAIL_API_TASKS, SMTP, IMAP manual
+
+**Archivos principales:**
+- `correspondencia/utils/gmail_rate_limit.py`
+- `correspondencia/tasks.py`
+- `.env`
+
+---
+
 ### 2. rebotes-dsn-depuracion
 
 **Ruta:** `.github/skills/rebotes-dsn-depuracion/SKILL.md`

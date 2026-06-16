@@ -802,8 +802,59 @@ def _outbound_provider_label():
     return 'SMTP'
 
 
+def _outbound_provider_key():
+    """Clave del proveedor saliente: gmail_api | postmark | smtp."""
+    provider = (getattr(settings, 'EMAIL_PROVIDER', '') or 'smtp').strip().lower()
+    if provider in {'gmail_api', 'postmark'}:
+        return provider
+    return 'smtp'
+
+
+def _provider_id_label(provider_key=None):
+    labels = {
+        'gmail_api': 'ID Gmail',
+        'postmark': 'ID Postmark',
+        'smtp': 'ID SMTP',
+    }
+    key = provider_key or _outbound_provider_key()
+    return labels.get(key, 'ID proveedor')
+
+
+def _message_ids_payload(destinatario):
+    """IDs de trazabilidad saliente para monitoreo (legacy + etiquetas claras)."""
+    provider_key = _outbound_provider_key()
+    provider_id = (destinatario.postmark_message_id or '').strip()
+    rfc_id = (destinatario.id_mensaje_enviado or '').strip()
+    return {
+        'outbound_provider': provider_key,
+        'provider_id_label': _provider_id_label(provider_key),
+        'provider_message_id': provider_id,
+        'rfc_message_id': rfc_id,
+        'message_id': rfc_id,
+        'postmark_message_id': provider_id,
+    }
+
+
+def _message_ids_payload_salida(salida):
+    provider_key = _outbound_provider_key()
+    provider_id = (salida.postmark_message_id or '').strip()
+    rfc_id = (salida.id_mensaje_enviado or '').strip()
+    return {
+        'outbound_provider': provider_key,
+        'provider_id_label': _provider_id_label(provider_key),
+        'provider_message_id': provider_id,
+        'rfc_message_id': rfc_id,
+        'message_id': rfc_id,
+        'postmark_message_id': provider_id,
+    }
+
+
 def _outbound_usa_postmark():
     return (getattr(settings, 'EMAIL_PROVIDER', '') or '').strip().lower() == 'postmark'
+
+
+def _outbound_usa_gmail_api():
+    return (getattr(settings, 'EMAIL_PROVIDER', '') or '').strip().lower() == 'gmail_api'
 
 
 def _evento_principal_para_destinatario(eventos, email):
@@ -852,6 +903,11 @@ def _postmark_estado_para_destinatario(destinatario, evento):
 
     if provider_id:
         if destinatario.estado == 'ENVIADO':
+            if _outbound_usa_gmail_api():
+                return (
+                    f'Enviado por {provider_label} (aceptado en servidor de Gmail). '
+                    'Sin confirmación de entrega al destinatario externo.'
+                )
             return f'Enviado por {provider_label}; confirmación de entrega pendiente'
         return f'Enviado por {provider_label}; estado final en aplicativo'
 
@@ -1166,8 +1222,7 @@ def api_monitoreo_salidas_correo(request):
             'estado_label': d.get_estado_display(),
             'destinatario_email': email,
             'destinatario_nombre': d.nombre_snapshot or '',
-            'message_id': d.id_mensaje_enviado or '',
-            'postmark_message_id': postmark_id,
+            **_message_ids_payload(d),
             'postmark_estado': _postmark_estado_para_destinatario(d, evento),
             'postmark_record_type': evento.record_type if evento else '',
             'postmark_recibido_at': evento.recibido_at.isoformat() if evento else '',
@@ -1261,8 +1316,7 @@ def api_monitoreo_salidas_correo_detalle(request, salida_id):
             'estado': destinatario.estado,
             'estado_label': destinatario.get_estado_display(),
             'fecha_envio': destinatario.fecha_envio.isoformat() if destinatario.fecha_envio else '',
-            'message_id': destinatario.id_mensaje_enviado or '',
-            'postmark_message_id': postmark_id,
+            **_message_ids_payload(destinatario),
             'postmark_estado': _postmark_estado_para_destinatario(destinatario, evento_principal),
             'postmark_url': _postmark_message_url(postmark_id),
             'detalle_error': destinatario.detalle_error or '',
@@ -1310,8 +1364,7 @@ def api_monitoreo_salidas_correo_detalle(request, salida_id):
         'fecha_ultima_modificacion': salida.fecha_ultima_modificacion.isoformat() if salida.fecha_ultima_modificacion else '',
         'fecha_aprobacion': salida.fecha_aprobacion.isoformat() if salida.fecha_aprobacion else '',
         'fecha_envio': salida.fecha_envio.isoformat() if salida.fecha_envio else '',
-        'message_id': salida.id_mensaje_enviado or '',
-        'postmark_message_id': salida.postmark_message_id or '',
+        **_message_ids_payload_salida(salida),
         'postmark_url': _postmark_message_url((salida.postmark_message_id or '').strip()),
         'oficina': {
             'id': salida.oficina_emisora_id,
@@ -1360,6 +1413,449 @@ def api_monitoreo_salidas_correo_detalle(request, salida_id):
         ],
         'correspondencia_original': correspondencia_original,
         'django_detail_url': reverse('correspondencia:detalle_respuesta_salida', args=[salida.id]),
+    })
+
+
+# ─── FLUJO CORREOS ENTRANTES (INBOUND) ───────────────────────────────────────
+
+ENTRADA_ESTADOS_UI = (
+    'RECIBIDO',
+    'EN_COLA',
+    'CLASIFICADO',
+    'RADICADO',
+    'URGENCIA',
+    'PAPELERA',
+    'PROBLEMATICO',
+    'REVISION',
+)
+
+ENTRADA_ESTADO_LABELS = {
+    'RECIBIDO': 'Recibido',
+    'EN_COLA': 'En cola / sin clasificar',
+    'CLASIFICADO': 'Clasificado (IA)',
+    'RADICADO': 'Radicado',
+    'URGENCIA': 'Urgencia',
+    'PAPELERA': 'Excluido (papelera)',
+    'PROBLEMATICO': 'Problemático',
+    'REVISION': 'Requiere revisión',
+}
+
+MOTIVO_PAPELERA_LABELS = {
+    'NO_APLICABLE': 'No aplicable',
+    'NOTIFICACION_AUTOMATICA': 'Notificación automática',
+    'INVITACION_PROMOCIONAL': 'Invitación/Promocional',
+    'SPAM': 'Spam',
+    'DUPLICADO': 'Duplicado',
+    'OTRO': 'Otro',
+    'sin_motivo': 'Sin motivo',
+}
+
+
+def _message_ids_problematicos_pendientes():
+    return set(
+        CorreoProblematico.objects.filter(resuelto=False).values_list('message_id', flat=True)
+    )
+
+
+def _estado_ui_correo_entrante(correo, problematicos_pendientes=None):
+    """Estado calculado para la bandeja de monitoreo inbound."""
+    mids = problematicos_pendientes
+    if mids is None:
+        mids = _message_ids_problematicos_pendientes()
+    if (correo.message_id or '') in mids:
+        return 'PROBLEMATICO', ENTRADA_ESTADO_LABELS['PROBLEMATICO']
+    if correo.en_papelera:
+        return 'PAPELERA', ENTRADA_ESTADO_LABELS['PAPELERA']
+    if correo.urgencia_asociada_id:
+        return 'URGENCIA', ENTRADA_ESTADO_LABELS['URGENCIA']
+    if correo.radicado_asociado_id:
+        return 'RADICADO', ENTRADA_ESTADO_LABELS['RADICADO']
+    if correo.requiere_revision_manual:
+        return 'REVISION', ENTRADA_ESTADO_LABELS['REVISION']
+    if correo.oficina_clasificada_id and correo.serie_clasificada_id:
+        return 'CLASIFICADO', ENTRADA_ESTADO_LABELS['CLASIFICADO']
+    if not correo.procesado:
+        return 'EN_COLA', ENTRADA_ESTADO_LABELS['EN_COLA']
+    return 'RECIBIDO', ENTRADA_ESTADO_LABELS['RECIBIDO']
+
+
+def _filtro_rango_correo_entrante(desde, hasta):
+    return (
+        Q(fecha_recibida_gmail__gte=desde, fecha_recibida_gmail__lte=hasta)
+        | Q(
+            fecha_recibida_gmail__isnull=True,
+            fecha_lectura_imap__gte=desde,
+            fecha_lectura_imap__lte=hasta,
+        )
+    )
+
+
+def _filtro_estado_entrada_q(estado, problematicos_mids):
+    estado = (estado or '').strip().upper()
+    if estado == 'PAPELERA':
+        return Q(en_papelera=True)
+    if estado == 'PROBLEMATICO':
+        if not problematicos_mids:
+            return Q(pk__in=[])
+        return Q(message_id__in=problematicos_mids)
+    if estado == 'URGENCIA':
+        return Q(en_papelera=False, urgencia_asociada__isnull=False)
+    if estado == 'RADICADO':
+        return Q(en_papelera=False, radicado_asociado__isnull=False)
+    if estado == 'REVISION':
+        return Q(en_papelera=False, requiere_revision_manual=True)
+    if estado == 'CLASIFICADO':
+        return Q(
+            en_papelera=False,
+            radicado_asociado__isnull=True,
+            urgencia_asociada__isnull=True,
+            oficina_clasificada__isnull=False,
+            serie_clasificada__isnull=False,
+        )
+    if estado == 'EN_COLA':
+        return Q(en_papelera=False, procesado=False)
+    if estado == 'RECIBIDO':
+        filtro = Q(
+            en_papelera=False,
+            procesado=True,
+            radicado_asociado__isnull=True,
+            urgencia_asociada__isnull=True,
+            requiere_revision_manual=False,
+        ) & (
+            Q(oficina_clasificada__isnull=True) | Q(serie_clasificada__isnull=True)
+        )
+        if problematicos_mids:
+            filtro &= ~Q(message_id__in=problematicos_mids)
+        return filtro
+    return Q()
+
+
+def _default_rango_entradas(request):
+    desde, hasta = _parse_rango(request)
+    if not desde:
+        ahora = timezone.now()
+        desde = (ahora - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+        hasta = ahora
+    return desde, hasta
+
+
+def _serialize_entrada_list_item(correo, problematicos_pendientes, ingestion_provider):
+    from correspondencia.utils.message_id_utils import normalize_message_id_value
+
+    estado, estado_label = _estado_ui_correo_entrante(correo, problematicos_pendientes)
+    radicado = ''
+    if correo.radicado_asociado_id and correo.radicado_asociado:
+        radicado = correo.radicado_asociado.numero_radicado or ''
+    oficina_destino = ''
+    if correo.oficina_clasificada_id and correo.oficina_clasificada:
+        oficina_destino = correo.oficina_clasificada.nombre or ''
+    elif correo.radicado_asociado_id and correo.radicado_asociado and correo.radicado_asociado.oficina_destino:
+        oficina_destino = correo.radicado_asociado.oficina_destino.nombre or ''
+
+    hora = correo.fecha_recibida_gmail or correo.fecha_lectura_imap
+    motivo = correo.motivo_papelera or 'sin_motivo'
+
+    return {
+        'id': correo.id,
+        'message_id': normalize_message_id_value(correo.message_id) or correo.message_id or '',
+        'message_id_raw': correo.message_id or '',
+        'remitente': correo.remitente or '',
+        'asunto': (correo.asunto or '')[:500],
+        'hora': hora.isoformat() if hora else '',
+        'fecha_ingesta_bd': correo.fecha_lectura_imap.isoformat() if correo.fecha_lectura_imap else '',
+        'estado': estado,
+        'estado_label': estado_label,
+        'motivo_papelera': motivo,
+        'motivo_papelera_label': MOTIVO_PAPELERA_LABELS.get(motivo, motivo),
+        'en_papelera': correo.en_papelera,
+        'procesado': correo.procesado,
+        'requiere_revision_manual': correo.requiere_revision_manual,
+        'oficina_destino': oficina_destino,
+        'radicado_asociado': radicado,
+        'radicado_asociado_id': correo.radicado_asociado_id,
+        'ingestion_provider': ingestion_provider,
+    }
+
+
+def _resumen_estados_entrada(qs, problematicos_mids):
+    resumen = []
+    for estado in ENTRADA_ESTADOS_UI:
+        filtro = _filtro_estado_entrada_q(estado, problematicos_mids)
+        total = qs.filter(filtro).count()
+        if total:
+            resumen.append({
+                'estado': estado,
+                'total': total,
+                'label': ENTRADA_ESTADO_LABELS.get(estado, estado),
+            })
+    return resumen
+
+
+def _historial_sintetico_entrada(correo, problematico):
+    eventos = []
+    if correo.fecha_recibida_gmail or correo.fecha_lectura_imap:
+        eventos.append({
+            'tipo': 'INGESTA',
+            'tipo_label': 'Ingesta en base de datos',
+            'descripcion': 'Correo almacenado desde Gmail/IMAP.',
+            'fecha_hora': (correo.fecha_lectura_imap or correo.fecha_recibida_gmail).isoformat(),
+            'usuario': 'Sistema',
+        })
+    if problematico and not problematico.resuelto:
+        eventos.append({
+            'tipo': 'PROBLEMATICO',
+            'tipo_label': 'Marcado como problemático',
+            'descripcion': problematico.detalle_problema or problematico.motivo_problema,
+            'fecha_hora': (
+                problematico.fecha_recibida_gmail or problematico.fecha_lectura_imap
+            ).isoformat() if (problematico.fecha_recibida_gmail or problematico.fecha_lectura_imap) else '',
+            'usuario': 'Sistema',
+        })
+    if correo.fecha_clasificacion:
+        oficina = getattr(correo.oficina_clasificada, 'nombre', '') or ''
+        eventos.append({
+            'tipo': 'CLASIFICACION',
+            'tipo_label': 'Clasificación IA',
+            'descripcion': f'Oficina sugerida: {oficina}' if oficina else 'Clasificación registrada.',
+            'fecha_hora': correo.fecha_clasificacion.isoformat(),
+            'usuario': 'Sistema',
+        })
+    if correo.en_papelera and correo.fecha_papelera:
+        usuario = _user_display(correo.usuario_papelera) or 'Sistema'
+        motivo = correo.get_motivo_papelera_display() if correo.motivo_papelera else 'Sin motivo'
+        eventos.append({
+            'tipo': 'PAPELERA',
+            'tipo_label': 'Enviado a papelera',
+            'descripcion': motivo,
+            'fecha_hora': correo.fecha_papelera.isoformat(),
+            'usuario': usuario,
+        })
+    if correo.radicado_asociado_id and correo.radicado_asociado:
+        rad = correo.radicado_asociado
+        eventos.append({
+            'tipo': 'RADICADO',
+            'tipo_label': 'Radicado asociado',
+            'descripcion': rad.numero_radicado or '',
+            'fecha_hora': rad.fecha_radicacion.isoformat() if rad.fecha_radicacion else '',
+            'usuario': _user_display(rad.usuario_radicador) or 'Ventanilla',
+        })
+    eventos.sort(key=lambda e: e.get('fecha_hora') or '', reverse=True)
+    for idx, ev in enumerate(eventos):
+        ev['id'] = idx + 1
+    return eventos
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsSuperUser])
+def api_monitoreo_entradas_correo(request):
+    """
+    GET /api/monitoreo/entradas-correo/
+    Flujo reciente de correos entrantes (una fila por CorreoEntrante).
+    """
+    import math
+
+    desde, hasta = _default_rango_entradas(request)
+    ingestion_provider = get_email_ingestion_provider_name()
+
+    qs = CorreoEntrante.objects.select_related(
+        'oficina_clasificada',
+        'serie_clasificada',
+        'radicado_asociado',
+        'radicado_asociado__oficina_destino',
+        'urgencia_asociada',
+    ).filter(_filtro_rango_correo_entrante(desde, hasta))
+
+    problematicos_mids = _message_ids_problematicos_pendientes()
+
+    estado = (request.GET.get('estado') or '').strip().upper()
+    if estado in ENTRADA_ESTADOS_UI:
+        qs = qs.filter(_filtro_estado_entrada_q(estado, problematicos_mids))
+
+    motivo = (request.GET.get('motivo') or '').strip()
+    if motivo:
+        if motivo == 'sin_motivo':
+            qs = qs.filter(en_papelera=True).filter(Q(motivo_papelera='') | Q(motivo_papelera__isnull=True))
+        else:
+            qs = qs.filter(en_papelera=True, motivo_papelera=motivo)
+
+    q = (request.GET.get('q') or '').strip()
+    if q:
+        qs = qs.filter(
+            Q(remitente__icontains=q)
+            | Q(asunto__icontains=q)
+            | Q(message_id__icontains=q)
+            | Q(radicado_asociado__numero_radicado__icontains=q)
+            | Q(oficina_clasificada__nombre__icontains=q)
+        )
+
+    page = max(int(request.GET.get('page', 1)), 1)
+    page_size = min(max(int(request.GET.get('page_size', 50)), 1), 50)
+    offset = (page - 1) * page_size
+
+    total = qs.count()
+    correos = list(
+        qs.order_by('-fecha_recibida_gmail', '-fecha_lectura_imap', '-id')[offset:offset + page_size]
+    )
+
+    resumen_estados = _resumen_estados_entrada(
+        CorreoEntrante.objects.filter(_filtro_rango_correo_entrante(desde, hasta)),
+        problematicos_mids,
+    )
+    resumen_motivos = list(
+        CorreoEntrante.objects.filter(
+            _filtro_rango_correo_entrante(desde, hasta),
+            en_papelera=True,
+        )
+        .values('motivo_papelera')
+        .annotate(total=Count('id'))
+        .order_by('-total')
+    )
+
+    registros = [
+        _serialize_entrada_list_item(c, problematicos_mids, ingestion_provider)
+        for c in correos
+    ]
+
+    return Response({
+        'total': total,
+        'page': page,
+        'page_size': page_size,
+        'pages': math.ceil(total / page_size) if total else 0,
+        'desde': desde.isoformat(),
+        'hasta': hasta.isoformat(),
+        'ingestion_provider': ingestion_provider,
+        'resumen_estados': resumen_estados,
+        'resumen_motivos': [
+            {
+                'motivo': item['motivo_papelera'] or 'sin_motivo',
+                'total': item['total'],
+                'label': MOTIVO_PAPELERA_LABELS.get(item['motivo_papelera'] or 'sin_motivo', item['motivo_papelera'] or 'sin_motivo'),
+            }
+            for item in resumen_motivos
+        ],
+        'registros': registros,
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsSuperUser])
+def api_monitoreo_entradas_correo_detalle(request, correo_id):
+    """
+    GET /api/monitoreo/entradas-correo/<correo_id>/detalle/
+    Detalle operativo de un correo entrante para el modal React de monitoreo.
+    """
+    from correspondencia.utils.message_id_utils import normalize_message_id_value
+
+    correo = get_object_or_404(
+        CorreoEntrante.objects.select_related(
+            'oficina_clasificada',
+            'serie_clasificada',
+            'subserie_clasificada',
+            'radicado_asociado',
+            'radicado_asociado__remitente',
+            'radicado_asociado__oficina_destino',
+            'urgencia_asociada',
+            'usuario_papelera',
+        ).prefetch_related('adjuntos'),
+        pk=correo_id,
+    )
+
+    problematico = (
+        CorreoProblematico.objects.filter(message_id=correo.message_id)
+        .order_by('-fecha_lectura_imap')
+        .first()
+    )
+    estado, estado_label = _estado_ui_correo_entrante(correo)
+    ingestion_provider = get_email_ingestion_provider_name()
+    sync_state = EstadoSincronizacionCorreos.objects.order_by('-ultimo_fin').first()
+
+    radicado_payload = None
+    if correo.radicado_asociado_id and correo.radicado_asociado:
+        rad = correo.radicado_asociado
+        radicado_payload = {
+            'id': rad.id,
+            'radicado': rad.numero_radicado or '',
+            'asunto': rad.asunto or '',
+            'oficina_destino': getattr(rad.oficina_destino, 'nombre', '') or '',
+            'fecha_radicacion': rad.fecha_radicacion.isoformat() if rad.fecha_radicacion else '',
+            'url': reverse('correspondencia:detalle_correspondencia', args=[rad.id]),
+        }
+
+    urgencia_payload = None
+    if correo.urgencia_asociada_id and correo.urgencia_asociada:
+        urg = correo.urgencia_asociada
+        urgencia_payload = {
+            'id': urg.id,
+            'radicado': urg.radicado or '',
+            'estado': urg.estado or '',
+            'prioridad': urg.prioridad or '',
+        }
+
+    problematico_payload = None
+    if problematico:
+        problematico_payload = {
+            'id': problematico.id,
+            'resuelto': problematico.resuelto,
+            'motivo_problema': problematico.motivo_problema or '',
+            'detalle_problema': problematico.detalle_problema or '',
+            'django_detail_url': reverse(
+                'correspondencia:detalle_correo_problematico',
+                args=[problematico.id],
+            ),
+        }
+
+    clasificacion = None
+    if correo.oficina_clasificada_id or correo.serie_clasificada_id:
+        clasificacion = {
+            'oficina': getattr(correo.oficina_clasificada, 'nombre', '') or '',
+            'serie': getattr(correo.serie_clasificada, 'nombre', '') or '',
+            'subserie': getattr(correo.subserie_clasificada, 'nombre', '') or '',
+            'fecha_clasificacion': (
+                correo.fecha_clasificacion.isoformat() if correo.fecha_clasificacion else ''
+            ),
+        }
+
+    return Response({
+        'id': correo.id,
+        'message_id': normalize_message_id_value(correo.message_id) or correo.message_id or '',
+        'message_id_raw': correo.message_id or '',
+        'remitente': correo.remitente or '',
+        'asunto': correo.asunto or '',
+        'estado': estado,
+        'estado_label': estado_label,
+        'cuerpo_texto': correo.cuerpo_texto or '',
+        'cuerpo_html': correo.cuerpo_html or '',
+        'fecha_recepcion_original': (
+            correo.fecha_recepcion_original.isoformat() if correo.fecha_recepcion_original else ''
+        ),
+        'fecha_recibida_gmail': (
+            correo.fecha_recibida_gmail.isoformat() if correo.fecha_recibida_gmail else ''
+        ),
+        'fecha_lectura_imap': (
+            correo.fecha_lectura_imap.isoformat() if correo.fecha_lectura_imap else ''
+        ),
+        'procesado': correo.procesado,
+        'en_papelera': correo.en_papelera,
+        'motivo_papelera': correo.motivo_papelera or '',
+        'motivo_papelera_label': (
+            correo.get_motivo_papelera_display() if correo.motivo_papelera else ''
+        ),
+        'fecha_papelera': correo.fecha_papelera.isoformat() if correo.fecha_papelera else '',
+        'requiere_revision_manual': correo.requiere_revision_manual,
+        'ingestion_provider': ingestion_provider,
+        'sync_pipeline': {
+            'estado': sync_state.estado if sync_state else '',
+            'ultimo_fin': sync_state.ultimo_fin.isoformat() if sync_state and sync_state.ultimo_fin else '',
+            'ultimo_error': (sync_state.ultimo_error or '') if sync_state else '',
+        },
+        'clasificacion': clasificacion,
+        'radicado_asociado': radicado_payload,
+        'urgencia_asociada': urgencia_payload,
+        'problematico': problematico_payload,
+        'adjuntos': [_archivo_payload(adj) for adj in correo.adjuntos.all()],
+        'historial': _historial_sintetico_entrada(correo, problematico),
+        'django_detail_url': reverse('correspondencia:detalle_correo_entrante', args=[correo.id]),
+        'email_sync_url': '/monitoreo',  # panel Sistema; referencia operativa
     })
 
 

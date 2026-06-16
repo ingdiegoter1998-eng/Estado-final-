@@ -5591,13 +5591,14 @@ def detalle_correo_entrante_view(request, correo_id):
 
     # 1) Formulario de contacto
     # --- DOMINIO y entidad sugerida para el formulario de contacto ---
+    from correspondencia.utils.blocked_recipients import normalizar_email_destinatario
+
+    email_remitente_normalizado = normalizar_email_destinatario(correo.remitente)
     entidad_sugerida = None
-    if correo.remitente:
-        correo_remitente = correo.remitente.strip().lower()
-        if '@' in correo_remitente:
-            dominio = correo_remitente.split('@')[-1]
-            if dominio not in DOMINIOS_GENERICOS:
-                entidad_sugerida = EntidadExterna.buscar_por_dominio(dominio)
+    if email_remitente_normalizado and '@' in email_remitente_normalizado:
+        dominio = email_remitente_normalizado.split('@', 1)[1]
+        if dominio not in DOMINIOS_GENERICOS:
+            entidad_sugerida = EntidadExterna.buscar_por_dominio(dominio)
 
     # 1) Formulario de contacto con entidad sugerida (si existe)
     if entidad_sugerida:
@@ -5622,9 +5623,10 @@ def detalle_correo_entrante_view(request, correo_id):
     form_radicacion = None
     contacto_sugerido = None
     if not correo.radicado_asociado:
-        contacto_sugerido = Contacto.objects.filter(
-            correo_electronico__iexact=correo.remitente
-        ).first()
+        if email_remitente_normalizado:
+            contacto_sugerido = Contacto.objects.filter(
+                correo_electronico__iexact=email_remitente_normalizado
+            ).select_related('entidad_externa').first()
 
         initial_radicacion = {
             'asunto': correo.asunto,
@@ -6006,6 +6008,8 @@ def enviar_radicado_salida_email(request, salida_id):
         from django.core.mail import EmailMessage as DjangoEmailMessage
 
         from correspondencia.utils.radicacion_rapida_email import (
+            HEADER_NOTIFICACION_CORRESPONDENCIA,
+            VALOR_NOTIFICACION_RADICACION_RAPIDA,
             get_radicacion_rapida_entrante_mail_connection,
             preparar_destinatarios_notificacion_radicacion_rapida,
         )
@@ -6064,6 +6068,9 @@ def enviar_radicado_salida_email(request, salida_id):
                 to=to_recipients,
                 bcc=bcc_recipients,
                 connection=connection,
+                headers={
+                    HEADER_NOTIFICACION_CORRESPONDENCIA: VALOR_NOTIFICACION_RADICACION_RAPIDA,
+                },
             )
             email_msg.content_subtype = 'html'
             email_msg.send(fail_silently=False)

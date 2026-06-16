@@ -18,8 +18,9 @@ function useMonitoreoSWR(endpoint: string, realtimeMs: number) {
 export function usePulso() { return useMonitoreoSWR("pulso", 15000); }
 export function useSLA() { return useMonitoreoSWR("sla", 30000); }
 export function useEnvio() { return useMonitoreoSWR("envio", 30000); }
-export function useIMAP() { return useMonitoreoSWR("imap", 30000); }
-export function useEmailSync() { return useMonitoreoSWR("email-sync", 30000); }
+export function useIMAP() { return useMonitoreoSWR("imap", 120000); }
+export function useEmailSync() { return useMonitoreoSWR("email-sync", 120000); }
+export function useEntradasCorreo() { return useMonitoreoSWR("entradas-correo", 30000); }
 export function useDistribucion() { return useMonitoreoSWR("distribucion", 30000); }
 export function useInternas() { return useMonitoreoSWR("internas", 30000); }
 export function useUrgencias() { return useMonitoreoSWR("urgencias", 20000); }

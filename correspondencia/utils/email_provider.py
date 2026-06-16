@@ -39,7 +39,7 @@ def _normalize_headers(headers):
     normalized = {}
     for key, value in (headers or {}).items():
         header_key = str(key).lower()
-        if isinstance(value, list):
+        if isinstance(value, (list, tuple)):
             normalized[header_key] = [str(item) for item in value if item is not None]
         elif value is None:
             normalized[header_key] = []

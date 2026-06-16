@@ -11,24 +11,142 @@ from django.db import transaction
 from django.utils import timezone
 
 from correspondencia.models import AdjuntoCorreoEntrante, CorreoEntrante, CorreoProblematico
+from correspondencia.utils.blocked_recipients import (
+    emails_destinatarios_bloqueados,
+    normalizar_email_destinatario,
+)
 from correspondencia.utils.email_attachment_validator import EmailAttachmentValidator
 from correspondencia.utils.email_body_extractor import extraer_cuerpos_correo
 from correspondencia.utils.email_provider import build_email_inbox_provider
+from correspondencia.utils.message_id_utils import (
+    build_known_message_id_set,
+    message_id_matches_stored,
+    normalize_message_id_value,
+)
+from correspondencia.utils.subject_dedup import debe_omitir_reenvio_institucional_redundante
+from correspondencia.utils.radicacion_rapida_email import (
+    HEADER_NOTIFICACION_CORRESPONDENCIA,
+    VALOR_NOTIFICACION_RADICACION_RAPIDA,
+)
 
 logger = logging.getLogger(__name__)
 
+_ASUNTOS_NOTIFICACION_RADICACION_RAPIDA = (
+    'correspondencia asignada - ',
+    'radicado de salida ',
+)
+
+
+def _header_values(msg, header_name: str) -> list[str]:
+    headers = getattr(msg, 'headers', {}) or {}
+    key = header_name.lower()
+    values = headers.get(key)
+    if values is None:
+        values = headers.get(header_name)
+    if values is None:
+        return []
+    if isinstance(values, str):
+        return [values]
+    return [str(value) for value in values if value is not None]
+
+
+def _asunto_mensaje(msg) -> str:
+    subject = (getattr(msg, 'subject', None) or '').strip()
+    if subject:
+        return subject
+    return (_header_values(msg, 'subject') or [''])[0].strip()
+
+
+def _remitente_mensaje(msg) -> str:
+    from_email = (getattr(msg, 'from_', None) or '').strip()
+    if from_email:
+        return from_email
+    return (_header_values(msg, 'from') or [''])[0].strip()
+
+
+def _es_asunto_notificacion_radicacion_rapida(subject: str) -> bool:
+    subject_lower = (subject or '').strip().lower()
+    if not subject_lower:
+        return False
+    if any(subject_lower.startswith(prefix) for prefix in _ASUNTOS_NOTIFICACION_RADICACION_RAPIDA):
+        return True
+    if subject_lower.startswith('fwd:'):
+        inner = subject_lower[4:].strip()
+        return any(inner.startswith(prefix) for prefix in _ASUNTOS_NOTIFICACION_RADICACION_RAPIDA)
+    return False
+
+
+def _es_notificacion_saliente_correspondencia(msg) -> bool:
+    for value in _header_values(msg, HEADER_NOTIFICACION_CORRESPONDENCIA):
+        if value.strip().lower() == VALOR_NOTIFICACION_RADICACION_RAPIDA:
+            return True
+    return False
+
+
+def _debe_omitir_mensaje_propio_o_notificacion(msg) -> tuple[bool, str]:
+    """
+    Omite notificaciones de radicación rápida y reenvíos manuales redundantes
+    del buzón institucional (Fwd/Re que duplican contenido ya en bandeja).
+    """
+    if _es_notificacion_saliente_correspondencia(msg):
+        return True, 'Notificación interna (X-Correspondencia-Notification).'
+
+    remitente_raw = _remitente_mensaje(msg)
+    remitente_normalizado = normalizar_email_destinatario(remitente_raw)
+    if remitente_normalizado and remitente_normalizado in emails_destinatarios_bloqueados():
+        if _es_asunto_notificacion_radicacion_rapida(_asunto_mensaje(msg)):
+            return True, 'Notificación de radicación rápida enviada por el buzón institucional.'
+
+    canonical_mid = normalize_message_id_value(_raw_message_id_from_msg(msg))
+    omitir, motivo = debe_omitir_reenvio_institucional_redundante(
+        remitente_raw=remitente_raw,
+        subject=_asunto_mensaje(msg),
+        headers=getattr(msg, 'headers', {}) or {},
+        canonical_message_id=canonical_mid,
+    )
+    if omitir:
+        return True, motivo
+
+    return False, ''
+
+
+def _raw_message_id_from_msg(msg) -> str:
+    for value in _header_values(msg, 'message-id'):
+        if value:
+            return value
+    return ''
+
 
 def _normalize_message_id(msg, fallback_domain='local.host'):
-    raw_message_id = ''
-    try:
-        raw_message_id = (msg.headers.get('message-id') or [''])[0]
-    except Exception:
-        raw_message_id = ''
-    message_id = raw_message_id.strip('<>').strip()
+    message_id = normalize_message_id_value(_raw_message_id_from_msg(msg))
     if message_id:
         return message_id
     domain = fallback_domain or 'local.host'
-    return f"generated.{msg.uid}.{timezone.now().strftime('%Y%m%d%H%M%S%f')}@{domain}"
+    return f"generated.{getattr(msg, 'uid', '0')}.{timezone.now().strftime('%Y%m%d%H%M%S%f')}@{domain}"
+
+
+def correo_ya_registrado_por_message_id(canonical_id: str) -> bool:
+    """True si ya existe un CorreoEntrante con ese Message-ID (incluye legacy malformados)."""
+    if not canonical_id:
+        return False
+    if CorreoEntrante.objects.filter(message_id=canonical_id).exists():
+        return True
+    if CorreoEntrante.objects.filter(message_id__contains=canonical_id).exists():
+        for stored in CorreoEntrante.objects.filter(message_id__contains=canonical_id).values_list(
+            'message_id', flat=True
+        )[:50]:
+            if message_id_matches_stored(canonical_id, stored):
+                return True
+    return False
+
+
+def load_known_correo_message_ids() -> set[str]:
+    """IDs almacenados + forma canónica (CorreoEntrante y problemáticos abiertos)."""
+    stored = list(CorreoEntrante.objects.values_list('message_id', flat=True))
+    stored.extend(
+        CorreoProblematico.objects.filter(resuelto=False).values_list('message_id', flat=True)
+    )
+    return build_known_message_id_set(stored)
 
 
 def _normalize_datetime(value):
@@ -182,7 +300,16 @@ def registrar_correo_problematico(msg, *, folder_name='', flow_label='', problem
 def procesar_mensaje_imap(msg, *, folder_name='', flow_label='', persist=True, fallback_domain='local.host'):
     message_id = _normalize_message_id(msg, fallback_domain=fallback_domain)
 
-    if CorreoEntrante.objects.filter(message_id=message_id).exists():
+    omitir, motivo_omision = _debe_omitir_mensaje_propio_o_notificacion(msg)
+    if omitir:
+        return {
+            'status': 'skipped_own_outbound',
+            'message_id': message_id,
+            'detail': motivo_omision,
+            'attachment_count': 0,
+        }
+
+    if correo_ya_registrado_por_message_id(message_id):
         return {
             'status': 'duplicate',
             'message_id': message_id,

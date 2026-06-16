@@ -8,8 +8,17 @@ from django.core.management import call_command
 from django.contrib.auth import get_user_model
 from django import db
 
-from .utils.email_provider import build_email_inbox_provider, get_email_ingestion_sync_source
+from .utils.email_provider import (
+    build_email_inbox_provider,
+    get_email_ingestion_provider_name,
+    get_email_ingestion_sync_source,
+)
 from .utils.email_ingestion import procesar_mensaje_imap
+from .utils.gmail_rate_limit import (
+    is_gmail_rate_limit_error,
+    remember_gmail_rate_limit,
+    should_skip_gmail_api_celery_task,
+)
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -70,6 +79,10 @@ def procesar_emails_periodico():
     from .models import EstadoSincronizacionCorreos
 
     db.close_old_connections()
+
+    if get_email_ingestion_provider_name() == 'gmail_api':
+        if should_skip_gmail_api_celery_task('procesar_emails_periodico', logger=logger):
+            return
 
     if not _acquire_email_lock(timeout=240):
         logger.info("procesar_emails_periodico: otra tarea de emails ya está en ejecución, omitiendo.")
@@ -226,6 +239,9 @@ def sincronizar_entregas_postmark_periodico():
 def procesar_rebotes_periodico():
     """Tarea periódica para ejecutar el comando manage.py procesar_rebotes."""
     db.close_old_connections()
+    if get_email_ingestion_provider_name() == 'gmail_api':
+        if should_skip_gmail_api_celery_task('procesar_rebotes_periodico', logger=logger):
+            return
     if (
         getattr(settings, 'EMAIL_PROVIDER', '') == 'postmark'
         and getattr(settings, 'POSTMARK_BOUNCES_VIA_WEBHOOK', False)
@@ -240,6 +256,8 @@ def procesar_rebotes_periodico():
         call_command('procesar_rebotes')
         logger.info("Tarea periódica procesar_rebotes finalizada exitosamente.")
     except Exception as e:
+        if is_gmail_rate_limit_error(e):
+            remember_gmail_rate_limit(e)
         logger.error(f"Error ejecutando la tarea periódica procesar_rebotes: {e}", exc_info=True)
     finally:
         db.close_old_connections()
@@ -363,6 +381,12 @@ def aprobar_y_enviar_respuestas_pendientes_periodico():
     from .aprobacion_envio import aprobar_y_enviar_una_respuesta
 
     db.close_old_connections()
+    if (getattr(settings, 'EMAIL_PROVIDER', '') or '').strip().lower() == 'gmail_api':
+        if should_skip_gmail_api_celery_task(
+            'aprobar_y_enviar_respuestas_pendientes_periodico',
+            logger=logger,
+        ):
+            return
     if not _acquire_named_lock(_APROBAR_RESPUESTAS_LOCK_KEY, timeout=600):
         logger.info('Aprobación automática omitida: otra instancia en curso')
         return
@@ -417,6 +441,16 @@ def watchdog_inbox():
 
     from imap_tools import MailBox, AND
     from .models import CorreoEntrante, CorreoProblematico
+    from .utils.email_sync_helpers import get_email_ingestion_provider_name
+    from .utils.email_ingestion import load_known_correo_message_ids
+    from .utils.message_id_utils import normalize_message_id_value
+
+    if (
+        get_email_ingestion_provider_name() == 'gmail_api'
+        and getattr(settings, 'CELERY_DISABLE_WATCHDOG_WHEN_GMAIL_API', True)
+    ):
+        logger.debug('watchdog_inbox: omitido (Gmail API activo; Pub/Sub cubre ingesta).')
+        return
 
     EMAIL_ACCOUNT = settings.EMAIL_HOST_USER
 
@@ -458,17 +492,13 @@ def watchdog_inbox():
             logger.debug("watchdog_inbox: sin correos hoy en INBOX.")
             return
 
-        # Comparar con BD
-        existing_ids = set(
-            CorreoEntrante.objects.values_list('message_id', flat=True)
-        )
-        existing_ids.update(
-            CorreoProblematico.objects.filter(resuelto=False).values_list('message_id', flat=True)
-        )
+        # Comparar con BD (IDs canónicos + legacy malformados)
+        existing_ids = load_known_correo_message_ids()
 
         missing_uids = []
         for h in headers:
-            mid = (h.headers.get('message-id', [''])[0].strip("<>").strip())
+            raw_mid = (h.headers.get('message-id') or [''])[0]
+            mid = normalize_message_id_value(raw_mid)
             if mid and mid not in existing_ids:
                 missing_uids.append(h.uid)
 
@@ -542,10 +572,10 @@ def watchdog_inbox():
 @shared_task(name='correspondencia.tasks.gmail_pubsub_pull_periodico', soft_time_limit=120, time_limit=150)
 def gmail_pubsub_pull_periodico():
     """Consume notificaciones Pub/Sub de Gmail watch y dispara history sync."""
-    from .utils.email_provider import get_email_ingestion_provider_name
-
     if get_email_ingestion_provider_name() != 'gmail_api':
         logger.debug('gmail_pubsub_pull_periodico: omitido (ingestion != gmail_api)')
+        return
+    if should_skip_gmail_api_celery_task('gmail_pubsub_pull_periodico', logger=logger):
         return
 
     db.close_old_connections()
@@ -569,10 +599,10 @@ def gmail_pubsub_pull_periodico():
 @shared_task(name='correspondencia.tasks.gmail_watch_renew_periodico', soft_time_limit=120, time_limit=150)
 def gmail_watch_renew_periodico():
     """Renueva users.watch si está por expirar o no existe."""
-    from .utils.email_provider import get_email_ingestion_provider_name
-
     if get_email_ingestion_provider_name() != 'gmail_api':
         logger.debug('gmail_watch_renew_periodico: omitido (ingestion != gmail_api)')
+        return
+    if should_skip_gmail_api_celery_task('gmail_watch_renew_periodico', logger=logger):
         return
 
     db.close_old_connections()

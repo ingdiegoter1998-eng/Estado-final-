@@ -9,7 +9,8 @@ from django.utils.dateparse import parse_datetime
 
 from correspondencia.utils.email_attachment_validator import EmailAttachmentValidator
 from correspondencia.utils.email_provider import build_email_inbox_provider
-from correspondencia.utils.email_ingestion import procesar_mensaje_imap
+from correspondencia.utils.email_ingestion import load_known_correo_message_ids, procesar_mensaje_imap
+from correspondencia.utils.message_id_utils import normalize_message_id_value
 from correspondencia.utils.gmail_rate_limit import (
     get_gmail_rate_limit_until,
     is_gmail_rate_limit_error,
@@ -150,12 +151,8 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(f"Escaneando UNSEEN en INBOX ({days_back} día(s) atrás)...")
 
-            # Obtener message_ids existentes en BD de un solo golpe
-            existing_ids = set(CorreoEntrante.objects.values_list('message_id', flat=True))
-            if not recovery_mode:
-                existing_ids.update(
-                    CorreoProblematico.objects.filter(resuelto=False).values_list('message_id', flat=True)
-                )
+            # Obtener message_ids existentes en BD de un solo golpe (canónicos + legacy)
+            existing_ids = load_known_correo_message_ids()
 
             # Criterio IMAP: en modo normal escanea TODOS los headers de INBOX
             # (ya no depende de UNSEEN — correos leídos en Gmail web se capturan).
@@ -197,7 +194,7 @@ class Command(BaseCommand):
                 folder_uids = []
                 own_email_lower = EMAIL_ACCOUNT.lower()
                 for h in headers:
-                    mid = (h.headers.get('message-id', [''])[0].strip("<>").strip())
+                    mid = normalize_message_id_value((h.headers.get('message-id') or [''])[0])
                     if not mid or mid in existing_ids or mid in seen_mids:
                         continue
                     # En AllMail: descartar correos enviados por la propia cuenta

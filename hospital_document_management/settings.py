@@ -546,6 +546,10 @@ GMAIL_API_HISTORY_SYNC_MAX_RESULTS = int(os.getenv('GMAIL_API_HISTORY_SYNC_MAX_R
 GMAIL_API_HISTORY_FETCH_BATCH_SIZE = int(os.getenv('GMAIL_API_HISTORY_FETCH_BATCH_SIZE', '12'))
 # Pausa entre cada messages.get dentro de un lote (ms).
 GMAIL_API_HISTORY_FETCH_DELAY_MS = int(os.getenv('GMAIL_API_HISTORY_FETCH_DELAY_MS', '120'))
+# Margen extra local sobre Retry-After de Gmail para evitar reanudar antes de tiempo.
+GMAIL_API_RATE_LIMIT_COOLDOWN_BUFFER_SECONDS = int(
+    os.getenv('GMAIL_API_RATE_LIMIT_COOLDOWN_BUFFER_SECONDS', '120')
+)
 
 if EMAIL_PROVIDER == 'gmail_api':
     EMAIL_BACKEND = 'correspondencia.email_backends.GmailAPIEmailBackend'
@@ -595,6 +599,10 @@ GMAIL_API_WATCH_RENEW_HOURS_BEFORE = int(os.getenv('GMAIL_API_WATCH_RENEW_HOURS_
 CELERY_GMAIL_PUBSUB_PULL_INTERVAL = float(os.getenv('CELERY_GMAIL_PUBSUB_PULL_INTERVAL', '90'))
 CELERY_GMAIL_WATCH_RENEW_INTERVAL = float(os.getenv('CELERY_GMAIL_WATCH_RENEW_INTERVAL', '21600'))  # 6 h
 CELERY_DISABLE_WATCHDOG_WHEN_GMAIL_API = os.getenv('CELERY_DISABLE_WATCHDOG_WHEN_GMAIL_API', 'true').lower() == 'true'
+# Pausa temporal de tareas Celery que consumen cuota Gmail API (sync, rebotes, envío auto).
+CELERY_PAUSE_GMAIL_API_TASKS = os.getenv('CELERY_PAUSE_GMAIL_API_TASKS', 'false').lower() in {
+    '1', 'true', 'yes', 'on',
+}
 # El poll de respaldo por Gmail API es redundante con Pub/Sub (que es el camino principal).
 # Antes corría cada 5 min y duplicaba la presión sobre la cuota de Gmail por usuario, lo que
 # contribuyó al 429 en cascada. Se espacia a 30 min como red de seguridad; configurable por entorno.

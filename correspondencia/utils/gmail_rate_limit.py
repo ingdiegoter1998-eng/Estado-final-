@@ -12,6 +12,14 @@ from django.utils.dateparse import parse_datetime
 
 GMAIL_API_RATE_LIMIT_CACHE_KEY = 'correspondencia:gmail_api_rate_limit_until'
 _RETRY_AFTER_RE = re.compile(r'Retry after\s+([0-9T:\.\-+Z]+)', re.IGNORECASE)
+# Margen extra tras el Retry-After de Google (cache expiraba antes que el bloqueo real).
+DEFAULT_COOLDOWN_BUFFER_SECONDS = 120
+
+
+def _cooldown_buffer_seconds() -> int:
+    from django.conf import settings
+
+    return int(getattr(settings, 'GMAIL_API_RATE_LIMIT_COOLDOWN_BUFFER_SECONDS', DEFAULT_COOLDOWN_BUFFER_SECONDS))
 
 
 def _as_aware(dt):
@@ -37,6 +45,7 @@ def remember_gmail_rate_limit(exc_or_text, *, fallback_seconds: int = 900):
     retry_after = parse_gmail_retry_after(exc_or_text) or (now + timedelta(seconds=fallback_seconds))
     if retry_after <= now:
         retry_after = now + timedelta(seconds=fallback_seconds)
+    retry_after = retry_after + timedelta(seconds=_cooldown_buffer_seconds())
 
     timeout = max(1, int((retry_after - now).total_seconds()))
     cache.set(GMAIL_API_RATE_LIMIT_CACHE_KEY, retry_after.isoformat(), timeout=timeout)
@@ -67,3 +76,31 @@ def is_gmail_rate_limit_error(exc) -> bool:
         return True
     text = str(exc)
     return 'rateLimitExceeded' in text or 'User-rate limit exceeded' in text
+
+
+def celery_gmail_api_tasks_paused() -> bool:
+    """True si Celery debe omitir tareas pesadas que consumen cuota Gmail API."""
+    from django.conf import settings
+
+    return getattr(settings, 'CELERY_PAUSE_GMAIL_API_TASKS', False)
+
+
+def should_skip_gmail_api_celery_task(task_name: str, *, logger=None) -> bool:
+    """
+    Omite tareas Celery que golpean Gmail API si hay pausa operativa explícita
+    o cooldown activo por 429 (evita alargar el bloqueo).
+    """
+    if celery_gmail_api_tasks_paused():
+        if logger is not None:
+            logger.info('%s: omitido (CELERY_PAUSE_GMAIL_API_TASKS=true)', task_name)
+        return True
+    retry_after = get_gmail_rate_limit_until()
+    if retry_after:
+        if logger is not None:
+            logger.info(
+                '%s: omitido (Gmail API rate limit hasta %s)',
+                task_name,
+                retry_after.isoformat(),
+            )
+        return True
+    return False

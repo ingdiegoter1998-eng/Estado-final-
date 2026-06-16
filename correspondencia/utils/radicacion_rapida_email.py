@@ -19,6 +19,9 @@ from correspondencia.utils.blocked_recipients import (
     validar_emails_destinatario_permitidos,
 )
 
+HEADER_NOTIFICACION_CORRESPONDENCIA = 'X-Correspondencia-Notification'
+VALOR_NOTIFICACION_RADICACION_RAPIDA = 'radicacion-rapida'
+
 
 class DestinatarioNotificacionRapidaInvalido(ValueError):
     """El correo del funcionario no puede usarse como destinatario de la notificación."""
@@ -91,6 +94,12 @@ def enviar_notificacion_radicacion_rapida_entrante(
     if owned_connection:
         mail_connection.open()
 
+    notification_headers = dict(extra_headers or {})
+    notification_headers.setdefault(
+        HEADER_NOTIFICACION_CORRESPONDENCIA,
+        VALOR_NOTIFICACION_RADICACION_RAPIDA,
+    )
+
     try:
         email_msg = EmailMessage(
             subject=asunto,
@@ -99,7 +108,7 @@ def enviar_notificacion_radicacion_rapida_entrante(
             to=to_recipients,
             bcc=bcc_recipients,
             connection=mail_connection,
-            headers=dict(extra_headers or {}),
+            headers=notification_headers,
         )
         email_msg.content_subtype = 'html'
 

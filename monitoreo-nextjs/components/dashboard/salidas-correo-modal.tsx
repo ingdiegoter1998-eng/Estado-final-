@@ -32,7 +32,17 @@ const PAGE_SIZE = 50;
 
 const fetcher = (url: string) => api.get(url).then((r) => r.data);
 
-type SalidaCorreo = {
+type MessageIdsFields = {
+  outbound_provider?: string;
+  provider_id_label?: string;
+  provider_message_id?: string;
+  rfc_message_id?: string;
+  message_id?: string;
+  postmark_message_id?: string;
+  postmark_url?: string;
+};
+
+type SalidaCorreo = MessageIdsFields & {
   id: number;
   salida_id: number;
   radicado: string;
@@ -43,13 +53,10 @@ type SalidaCorreo = {
   estado_label: string;
   destinatario_email: string;
   destinatario_nombre: string;
-  message_id: string;
-  postmark_message_id: string;
   postmark_estado: string;
   postmark_record_type: string;
   postmark_recibido_at: string;
   postmark_detalle: string;
-  postmark_url: string;
   detalle_error: string;
   smtp_code: string;
   dsn_status: string;
@@ -86,17 +93,15 @@ type EventoPostmarkDetalle = {
   inactive: boolean;
 };
 
-type DestinatarioDetalle = {
+type DestinatarioDetalle = MessageIdsFields & {
   id: number;
   nombre: string;
   email: string;
   estado: string;
   estado_label: string;
   fecha_envio: string;
-  message_id: string;
-  postmark_message_id: string;
   postmark_estado: string;
-  postmark_url: string;
+  postmark_url?: string;
   detalle_error: string;
   motivo_resumen: string;
   smtp_code: string;
@@ -114,7 +119,7 @@ type HistorialDetalle = {
   usuario: string;
 };
 
-type SalidaCorreoDetalle = {
+type SalidaCorreoDetalle = MessageIdsFields & {
   id: number;
   radicado: string;
   estado: string;
@@ -128,9 +133,7 @@ type SalidaCorreoDetalle = {
   fecha_ultima_modificacion: string;
   fecha_aprobacion: string;
   fecha_envio: string;
-  message_id: string;
-  postmark_message_id: string;
-  postmark_url: string;
+  postmark_url?: string;
   oficina: { id: number | null; nombre: string };
   redactor: { id: number | null; nombre: string; cargo: string };
   aprobador: { id: number | null; nombre: string };
@@ -226,44 +229,65 @@ function CopyButton({ value, label }: { value: string; label: string }) {
   );
 }
 
-function MessageIdBlock({ item }: { item: SalidaCorreo }) {
-  const displayId = item.postmark_message_id || item.message_id;
+function resolveProviderIdLabel(item: MessageIdsFields) {
+  if (item.provider_id_label) return item.provider_id_label;
+  if (item.outbound_provider === "gmail_api") return "ID Gmail";
+  if (item.outbound_provider === "postmark") return "ID Postmark";
+  return "ID proveedor";
+}
 
-  if (!displayId) {
-    return (
-      <div className="text-xs text-muted-foreground">
-        Sin MessageID persistido.
-      </div>
-    );
+function MessageIdsBlock({ item, compact = false }: { item: MessageIdsFields; compact?: boolean }) {
+  const providerId = (item.provider_message_id || item.postmark_message_id || "").trim();
+  const rfcId = (item.rfc_message_id || item.message_id || "").trim();
+  const providerLabel = resolveProviderIdLabel(item);
+  const codeClass = compact
+    ? "block max-w-[240px] truncate rounded bg-muted/70 px-1.5 py-1 text-[10px]"
+    : "max-w-[260px] truncate rounded-md bg-muted/70 px-2 py-1 text-[11px]";
+
+  if (!providerId && !rfcId) {
+    return <div className="text-xs text-muted-foreground">Sin IDs persistidos.</div>;
   }
 
   return (
-    <div className="space-y-1.5">
-      <div className="flex flex-wrap items-start gap-2">
-        <code className="max-w-[260px] truncate rounded-md bg-muted/70 px-2 py-1 text-[11px]">
-          {displayId}
-        </code>
-        <CopyButton
-          value={displayId}
-          label={item.postmark_message_id ? "ID mensaje proveedor" : "Message-ID SMTP"}
-        />
-        {item.postmark_url && (
-          <a
-            href={item.postmark_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-md border border-blue-500/30 px-2 py-1 text-[10px] font-semibold text-blue-400 hover:bg-blue-500/10"
-          >
-            Postmark
-            <ExternalLink className="h-3 w-3" />
-          </a>
-        )}
-      </div>
-      {item.postmark_message_id && item.message_id && item.postmark_message_id !== item.message_id && (
-        <p className="text-[10px] text-muted-foreground">
-          SMTP: <span className="font-mono">{item.message_id}</span>
-        </p>
-      )}
+    <div className="space-y-2">
+      {providerId ? (
+        <div className="space-y-0.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {providerLabel}
+          </p>
+          <div className="flex flex-wrap items-start gap-2">
+            <code className={codeClass}>{providerId}</code>
+            <CopyButton value={providerId} label={providerLabel} />
+            {item.postmark_url && item.outbound_provider === "postmark" && (
+              <a
+                href={item.postmark_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 rounded-md border border-blue-500/30 px-2 py-1 text-[10px] font-semibold text-blue-400 hover:bg-blue-500/10"
+              >
+                Postmark
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            )}
+          </div>
+        </div>
+      ) : null}
+      {rfcId ? (
+        <div className="space-y-0.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Message-ID RFC
+          </p>
+          <div className="flex flex-wrap items-start gap-2">
+            <code className={codeClass}>{rfcId}</code>
+            <CopyButton value={rfcId} label="Message-ID RFC" />
+          </div>
+          {item.outbound_provider === "gmail_api" && (
+            <p className="text-[10px] text-muted-foreground">
+              Usado para cruzar rebotes DSN que vuelven al buzón entrante.
+            </p>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -411,6 +435,12 @@ function SalidaCorreoDetailPanel({
               <DetailField label="Aprobador" value={data.aprobador.nombre || "Sin aprobador"} />
               <DetailField label="Funcionario que envía" value={data.funcionario_envia || "No registrado"} />
             </div>
+            <div className="mt-4 rounded-lg border border-border/60 bg-background/60 p-3">
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Identificadores de trazabilidad
+              </p>
+              <MessageIdsBlock item={data} />
+            </div>
           </DetailSection>
 
           <DetailSection title="Entrega y destinatarios" icon={<MailCheck className="h-4 w-4 text-emerald-400" />}>
@@ -450,21 +480,9 @@ function SalidaCorreoDetailPanel({
                         </td>
                         <td className="px-3 py-2 align-top">
                           <p className="font-medium">{destinatario.postmark_estado}</p>
-                          {(destinatario.postmark_message_id || destinatario.message_id) && (
-                            <code className="mt-1 block max-w-[240px] truncate rounded bg-muted/70 px-1.5 py-1">
-                              {destinatario.postmark_message_id || destinatario.message_id}
-                            </code>
-                          )}
-                          {destinatario.postmark_url && (
-                            <a
-                              href={destinatario.postmark_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mt-1 inline-flex items-center gap-1 text-blue-400 hover:underline"
-                            >
-                              Postmark <ExternalLink className="h-3 w-3" />
-                            </a>
-                          )}
+                          <div className="mt-1">
+                            <MessageIdsBlock item={destinatario} compact />
+                          </div>
                         </td>
                         <td className="px-3 py-2 align-top text-muted-foreground">
                           {destinatario.motivo_resumen || destinatario.eventos_postmark[0]?.detalle || "-"}
@@ -808,9 +826,9 @@ function SalidasCorreoContent() {
                         </p>
                       )}
                     </td>
-                    <td className="px-3 py-3 align-top">
-                      <MessageIdBlock item={item} />
-                    </td>
+                        <td className="px-3 py-3 align-top">
+                          <MessageIdsBlock item={item} />
+                        </td>
                     <td className="px-3 py-3 align-top">
                       <p className="font-medium text-foreground/90">
                         {item.postmark_estado}
@@ -877,35 +895,4 @@ function SalidasCorreoContent() {
   );
 }
 
-export default function SalidasCorreoModal() {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-blue-500/30 bg-blue-500/10 px-3 text-xs font-semibold text-blue-300 transition-colors hover:bg-blue-500/15 sm:w-auto"
-      >
-        <MailCheck className="h-4 w-4" />
-        Flujo correos
-      </button>
-
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="flex h-[92vh] w-[90vw] max-w-[90vw] flex-col gap-3 overflow-hidden p-4 sm:p-6">
-          <DialogHeader className="shrink-0 space-y-1">
-            <DialogTitle className="flex items-center gap-2 text-lg">
-              <MailCheck className="h-5 w-5 text-blue-400" />
-              Flujo de salida de correos
-            </DialogTitle>
-            <DialogDescription className="text-xs sm:text-sm">
-              Ultimas salidas por destinatario: radicado, oficina, usuario, hora,
-              MessageID y estado de entrega según el proveedor de envío configurado.
-            </DialogDescription>
-          </DialogHeader>
-          <SalidasCorreoContent />
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
+export { SalidasCorreoContent };

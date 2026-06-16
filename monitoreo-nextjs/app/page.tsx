@@ -30,7 +30,7 @@ import ActividadSection from "@/components/dashboard/actividad-section";
 import NotificacionesSection from "@/components/dashboard/notificaciones-section";
 import DespliegueOficinasSection from "@/components/dashboard/despliegue-oficinas-section";
 import RebotesGlobalModal from "@/components/dashboard/rebotes-global-modal";
-import SalidasCorreoModal from "@/components/dashboard/salidas-correo-modal";
+import FlujoCorreosModal from "@/components/dashboard/flujo-correos-modal";
 import { appPath } from "@/lib/app-path";
 
 export default function DashboardPage() {
@@ -142,7 +142,7 @@ export default function DashboardPage() {
                 <TabsTrigger value="despliegue">Despliegue</TabsTrigger>
                 <TabsTrigger value="sistema">Sistema</TabsTrigger>
               </TabsList>
-              <SalidasCorreoModal />
+              <FlujoCorreosModal />
             </div>
 
             <TabsContent value="operaciones" className="space-y-6 mt-6">
