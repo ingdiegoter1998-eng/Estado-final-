@@ -1,9 +1,12 @@
 # Diccionario de Datos - Sistema de Gestión de Correspondencia
 ## Hospital del Sarare E.S.E.
 
-**Versión:** 1.0  
-**Fecha:** Enero 2026  
-**Base de Datos:** SQLite (desarrollo) / SQL Server (producción)
+**Versión:** 1.1
+**Fecha:** Junio 2026
+**Base de Datos:** SQL Server `GestionDocumental` (producción) / SQLite solo para desarrollo local explícito
+
+**Fuente de verdad técnica:** modelos Django en `documentos.models`, `correspondencia.models`, `correspondencia.modelos_minimos_sla` y `correspondencia.chat_models`.
+**Criterio de conteo:** se cuentan modelos de dominio y tablas estándar documentadas; las tablas intermedias Many-to-Many se describen dentro de la tabla propietaria y no incrementan el total salvo que tengan modelo explícito.
 
 ---
 
@@ -25,7 +28,12 @@
 14. [Módulo: Correspondencia - Informes Diarios](#módulo-correspondencia---informes-diarios)
 15. [Módulo: Correspondencia - Firmas](#módulo-correspondencia---firmas)
 16. [Módulo: Correspondencia - Comunicaciones Internas](#módulo-correspondencia---comunicaciones-internas)
-17. [Módulo: Correspondencia - Notificaciones](#módulo-correspondencia---notificaciones)
+17. [Módulo: Correspondencia - SLA y Calendario Laboral](#módulo-correspondencia---sla-y-calendario-laboral)
+18. [Módulo: Correspondencia - Operativa de Correos](#módulo-correspondencia---operativa-de-correos)
+19. [Módulo: Correspondencia - Urgencias](#módulo-correspondencia---urgencias)
+20. [Módulo: Correspondencia - Asistente IA Documental](#módulo-correspondencia---asistente-ia-documental)
+21. [Módulo: Correspondencia - Chat de Soporte](#módulo-correspondencia---chat-de-soporte)
+22. [Módulo: Correspondencia - Notificaciones](#módulo-correspondencia---notificaciones)
 
 ---
 
@@ -68,6 +76,25 @@
 - `Ventanilla`: Radicar, imprimir sellos, aprobar respuestas
 - `Lider de Oficina`: Aprobar comunicaciones, gestionar oficina
 - `Usuario`: Leer, responder correspondencia asignada
+
+---
+
+### Tabla: `auth_permission`
+
+**Descripción:** Permisos estándar de Django asociados a modelos y acciones (`add`, `change`, `delete`, `view`) más permisos personalizados.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único del permiso |
+| `name` | Varchar(255) | NOT NULL | Nombre legible del permiso |
+| `content_type_id` | Integer | FK, NOT NULL | Modelo al que pertenece el permiso |
+| `codename` | Varchar(100) | NOT NULL | Código técnico del permiso |
+
+**Restricciones:**
+- UNIQUE: `(content_type_id, codename)`
+
+**Relaciones:**
+- `content_type_id` → `django_content_type.id`
 
 ---
 
@@ -358,6 +385,26 @@
 
 ---
 
+### Tabla: `documentos_despliegueoficina`
+
+**Descripción:** Seguimiento manual del despliegue/capacitación por oficina para monitoreo operativo.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `oficina_id` | Integer | FK, UNIQUE, NOT NULL | Oficina monitoreada |
+| `estado_visita` | Varchar(20) | DEFAULT: 'pendiente' | pendiente, visitada, capacitada, no_aplica |
+| `fecha_visita` | Date | NULL | Fecha de visita o capacitación |
+| `notas` | Text | DEFAULT: '' | Observaciones del despliegue |
+| `actualizado_por_id` | Integer | FK, NULL | Usuario que actualizó el registro |
+| `actualizado_en` | DateTime | NOT NULL | Última actualización |
+
+**Relaciones:**
+- `oficina_id` → `documentos_oficinaproductora.id` (OneToOne)
+- `actualizado_por_id` → `auth_user.id`
+
+---
+
 ## Módulo: Documentos - Pacientes
 
 ### Tabla: `documentos_tipodocumento`
@@ -437,13 +484,14 @@
 | `fuid_id` | Integer | FK, NULL | FUID asociado |
 | `solicitante_id` | Integer | FK, NOT NULL | Usuario solicitante |
 | `oficina_solicitante_id` | Integer | FK, NULL | Oficina del solicitante |
+| `oficina_responsable_id` | Integer | FK, NULL | Oficina a la que se dirige la solicitud |
 | `subproceso_solicitante` | Varchar(255) | NULL | Subproceso solicitante |
 | `codigo_trd` | Varchar(50) | NULL | Código TRD |
 | `serie_id` | Integer | FK, NULL | Serie documental |
 | `subserie_id` | Integer | FK, NULL | Subserie documental |
 | `descripcion_documento` | Text | NULL | Descripción del documento |
 | `tipo_prestamo` | Varchar(10) | NOT NULL | FISICO o VIRTUAL |
-| `estado` | Varchar(20) | NOT NULL | SOLICITADO, EN_PROCESO, ENTREGADO, PRESTAMO_ACTIVO, DEVUELTO, REINTEGRADO, RECHAZADO, RECHAZADO_USUARIO, VENCIDO |
+| `estado` | Varchar(25) | NOT NULL, DEFAULT: 'SOLICITADO' | SOLICITADO, ENTREGADO, PRESTAMO_ACTIVO, DEVOLUCION_SOLICITADA, DEVUELTO, REINTEGRADO, RECHAZADO, RECHAZADO_USUARIO, VENCIDO |
 | `fecha_solicitud` | DateTime | NOT NULL | Fecha de solicitud |
 | `fecha_aprobacion` | DateTime | NULL | Fecha de aprobación |
 | `fecha_entrega` | DateTime | NULL | Fecha de entrega |
@@ -477,6 +525,7 @@
 - `fuid_id` → `documentos_fuid.id`
 - `solicitante_id` → `auth_user.id`
 - `oficina_solicitante_id` → `documentos_oficinaproductora.id`
+- `oficina_responsable_id` → `documentos_oficinaproductora.id`
 - `serie_id` → `documentos_seriedocumental.id`
 - `subserie_id` → `documentos_subseriedocumental.id`
 - `aprobado_por_id` → `auth_user.id`
@@ -545,6 +594,36 @@
 
 ---
 
+### Tabla: `documentos_historialdescargaprestamo`
+
+**Descripción:** Auditoría de descargas de reportes mensuales de préstamos documentales.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `usuario_id` | Integer | FK, NULL | Usuario que descargó el reporte |
+| `fecha_descarga` | DateTime | NOT NULL | Fecha y hora de descarga |
+| `anio` | Integer | NOT NULL | Año reportado |
+| `mes` | SmallInteger | NOT NULL | Mes reportado |
+| `nombre_archivo` | Varchar(255) | NOT NULL | Nombre del archivo generado |
+| `total_registros` | Integer | DEFAULT: 0 | Total de préstamos exportados |
+| `filtro_estado` | Varchar(25) | NULL | Estado filtrado |
+| `filtro_tipo` | Varchar(10) | NULL | Tipo de préstamo filtrado |
+| `filtro_alerta` | Varchar(40) | NULL | Alerta filtrada |
+| `filtro_tipo_archivo` | Varchar(40) | NULL | Tipo de archivo filtrado |
+| `filtro_oficina` | Varchar(255) | NULL | Oficina filtrada |
+| `busqueda` | Varchar(255) | NULL | Texto de búsqueda aplicado |
+| `ip_address` | Varchar(39) | NULL | Dirección IP |
+
+**Índices:**
+- `(anio, mes, fecha_descarga)`
+- `(usuario_id, fecha_descarga)`
+
+**Relaciones:**
+- `usuario_id` → `auth_user.id`
+
+---
+
 ## Módulo: Correspondencia - Entidades y Contactos
 
 ### Tabla: `correspondencia_entidadexterna`
@@ -582,6 +661,107 @@
 
 ---
 
+### Tabla: `correspondencia_entidadexternadominio`
+
+**Descripción:** Dominios secundarios autorizados para una entidad externa, usados para reconocer remitentes institucionales sin duplicar entidades.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `entidad_externa_id` | Integer | FK, NOT NULL | Entidad propietaria del dominio |
+| `dominio` | Varchar(120) | UNIQUE, NOT NULL | Dominio normalizado |
+| `activo` | Boolean | DEFAULT: True | Dominio habilitado para clasificación |
+| `fecha_creacion` | DateTime | NOT NULL | Fecha de creación |
+
+**Relaciones:**
+- `entidad_externa_id` → `correspondencia_entidadexterna.id`
+
+---
+
+### Tabla: `correspondencia_auditoriacontacto`
+
+**Descripción:** Bitácora de creación, edición y eliminación de contactos externos.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `contacto_id` | Integer | FK, NULL | Contacto afectado |
+| `usuario_id` | Integer | FK, NULL | Usuario que realizó el cambio |
+| `tipo_cambio` | Varchar | NOT NULL | CREACION, EDICION o ELIMINACION |
+| `fecha_cambio` | DateTime | NOT NULL | Fecha del evento |
+| `campos_modificados` | JSON | DEFAULT: {} | Diccionario `{campo: {antes, despues}}` |
+| `contacto_nombre_snapshot` | Varchar(300) | NULL | Nombre del contacto al momento del cambio |
+| `ip_address` | Varchar(39) | NULL | Dirección IP |
+
+**Relaciones:**
+- `contacto_id` → `correspondencia_contacto.id`
+- `usuario_id` → `auth_user.id`
+
+---
+
+## Módulo: Correspondencia - SLA y Calendario Laboral
+
+### Tabla: `correspondencia_tipotramite`
+
+**Descripción:** Catálogo administrativo de tipos de trámite para radicación rápida, con días hábiles configurables desde el sistema.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `codigo` | Varchar(20) | UNIQUE, NOT NULL | Código del trámite (PT, PTA, PQRSF, etc.) |
+| `nombre` | Varchar(100) | NOT NULL | Nombre descriptivo |
+| `descripcion` | Text | NULL | Descripción operativa |
+| `dias_respuesta` | Integer | NULL | Días hábiles; NULL si no aplica plazo |
+| `activo` | Boolean | DEFAULT: True | Disponible en formularios |
+| `orden` | Integer | DEFAULT: 0 | Orden de presentación |
+| `fecha_creacion` | DateTime | NOT NULL | Fecha de creación |
+| `fecha_modificacion` | DateTime | NOT NULL | Última modificación |
+
+---
+
+### Tabla: `correspondencia_tramitetipo`
+
+**Descripción:** Catálogo de trámites legales asociados a plazos de respuesta de la TRD.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `codigo` | Varchar(50) | UNIQUE, NOT NULL | Código legal/operativo |
+| `nombre` | Varchar(255) | NOT NULL | Nombre del trámite |
+| `plazo_dias_habiles` | SmallInteger | NOT NULL | Plazo legal en días hábiles |
+| `fundamento_normativo` | Varchar(255) | NULL | Norma o sustento del plazo |
+| `activo` | Boolean | DEFAULT: True | Trámite disponible |
+
+---
+
+### Tabla: `correspondencia_subserietramite`
+
+**Descripción:** Mapeo uno a uno entre subseries documentales y trámites legales de SLA.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `subserie_id` | Integer | FK, UNIQUE, NOT NULL | Subserie documental |
+| `tramite_id` | Integer | FK, NOT NULL | Trámite legal aplicado |
+
+**Relaciones:**
+- `subserie_id` → `documentos_subseriedocumental.id`
+- `tramite_id` → `correspondencia_tramitetipo.id`
+
+---
+
+### Tabla: `correspondencia_calendariolaboral`
+
+**Descripción:** Calendario de días hábiles/feriados usado por el cálculo de SLA. Si está vacío, el sistema cae al cálculo por lunes-viernes.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `fecha` | Date | UNIQUE, NOT NULL, INDEX | Fecha evaluada |
+| `es_habil` | Boolean | DEFAULT: True | Indica si la fecha cuenta como hábil |
+
+---
+
 ## Módulo: Correspondencia - Correspondencia Entrante
 
 ### Tabla: `correspondencia_correspondencia`
@@ -602,9 +782,10 @@
 | `medio_recepcion` | Varchar(50) | NOT NULL, DEFAULT: 'FISICO' | FISICO o ELECTRONICO |
 | `requiere_respuesta` | Boolean | DEFAULT: False | Requiere respuesta |
 | `tiempo_respuesta` | Varchar(20) | NULL | NORMAL, URGENTE, MUY_URGENTE |
+| `dias_personalizados` | Integer | NULL | Días personalizados (1-15) con prioridad sobre TRD/fallback |
 | `plazo_respuesta_dias` | Integer | NULL | Días hábiles persistidos |
 | `fecha_limite_respuesta_persist` | DateTime | NULL | Fecha límite persistida |
-| `plazo_origen` | Varchar(20) | DEFAULT: 'NONE' | TRD, FALLBACK, NONE |
+| `plazo_origen` | Varchar(20) | DEFAULT: 'NONE' | TRD, TIPO_TRAMITE, PERSONALIZADO, MANUAL, FALLBACK, NONE |
 | `tramite_aplicado_id` | Integer | FK, NULL | Trámite aplicado (si TRD) |
 | `estado` | Varchar(50) | NOT NULL, DEFAULT: 'RADICADA' | RADICADA, ASIGNADA_USUARIO, LEIDA, RESPONDIDA |
 | `leido_por_oficina` | Boolean | DEFAULT: False | Leído por oficina |
@@ -614,6 +795,26 @@
 | `en_planilla` | Boolean | DEFAULT: False, INDEX | Incluido en planilla |
 | `oficina_destino_id` | Integer | FK, NOT NULL | Oficina destino |
 | `usuario_destino_inicial_id` | Integer | FK, NULL | Usuario destino inicial |
+| `origen_radicacion` | Varchar(20) | DEFAULT: 'NORMAL', INDEX | NORMAL, RAPIDA o CORREO |
+| `fecha_recepcion_documento` | Date | NULL | Fecha de recepción física/documental |
+| `tipo_tramite` | Varchar(50) | NULL | Código de trámite para radicación rápida |
+| `entidad_persona_remitente` | Varchar(255) | NULL | Remitente textual en radicación rápida |
+| `funcionario_responsable_tramite` | Varchar(255) | NULL | Funcionario responsable informado |
+| `email_funcionario_responsable` | Varchar(254) | NULL | Email del funcionario responsable |
+| `clasificacion_comunicacion` | Varchar(255) | NULL | Clasificación operativa de comunicación |
+| `numero_folios` | Integer | NULL | Número de folios |
+| `anexos` | Varchar(500) | NULL | Descripción de anexos |
+| `medio_recibido` | Varchar(50) | NULL | EMAIL, CORREO_CERTIFICADO o PERSONAL |
+| `direccion_correo_remitente` | Varchar(254) | NULL | Email remitente capturado |
+| `empresa_transportadora` | Varchar(255) | NULL | Transportadora si aplica |
+| `numero_guia` | Varchar(100) | NULL | Número de guía si aplica |
+| `fecha_limite_respuesta_manual` | Date | NULL | Fecha límite manual |
+| `fecha_primer_seguimiento` | Date | NULL | Primer seguimiento |
+| `fecha_segundo_seguimiento` | Date | NULL | Segundo seguimiento |
+| `fecha_notificacion_vencimiento` | Date | NULL | Notificación de vencimiento |
+| `fecha_respuesta` | Date | NULL | Fecha de respuesta final |
+| `estado_respuesta` | Varchar(20) | NULL | PENDIENTE, RESPONDIDA o VENCIDA |
+| `radicado_enviado_respuesta` | Varchar(100) | NULL | Radicado de respuesta enviado |
 
 **Relaciones:**
 - `usuario_radicador_id` → `auth_user.id`
@@ -622,6 +823,7 @@
 - `subserie_id` → `documentos_subseriedocumental.id`
 - `oficina_destino_id` → `documentos_oficinaproductora.id`
 - `usuario_destino_inicial_id` → `auth_user.id`
+- `tramite_aplicado_id` → `correspondencia_tramitetipo.id`
 
 ---
 
@@ -662,6 +864,24 @@
 
 ---
 
+### Tabla: `correspondencia_adjuntocorrespondenciarapida`
+
+**Descripción:** Escaneos o documentos adjuntos capturados durante radicación rápida.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `correspondencia_id` | Integer | FK, NOT NULL | Correspondencia asociada |
+| `archivo` | Varchar(255) | NOT NULL | Ruta del archivo |
+| `nombre_original` | Varchar(255) | NULL | Nombre original del archivo |
+| `tipo_mime` | Varchar(100) | NULL | Tipo MIME |
+| `fecha_carga` | DateTime | NOT NULL | Fecha de carga |
+
+**Relaciones:**
+- `correspondencia_id` → `correspondencia_correspondencia.id`
+
+---
+
 ## Módulo: Correspondencia - Correos Entrantes (IMAP)
 
 ### Tabla: `correspondencia_correoentrante`
@@ -677,10 +897,16 @@
 | `cuerpo_texto` | Text | NULL | Cuerpo en texto plano |
 | `cuerpo_html` | Text | NULL | Cuerpo en HTML |
 | `fecha_recepcion_original` | DateTime | NULL | Fecha del encabezado Date |
+| `fecha_recibida_gmail` | DateTime | NULL | INTERNALDATE registrada por Gmail/IMAP |
 | `fecha_lectura_imap` | DateTime | NOT NULL | Fecha de lectura desde IMAP |
 | `procesado` | Boolean | DEFAULT: False, INDEX | Ya procesado por IA |
 | `radicado_asociado_id` | Integer | FK, NULL | Correspondencia creada |
+| `urgencia_asociada_id` | Integer | FK, NULL | Urgencia creada desde el correo |
 | `requiere_revision_manual` | Boolean | DEFAULT: False | Requiere revisión manual |
+| `en_papelera` | Boolean | DEFAULT: False, INDEX | Excluido de bandeja activa sin borrarlo |
+| `motivo_papelera` | Varchar(32) | NULL | Motivo operativo de papelera |
+| `fecha_papelera` | DateTime | NULL | Fecha de envío a papelera |
+| `usuario_papelera_id` | Integer | FK, NULL | Usuario que envió a papelera |
 | `oficina_clasificada_id` | Integer | FK, NULL | Oficina predicha por IA |
 | `serie_clasificada_id` | Integer | FK, NULL | Serie predicha por IA |
 | `subserie_clasificada_id` | Integer | FK, NULL | Subserie predicha por IA |
@@ -688,6 +914,8 @@
 
 **Relaciones:**
 - `radicado_asociado_id` → `correspondencia_correspondencia.id`
+- `urgencia_asociada_id` → `correspondencia_urgencia.id`
+- `usuario_papelera_id` → `auth_user.id`
 - `oficina_clasificada_id` → `documentos_oficinaproductora.id`
 - `serie_clasificada_id` → `documentos_seriedocumental.id`
 - `subserie_clasificada_id` → `documentos_subseriedocumental.id`
@@ -705,10 +933,95 @@
 | `archivo` | Varchar(255) | NOT NULL | Ruta del archivo |
 | `nombre_original` | Varchar(255) | NULL | Nombre original |
 | `tipo_mime` | Varchar(100) | NULL | Tipo MIME |
+| `content_id` | Varchar(255) | NULL, INDEX | Content-ID para imágenes inline referenciadas por HTML |
 | `fecha_carga` | DateTime | NOT NULL | Fecha de carga |
 
 **Relaciones:**
 - `correo_entrante_id` → `correspondencia_correoentrante.id`
+
+---
+
+## Módulo: Correspondencia - Operativa de Correos
+
+### Tabla: `correspondencia_correoproblematico`
+
+**Descripción:** Correos detectados por IMAP/Gmail que no entraron al flujo normal y requieren revisión o admisión manual.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `message_id` | Varchar(255) | UNIQUE, NOT NULL | Message-ID del correo problemático |
+| `remitente` | Varchar(254) | NULL | Email remitente |
+| `asunto` | Varchar(500) | NULL | Asunto |
+| `cuerpo_texto` | Text | NULL | Cuerpo texto para revisión |
+| `cuerpo_html` | Text | NULL | HTML para revisión |
+| `fecha_recepcion_original` | DateTime | NULL | Fecha del encabezado Date |
+| `fecha_recibida_gmail` | DateTime | NULL | INTERNALDATE Gmail/IMAP |
+| `fecha_lectura_imap` | DateTime | NOT NULL | Fecha de detección |
+| `carpeta_origen` | Varchar(128) | NULL | Carpeta IMAP/Gmail de origen |
+| `flujo_origen` | Varchar(32) | NULL | Flujo que detectó el incidente |
+| `motivo_problema` | Varchar(64) | DEFAULT: 'VALIDACION_ADJUNTO' | Motivo técnico |
+| `detalle_problema` | Text | NULL | Detalle operativo |
+| `adjuntos_resumen` | Text | DEFAULT: '[]' | Resumen JSON de adjuntos |
+| `respaldo_eml` | Varchar(255) | NULL | Respaldo RFC822/.eml |
+| `resuelto` | Boolean | DEFAULT: False, INDEX | Incidente resuelto |
+| `fecha_resuelto` | DateTime | NULL | Fecha de resolución |
+| `correo_entrante_asociado_id` | Integer | FK, NULL | Correo creado al resolver |
+
+**Relaciones:**
+- `correo_entrante_asociado_id` → `correspondencia_correoentrante.id`
+
+---
+
+### Tabla: `correspondencia_estadosincronizacioncorreos`
+
+**Descripción:** Estado resumido de la última sincronización de correos y de la vigencia del watch Gmail.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `fuente` | Varchar(32) | DEFAULT: 'GMAIL_IMAP' | Fuente de sincronización |
+| `ultimo_inicio` | DateTime | NULL | Último inicio |
+| `ultimo_fin` | DateTime | NULL | Último fin |
+| `estado` | Varchar(16) | DEFAULT: 'SUCCESS' | RUNNING, SUCCESS o FAIL |
+| `ultimo_error` | Text | NULL | Último error registrado |
+| `ultimo_history_id` | Varchar(64) | NULL | History ID Gmail |
+| `ultima_renovacion_watch` | DateTime | NULL | Última renovación del watch |
+| `watch_expira_en` | DateTime | NULL | Expiración del watch |
+| `watch_topic` | Varchar(255) | NULL | Topic Pub/Sub asociado |
+| `actualizado_en` | DateTime | NOT NULL | Última actualización |
+
+---
+
+### Tabla: `correspondencia_ejecucioncontrolcorreos`
+
+**Descripción:** Bitácora de verificaciones, recuperaciones, diagnósticos y ciclos operativos de Gmail/IMAP.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `tipo_operacion` | Varchar(24) | NOT NULL | VERIFY, RECOVER, DIAGNOSE, SYNC_NOW, GMAIL_STATUS, etc. |
+| `estado` | Varchar(16) | DEFAULT: 'PENDING' | PENDING, RUNNING, SUCCESS, WARN o FAIL |
+| `ejecutado_por_id` | Integer | FK, NULL | Usuario que lanzó la operación |
+| `task_id` | Varchar(255) | NULL | ID Celery si aplica |
+| `parametros` | Text | DEFAULT: '{}' | Parámetros JSON serializados |
+| `resumen` | Text | DEFAULT: '{}' | Resumen JSON serializado |
+| `salida` | Text | NULL | Salida del comando/proceso |
+| `error` | Text | NULL | Error capturado |
+| `total_encontrados` | Integer | NULL | Métrica operativa |
+| `total_nuevos` | Integer | NULL | Métrica operativa |
+| `total_guardados` | Integer | NULL | Métrica operativa |
+| `total_rechazados` | Integer | NULL | Métrica operativa |
+| `total_adjuntos` | Integer | NULL | Métrica operativa |
+| `total_duplicados` | Integer | NULL | Métrica operativa |
+| `total_sospechosos` | Integer | NULL | Métrica operativa |
+| `total_errores` | Integer | NULL | Métrica operativa |
+| `creado_en` | DateTime | NOT NULL | Fecha de creación |
+| `iniciado_en` | DateTime | NULL | Inicio real |
+| `finalizado_en` | DateTime | NULL | Fin real |
+
+**Relaciones:**
+- `ejecutado_por_id` → `auth_user.id`
 
 ---
 
@@ -776,6 +1089,7 @@
 |-------|------|---------------|-------------|
 | `id` | Integer | PK, Auto | Identificador único |
 | `respuesta_a_id` | Integer | FK, NULL | Correspondencia entrante a la que responde |
+| `respuesta_a_urgencia_id` | Integer | FK, NULL | Urgencia a la que responde |
 | `numero_radicado_salida` | Varchar(50) | UNIQUE, NOT NULL | SALIENTE-2026-00001 |
 | `fecha_creacion` | DateTime | NOT NULL | Fecha de creación |
 | `usuario_redactor_id` | Integer | FK, NULL | Usuario redactor |
@@ -788,19 +1102,26 @@
 | `destinatario_email` | Varchar(254) | NOT NULL | Snapshot email destinatario |
 | `asunto` | Varchar(255) | NOT NULL | Asunto |
 | `cuerpo` | Text | NOT NULL | Cuerpo del mensaje |
+| `tipo_respuesta` | Varchar(20) | DEFAULT: 'OBLIGATORIA' | OBLIGATORIA o DISCRECIONAL |
+| `motivo_respuesta_discrecional` | Text | NULL | Motivo cuando la respuesta es discrecional |
 | `estado` | Varchar(50) | NOT NULL, DEFAULT: 'BORRADOR' | BORRADOR, PENDIENTE_APROBACION, APROBADA, RECHAZADA, ENVIADA, ERROR_ENVIO |
 | `usuario_aprobador_id` | Integer | FK, NULL | Usuario aprobador |
 | `fecha_aprobacion` | DateTime | NULL | Fecha de aprobación |
 | `motivo_rechazo` | Text | NULL | Motivo de rechazo |
 | `fecha_envio` | DateTime | NULL | Fecha de envío |
 | `id_mensaje_enviado` | Varchar(255) | NULL | Message-ID para seguimiento |
+| `postmark_message_id` | Varchar(64) | NULL, INDEX | MessageID devuelto por Postmark |
 | `envio_tipo` | Varchar(20) | NULL | INDIVIDUAL, GRUPO, MULTIPLE_SELECTIVO |
 | `envio_grupo_id` | Integer | FK, NULL | Grupo utilizado |
 | `envio_total_destinatarios` | Integer | NULL | Total destinatarios |
 | `envio_detalle_snapshot` | Varchar(255) | NULL | Detalle snapshot |
+| `funcionario_envia` | Varchar(255) | DEFAULT: '' | Funcionario que envía (texto libre) |
+| `fue_respondida` | Boolean | DEFAULT: False | Marca de respuesta efectiva |
+| `evidencia_respuesta` | Varchar(255) | NULL | Evidencia documental de respuesta |
 
 **Relaciones:**
 - `respuesta_a_id` → `correspondencia_correspondencia.id`
+- `respuesta_a_urgencia_id` → `correspondencia_urgencia.id`
 - `usuario_redactor_id` → `auth_user.id`
 - `oficina_emisora_id` → `documentos_oficinaproductora.id`
 - `destinatario_contacto_id` → `correspondencia_contacto.id`
@@ -836,7 +1157,7 @@
 | `id` | Integer | PK, Auto | Identificador único |
 | `correspondencia_salida_id` | Integer | FK, NOT NULL | Correspondencia saliente |
 | `fecha_hora` | DateTime | NOT NULL | Fecha y hora |
-| `tipo_evento` | Varchar(30) | NOT NULL | CREACION, MODIFICACION, ENVIO_APROBACION, APROBACION, RECHAZO, INTENTO_ENVIO, ENVIO_EXITOSO, ENVIO_FALLIDO |
+| `tipo_evento` | Varchar(30) | NOT NULL | CREACION, RESPUESTA_DISCRECIONAL, MODIFICACION, ENVIO_APROBACION, APROBACION, RECHAZO, INTENTO_ENVIO, ENVIO_EXITOSO, ENVIO_FALLIDO, ENTREGA_CONFIRMADA |
 | `usuario_id` | Integer | FK, NULL | Usuario |
 | `descripcion` | Text | NULL | Descripción |
 
@@ -860,6 +1181,7 @@
 | `estado` | Varchar(20) | NOT NULL, DEFAULT: 'PENDIENTE' | PENDIENTE, ENVIADO, FALLO, REBOTE |
 | `fecha_envio` | DateTime | NULL | Fecha de envío |
 | `id_mensaje_enviado` | Varchar(255) | NULL | Message-ID |
+| `postmark_message_id` | Varchar(64) | NULL, INDEX | MessageID devuelto por Postmark |
 | `detalle_error` | Text | NULL | Detalle de error |
 | `smtp_code` | Varchar(20) | NULL | Código SMTP |
 | `dsn_status` | Varchar(20) | NULL | Estado DSN |
@@ -868,6 +1190,26 @@
 **Relaciones:**
 - `correspondencia_salida_id` → `correspondencia_correspondenciasalida.id`
 - `contacto_id` → `correspondencia_contacto.id`
+
+---
+
+### Tabla: `correspondencia_postmarkwebhookevento`
+
+**Descripción:** Bitácora idempotente de webhooks de Postmark para seguimiento de entregas, rebotes y eventos de envío.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `record_type` | Varchar(32) | NOT NULL | Tipo de evento reportado por Postmark |
+| `postmark_message_id` | Varchar(64) | NOT NULL, INDEX | MessageID de Postmark |
+| `recipient` | Varchar(254) | DEFAULT: '' | Destinatario del evento |
+| `payload` | JSON | DEFAULT: {} | Cuerpo completo del webhook |
+| `recibido_at` | DateTime | NOT NULL | Fecha de recepción |
+| `procesado` | Boolean | DEFAULT: False | Indica si ya fue aplicado |
+| `resultado` | Varchar(64) | DEFAULT: '' | Resultado del procesamiento |
+
+**Restricciones:**
+- UNIQUE: `(record_type, postmark_message_id, recipient)`
 
 ---
 
@@ -1015,6 +1357,27 @@
 
 ---
 
+### Tabla: `correspondencia_firmaauxiliarcorrespondencia`
+
+**Descripción:** Firmas auxiliares adicionales asociadas a una correspondencia recibida sin reemplazar la firma principal.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `correspondencia_id` | Integer | FK, NOT NULL | Correspondencia firmada |
+| `firma_imagen` | Varchar(255) | NOT NULL | Imagen de la firma auxiliar |
+| `fecha_firma` | DateTime | NOT NULL | Fecha de firma |
+| `nombre_firmante` | Varchar(255) | NOT NULL | Nombre del firmante auxiliar |
+| `cargo_firmante` | Varchar(255) | NOT NULL | Cargo del firmante auxiliar |
+| `recolector_id` | Integer | FK, NULL | Usuario que recolectó |
+| `ip_address` | Varchar(39) | NULL | Dirección IP |
+
+**Relaciones:**
+- `correspondencia_id` → `correspondencia_correspondencia.id`
+- `recolector_id` → `auth_user.id`
+
+---
+
 ## Módulo: Correspondencia - Comunicaciones Internas
 
 ### Tabla: `correspondencia_comunicacioninterna`
@@ -1157,6 +1520,210 @@
 
 ---
 
+## Módulo: Correspondencia - Urgencias
+
+### Tabla: `correspondencia_urgencia`
+
+**Descripción:** Correspondencia urgente con SLA en horas laborales. Comparte secuencia de radicado con correspondencia entrante.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `correo_entrante_id` | Integer | FK, NOT NULL | Correo que origina la urgencia |
+| `numero_radicado` | Integer | UNIQUE, NOT NULL, INDEX | Consecutivo compartido con entrantes |
+| `radicado` | Varchar(50) | UNIQUE, NOT NULL | Formato `ENTRANTE-YYYY-NNNNN` |
+| `fecha_radicacion` | DateTime | NOT NULL | Fecha de radicación |
+| `usuario_radica_id` | Integer | FK, NOT NULL | Usuario de ventanilla que radica |
+| `serie_id` | Integer | FK, NOT NULL | Serie documental |
+| `subserie_id` | Integer | FK, NULL | Subserie documental |
+| `oficina_destino_id` | Integer | FK, NOT NULL | Oficina completa que recibe la urgencia |
+| `horas_limite` | SmallInteger | DEFAULT: 24 | Horas laborales para responder |
+| `fecha_limite` | DateTime | NOT NULL | Fecha límite calculada |
+| `estado` | Varchar(20) | DEFAULT: 'PENDIENTE', INDEX | PENDIENTE, EN_PROCESO, RESPONDIDA, VENCIDA |
+| `usuario_asignado_id` | Integer | FK, NULL | Usuario que tomó la urgencia |
+| `fecha_asignacion` | DateTime | NULL | Fecha de toma |
+| `usuario_responde_id` | Integer | FK, NULL | Usuario que respondió |
+| `fecha_respuesta` | DateTime | NULL | Fecha de respuesta |
+| `respuesta` | Text | NULL | Texto de respuesta |
+| `prioridad` | Varchar(10) | DEFAULT: 'ALTA', INDEX | ALTA o CRITICA |
+| `observaciones` | Text | NULL | Observaciones internas |
+| `motivo_urgencia` | Text | NOT NULL | Justificación de urgencia |
+| `horas_transcurridas` | Decimal(6,2) | DEFAULT: 0 | Horas laborales consumidas |
+
+**Índices:**
+- `(estado, oficina_destino_id)`
+- `(prioridad, estado)`
+- `fecha_limite`
+
+**Relaciones:**
+- `correo_entrante_id` → `correspondencia_correoentrante.id`
+- `usuario_radica_id` → `auth_user.id`
+- `serie_id` → `documentos_seriedocumental.id`
+- `subserie_id` → `documentos_subseriedocumental.id`
+- `oficina_destino_id` → `documentos_oficinaproductora.id`
+- `usuario_asignado_id` → `auth_user.id`
+- `usuario_responde_id` → `auth_user.id`
+
+---
+
+### Tabla: `adjuntos_urgencia`
+
+**Descripción:** Adjuntos de respuestas de urgencias.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `urgencia_id` | Integer | FK, NOT NULL | Urgencia asociada |
+| `archivo` | Varchar(255) | NOT NULL | Ruta del archivo |
+| `nombre_original` | Varchar(255) | NOT NULL | Nombre original |
+| `tipo_mime` | Varchar(100) | NULL | Tipo MIME |
+| `tamaño_bytes` | Integer | DEFAULT: 0 | Tamaño en bytes |
+| `fecha_carga` | DateTime | NOT NULL | Fecha de carga |
+| `subido_por_id` | Integer | FK, NULL | Usuario que subió |
+
+**Relaciones:**
+- `urgencia_id` → `correspondencia_urgencia.id`
+- `subido_por_id` → `auth_user.id`
+
+---
+
+## Módulo: Correspondencia - Asistente IA Documental
+
+### Tabla: `asistente_conversacion`
+
+**Descripción:** Sesiones de conversación del asistente documental por usuario.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `usuario_id` | Integer | FK, NOT NULL | Usuario dueño de la conversación |
+| `titulo` | Varchar(160) | DEFAULT: 'Nueva conversación' | Título visible |
+| `estado` | Varchar(20) | DEFAULT: 'ACTIVA' | ACTIVA o ARCHIVADA |
+| `ultima_pregunta_at` | DateTime | NULL | Última pregunta del usuario |
+| `creado_en` | DateTime | NOT NULL | Fecha de creación |
+| `actualizado_en` | DateTime | NOT NULL | Última actualización |
+
+**Relaciones:**
+- `usuario_id` → `auth_user.id`
+
+---
+
+### Tabla: `asistente_documento`
+
+**Descripción:** Documento fuente indexado para recuperación documental.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `ruta_relativa` | Varchar(500) | UNIQUE, NOT NULL | Ruta del documento fuente |
+| `titulo` | Varchar(255) | NOT NULL | Título del documento |
+| `checksum` | Varchar(64) | NOT NULL | Huella del archivo indexado |
+| `tipo_fuente` | Varchar(40) | DEFAULT: 'archivo' | Tipo de fuente |
+| `activo` | Boolean | DEFAULT: True | Disponible para búsqueda |
+| `metadata` | JSON | DEFAULT: {} | Metadatos del documento |
+| `indexado_en` | DateTime | NOT NULL | Fecha de indexación/actualización |
+
+---
+
+### Tabla: `asistente_chunk`
+
+**Descripción:** Fragmentos indexados de documentos fuente para recuperación semántica/textual.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `documento_id` | Integer | FK, NOT NULL | Documento fuente |
+| `orden` | Integer | NOT NULL | Orden del fragmento dentro del documento |
+| `heading` | Varchar(255) | NULL | Encabezado asociado |
+| `contenido` | Text | NOT NULL | Contenido del fragmento |
+| `search_text` | Text | NULL | Texto normalizado para búsqueda |
+| `metadata` | JSON | DEFAULT: {} | Metadatos del fragmento |
+
+**Restricciones:**
+- UNIQUE: `(documento_id, orden)`
+
+**Relaciones:**
+- `documento_id` → `asistente_documento.id`
+
+---
+
+### Tabla: `asistente_mensaje`
+
+**Descripción:** Mensajes intercambiados en una conversación del asistente documental.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `conversacion_id` | Integer | FK, NOT NULL | Conversación asociada |
+| `rol` | Varchar(20) | NOT NULL | user, assistant o system |
+| `contenido` | Text | NOT NULL | Contenido del mensaje |
+| `citas` | JSON | DEFAULT: [] | Citas/documentos usados |
+| `metadata` | JSON | DEFAULT: {} | Metadatos de generación |
+| `creado_en` | DateTime | NOT NULL | Fecha de creación |
+
+**Relaciones:**
+- `conversacion_id` → `asistente_conversacion.id`
+
+---
+
+## Módulo: Correspondencia - Chat de Soporte
+
+### Tabla: `correspondencia_chatconversation`
+
+**Descripción:** Hilos de soporte interno abiertos por usuarios.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `usuario_id` | Integer | FK, NOT NULL | Usuario que abre el hilo |
+| `asunto` | Varchar(200) | NOT NULL | Asunto del reporte |
+| `estado` | Varchar(10) | DEFAULT: 'abierta', INDEX | abierta o cerrada |
+| `prioridad` | Varchar(10) | DEFAULT: 'normal' | normal o urgente |
+| `creado` | DateTime | NOT NULL | Fecha de creación |
+| `actualizado` | DateTime | NOT NULL | Última actualización |
+
+**Relaciones:**
+- `usuario_id` → `auth_user.id`
+
+---
+
+### Tabla: `correspondencia_chatmessage`
+
+**Descripción:** Mensajes individuales dentro de un hilo de soporte.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `conversacion_id` | Integer | FK, NOT NULL | Conversación de soporte |
+| `autor_id` | Integer | FK, NULL | Usuario autor |
+| `texto` | Text | NOT NULL | Mensaje |
+| `es_admin` | Boolean | DEFAULT: False | Indica si lo envió un admin/superusuario |
+| `leido` | Boolean | DEFAULT: False | Mensaje leído |
+| `creado` | DateTime | NOT NULL | Fecha de creación |
+
+**Relaciones:**
+- `conversacion_id` → `correspondencia_chatconversation.id`
+- `autor_id` → `auth_user.id`
+
+---
+
+### Tabla: `correspondencia_chatadjunto`
+
+**Descripción:** Imágenes o capturas adjuntas a mensajes de soporte.
+
+| Campo | Tipo | Restricciones | Descripción |
+|-------|------|---------------|-------------|
+| `id` | Integer | PK, Auto | Identificador único |
+| `mensaje_id` | Integer | FK, NOT NULL | Mensaje asociado |
+| `archivo` | Varchar(255) | NOT NULL | Ruta de la imagen |
+| `nombre_original` | Varchar(255) | NOT NULL | Nombre original |
+| `creado` | DateTime | NOT NULL | Fecha de creación |
+
+**Relaciones:**
+- `mensaje_id` → `correspondencia_chatmessage.id`
+
+---
+
 ## Módulo: Correspondencia - Notificaciones
 
 ### Tabla: `correspondencia_notificacion`
@@ -1167,7 +1734,7 @@
 |-------|------|---------------|-------------|
 | `id` | Integer | PK, Auto | Identificador único |
 | `usuario_id` | Integer | FK, NOT NULL | Usuario destinatario |
-| `tipo` | Varchar(25) | NOT NULL, DEFAULT: 'asignacion' | asignacion, compartido, respuesta, vencimiento, acceso_oficina, comunicacion_interna, aprobacion_pendiente, otro |
+| `tipo` | Varchar(25) | NOT NULL, DEFAULT: 'asignacion' | asignacion, compartido, respuesta, vencimiento, acceso_oficina, comunicacion_interna, aprobacion_pendiente, urgencia, rebote, otro |
 | `titulo` | Varchar(200) | NOT NULL | Título de la notificación |
 | `mensaje` | Text | NOT NULL | Mensaje |
 | `correspondencia_id` | Integer | FK, NULL | Correspondencia asociada |
@@ -1194,21 +1761,26 @@
 | Autenticación | 3 |
 | Documentos - Estructura | 5 |
 | Documentos - TRD | 2 |
-| Documentos - FUID | 3 |
-| Documentos - Perfiles | 2 |
+| Documentos - FUID | 4 |
+| Documentos - Perfiles / Despliegue | 3 |
 | Documentos - Pacientes | 3 |
-| Documentos - Préstamos | 4 |
-| Correspondencia - Contactos | 2 |
-| Correspondencia - Entrante | 3 |
+| Documentos - Préstamos | 5 |
+| Correspondencia - Contactos | 4 |
+| Correspondencia - SLA y Calendario | 4 |
+| Correspondencia - Entrante | 4 |
 | Correspondencia - IMAP | 2 |
+| Correspondencia - Operativa de Correos | 3 |
 | Correspondencia - Distribución | 2 |
-| Correspondencia - Saliente | 4 |
+| Correspondencia - Saliente | 5 |
 | Correspondencia - Masivo | 3 |
 | Correspondencia - Informes | 2 |
-| Correspondencia - Firmas | 1 |
+| Correspondencia - Firmas | 2 |
 | Correspondencia - Internas | 5 |
+| Correspondencia - Urgencias | 2 |
+| Correspondencia - Asistente IA | 4 |
+| Correspondencia - Chat de Soporte | 3 |
 | Correspondencia - Notificaciones | 1 |
-| **TOTAL** | **45 tablas** |
+| **TOTAL** | **71 tablas documentadas** |
 
 ---
 
@@ -1222,5 +1794,5 @@
 
 ---
 
-**Última actualización:** Enero 2026  
+**Última actualización:** Junio 2026
 **Mantenido por:** Equipo de Desarrollo - Hospital del Sarare E.S.E.

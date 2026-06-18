@@ -1,147 +1,702 @@
 // Diagrama General - Relaciones Principales
-// Sistema de Gestión Documental y Correspondencia
-// Hospital del Sarare
-// Vista simplificada de modelos clave
+// Sistema de Gestion Documental y Correspondencia
+// Hospital del Sarare E.S.E.
 
 Project hospital_gestion_documental_general {
-  database_type: 'PostgreSQL'
-  Note: 'Vista general de relaciones entre módulos'
+  database_type: 'Microsoft SQL'
+  Note: 'Vista simplificada de modelos clave'
 }
 
-// documentos.SerieDocumental
-Table documentos_seriedocumental {
-  id bigint [pk, increment]
-  codigo varchar(50) [not null]
-  nombre varchar(255) [not null]
-}
+Table asistente_conversacion {
+  Note: '''
+Sesión de conversación del asistente documental.'''
 
-// documentos.SubserieDocumental
-Table documentos_subseriedocumental {
-  id bigint [pk, increment]
-  codigo varchar(50) [not null]
-  nombre varchar(255) [not null]
-  serie integer [not null]
-}
+  id big_auto [pk, unique, not null]
+  usuario_id foreign_key [not null]
+  titulo char [default:`"Nueva conversación"`, not null]
+  estado asistente.char_conversacion_estado [default:`"ACTIVA"`, not null]
+  ultima_pregunta_at date_time [null]
+  creado_en date_time [not null]
+  actualizado_en date_time [not null]
 
-// documentos.Proceso
-Table documentos_proceso {
-  id bigint [pk, increment]
-  nombre varchar(255) [not null]
-  macroproceso integer [not null]
-}
+  indexes {
+    (id) [pk, unique, name: 'asistente_conversacion_pkey', type: btree]
+    (usuario_id) [name: 'asistente_conversacion_usuario_id_1ae4151f', type: btree]
+  }
 
-// documentos.OficinaProductora
-Table documentos_oficinaproductora {
-  id bigint [pk, increment]
-  nombre varchar(255) [not null]
-  codigo varchar(50)
-  unidad_administrativa integer [not null]
-  proceso integer [not null]
-}
+Table correspondencia_calendariolaboral {
+  Note: '''
+Indica si una fecha determinada es hábil o no.
 
-// documentos.FUID
-Table documentos_fuid {
-  id bigint [pk, increment]
-  entidad_productora integer
-  unidad_administrativa integer
-  oficina_productora integer
-  objeto integer
-  fecha_creacion timestamp [not null]
-}
+Si la tabla está vacía, el utilitario _es_habil caerá al cálculo por día de la semana.'''
 
-// documentos.RegistroDeArchivo
-Table documentos_registrodearchivo {
-  id bigint [pk, increment]
-  codigo varchar(50)
-  codigo_serie integer [not null]
-  codigo_subserie integer
-  fecha_creacion timestamp [not null]
-}
+  id big_auto [pk, unique, not null]
+  fecha date [unique, not null]
+  es_habil boolean [default:`True`, not null]
 
-// documentos.PrestamoDocumental
-Table documentos_prestamodocumental {
-  id bigint [pk, increment]
-  registro integer
-  fuid integer
-  oficina_solicitante integer
-  serie integer
-  subserie integer
-  estado varchar(20) [not null]
-}
+  indexes {
+    (fecha) [unique, name: 'correspondencia_calendariolaboral_fecha_key', type: btree]
+    (id) [pk, unique, name: 'correspondencia_calendariolaboral_pkey', type: btree]
+  }
 
-// correspondencia.EntidadExterna
-Table correspondencia_entidadexterna {
-  id bigint [pk, increment]
-  nombre varchar(255) [unique, not null]
-}
+Table correspondencia_chatconversation {
+  Note: '''
+Hilo de conversación abierto por un usuario.'''
 
-// correspondencia.Contacto
-Table correspondencia_contacto {
-  id bigint [pk, increment]
-  entidad_externa integer [not null]
-}
+  id big_auto [pk, unique, not null]
+  usuario_id foreign_key [not null]
+  asunto char [not null]
+  estado correspondencia.char_chatconversation_estado [default:`"abierta"`, not null]
+  prioridad correspondencia.char_chatconversation_prioridad [default:`"normal"`, not null]
+  creado date_time [not null]
+  actualizado date_time [not null]
 
-// correspondencia.Correspondencia
-Table correspondencia_correspondencia {
-  id bigint [pk, increment]
-  numero_radicado varchar(50) [unique, not null]
-  remitente integer
-  asunto text [not null]
-  serie integer
-  subserie integer
-  tramite_aplicado integer
-  estado varchar(50) [not null]
-  oficina_destino integer [not null]
-}
+  indexes {
+    (estado) [name: 'correspondencia_chatconversation_estado_c9005042', type: btree]
+    (id) [pk, unique, name: 'correspondencia_chatconversation_pkey', type: btree]
+    (usuario_id) [name: 'correspondencia_chatconversation_usuario_id_a75c55c2', type: btree]
+  }
 
-// correspondencia.CorrespondenciaSalida
-Table correspondencia_correspondenciasalida {
-  id bigint [pk, increment]
-  respuesta_a integer
-  fecha_creacion timestamp [not null]
-  oficina_emisora integer
-  destinatario_contacto integer [not null]
-  asunto varchar(255) [not null]
-  estado varchar(50) [not null]
-  envio_grupo integer
-}
-
-// correspondencia.ComunicacionInterna
 Table correspondencia_comunicacioninterna {
-  id bigint [pk, increment]
-  radicado varchar(50) [unique]
-  fecha_creacion timestamp [not null]
-  tipo_distribucion varchar(20)
-  remitente_oficina integer [not null]
-  destinatario_oficina integer
-  destinatario_proceso integer
-  asunto varchar(255) [not null]
-  comunicacion_origen integer
-  estado varchar(25) [not null]
-}
+  Note: '''
+Modelo para gestionar las comunicaciones internas (Oficios) entre oficinas.
+Genera un documento Word basado en plantilla.
 
-// ========== RELACIONES PRINCIPALES ==========
+Flujo de estados:
+- BORRADOR: Usuario puede editar.
+- PENDIENTE_APROBACION: Esperando aprobación del líder.
+- RECHAZADA: Líder rechazó. Fin del flujo.
+- APROBADA: Líder aprobó. Si es a toda la entidad, requiere firma antes de distribuir.
+- DISTRIBUIDA: Comunicación enviada a destinatarios.
+- RESPONDIDA: Se creó una respuesta a esta comunicación.'''
 
-Ref: correspondencia_correspondencia.oficina_destino_id > documentos_oficinaproductora.id
-Ref: correspondencia_comunicacioninterna.remitente_oficina_id > documentos_oficinaproductora.id
-Ref: documentos_registrodearchivo.oficina_id > documentos_oficinaproductora.id
-Ref: correspondencia_correspondencia.serie_id > documentos_seriedocumental.id
-Ref: correspondencia_correspondencia.subserie_id > documentos_subseriedocumental.id
+  id big_auto [pk, unique, not null]
+  radicado char [unique, null]
+  codigo_dependencia char [note: '''Código jerárquico de la dependencia/oficina productora''', null]
+  anio_radicado positive_small_integer [null]
+  consecutivo_radicado positive_integer [null]
+  serie_documental_id foreign_key [note: '''Serie documental asociada a la comunicación interna''', null]
+  subserie_documental_id foreign_key [note: '''Subserie documental asociada a la comunicación interna''', null]
+  trd char [note: '''Código TRD (Tabla de Retención Documental)''', null]
+  fecha_creacion date_time [not null]
+  ciudad char [default:`"Saravena"`, not null]
+  fecha_documento date [note: '''Fecha que aparecerá en el documento impreso''', not null]
+  tipo_distribucion correspondencia.char_comunicacioninterna_tipo_distribucion [note: '''Tipo de distribución de la comunicación''', default:`"USUARIO"`, null]
+  es_a_toda_entidad boolean [note: '''Si es True, va a todos los usuarios del sistema y requiere firma digital. (DEPRECADO: usar tipo_distribucion="ENTIDAD")''', default:`False`, not null]
+  remitente_usuario_id foreign_key [not null]
+  remitente_nombre char [not null]
+  remitente_cargo char [null]
+  remitente_oficina_id foreign_key [not null]
+  destinatario_oficina_id foreign_key [note: '''Oficina destino. Dejar vacío si es a toda la entidad.''', null]
+  destinatario_usuario_id foreign_key [note: '''Opcional: Si va dirigido a una persona específica''', null]
+  destinatario_proceso_id foreign_key [note: '''Proceso destino (solo cuando tipo_distribucion = "PROCESO")''', null]
+  asunto char [not null]
+  cuerpo text [note: '''Contenido principal de la comunicación''', not null]
+  archivo_generado file [null]
+  archivo_firmado file [note: '''PDF firmado digitalmente por el líder (requerido para distribución a oficina/proceso/entidad)''', null]
+  fecha_firma date_time [note: '''Fecha y hora en que se subió el archivo firmado''', null]
+  revisado_por_id foreign_key [note: '''Líder de oficina que revisó y aprobó la comunicación''', null]
+  revisado_nombre char [note: '''Nombre del revisor (snapshot)''', null]
+  revisado_cargo char [note: '''Cargo del revisor (snapshot)''', null]
+  fecha_revision date_time [note: '''Fecha y hora de revisión/aprobación''', null]
+  motivo_rechazo text [note: '''Motivo del rechazo (si aplica)''', null]
+  comunicacion_origen_id foreign_key [note: '''Comunicación original a la que responde (múltiples respuestas permitidas)''', null]
+  es_respuesta_destacada boolean [note: '''Indica si esta respuesta está destacada (estrellita). Líderes y usuarios asignados inicialmente tienen respuestas destacadas.''', default:`False`, not null]
+  fecha_distribucion date_time [note: '''Fecha y hora de distribución''', null]
+  estado correspondencia.char_comunicacioninterna_estado [default:`"BORRADOR"`, not null]
 
-TableGroup documentos {
-  documentos_seriedocumental
-  documentos_subseriedocumental
-  documentos_proceso
-  documentos_oficinaproductora
-  documentos_fuid
-  documentos_registrodearchivo
-  documentos_prestamodocumental
-}
+  indexes {
+    (comunicacion_origen_id) [name: 'correspondencia_comunicacioninterna_comunicacion_origen_id_aa179bcb', type: btree]
+    (destinatario_oficina_id) [name: 'correspondencia_comunicacioninterna_destinatario_oficina_id_a9729f2a', type: btree]
+    (destinatario_proceso_id) [name: 'correspondencia_comunicacioninterna_destinatario_proceso_id_0fc7fcea', type: btree]
+    (destinatario_usuario_id) [name: 'correspondencia_comunicacioninterna_destinatario_usuario_id_76c0596c', type: btree]
+    (id) [pk, unique, name: 'correspondencia_comunicacioninterna_pkey', type: btree]
+    (radicado) [unique, name: 'correspondencia_comunicacioninterna_radicado_key', type: btree]
+    (remitente_oficina_id) [name: 'correspondencia_comunicacioninterna_remitente_oficina_id_235f04fd', type: btree]
+    (remitente_usuario_id) [name: 'correspondencia_comunicacioninterna_remitente_usuario_id_d29c0f24', type: btree]
+    (revisado_por_id) [name: 'correspondencia_comunicacioninterna_revisado_por_id_bd9d7cea', type: btree]
+    (serie_documental_id) [name: 'correspondencia_comunicacioninterna_serie_documental_id_f5c71249', type: btree]
+    (subserie_documental_id) [name: 'correspondencia_comunicacioninterna_subserie_documental_id_7039d29b', type: btree]
+  }
 
-TableGroup correspondencia {
-  correspondencia_entidadexterna
-  correspondencia_contacto
-  correspondencia_correspondencia
-  correspondencia_correspondenciasalida
-  correspondencia_comunicacioninterna
-}
+Table correspondencia_contacto {
+  Note: '''
+Representa un contacto externo (persona) asociado a una EntidadExterna.'''
+
+  id big_auto [pk, unique, not null]
+  entidad_externa_id foreign_key [default:`1`, not null]
+  nombres char [not null]
+  apellidos char [null]
+  cargo char [note: '''Cargo del contacto dentro de la entidad (opcional)''', null]
+  correo_electronico email [unique, not null]
+  telefono_contacto char [null]
+  numero_documento char [note: '''Cédula, pasaporte u otro documento de identificación (opcional)''', null]
+
+  indexes {
+    (correo_electronico) [unique, name: 'correspondencia_contacto_correo_electronico_key', type: btree]
+    (entidad_externa_id) [name: 'correspondencia_contacto_entidad_externa_id_67c92760', type: btree]
+    (id) [pk, unique, name: 'correspondencia_contacto_pkey', type: btree]
+  }
+
+Table correspondencia_correoentrante {
+  Note: '''
+Almacena temporalmente correos leídos de IMAP antes de procesarlos.'''
+
+  id big_auto [pk, unique, not null]
+  message_id char [note: '''Message-ID único del correo''', unique, not null]
+  remitente email [not null]
+  asunto char [not null]
+  cuerpo_texto text [note: '''Cuerpo del mensaje en texto plano''', not null]
+  cuerpo_html text [note: '''Cuerpo del mensaje en HTML (si existe)''', not null]
+  fecha_recepcion_original date_time [note: '''Fecha del encabezado "Date" del correo''', null]
+  fecha_recibida_gmail date_time [note: '''Fecha INTERNALDATE registrada por Gmail/IMAP (recepción en servidor)''', null]
+  fecha_lectura_imap date_time [default:`django.utils.timezone.now()`, not null]
+  procesado boolean [note: '''Indica si ya se intentó la clasificación IA''', default:`False`, not null]
+  radicado_asociado_id foreign_key [note: '''Correspondencia creada a partir de este correo (si aplica)''', null]
+  urgencia_asociada_id foreign_key [note: '''Urgencia creada a partir de este correo (si aplica)''', null]
+  requiere_revision_manual boolean [note: '''Marcar si la radicación automática falló y necesita intervención.''', default:`False`, not null]
+  en_papelera boolean [note: '''En papelera: no se muestra en bandeja activa; se conserva para registro.''', default:`False`, not null]
+  motivo_papelera correspondencia.char_correoentrante_motivo_papelera [note: '''Motivo por el cual se envió a papelera.''', not null]
+  fecha_papelera date_time [note: '''Fecha en que se envió a papelera.''', null]
+  usuario_papelera_id foreign_key [note: '''Usuario que envió el correo a papelera.''', null]
+  oficina_clasificada_id foreign_key [note: '''Oficina destino predicha por IA''', null]
+  serie_clasificada_id foreign_key [note: '''Serie documental predicha por IA''', null]
+  subserie_clasificada_id foreign_key [note: '''Subserie documental predicha por IA (relacionada a la serie)''', null]
+  fecha_clasificacion date_time [note: '''Fecha y hora en que se realizó la clasificación IA''', null]
+
+  indexes {
+    (en_papelera) [name: 'correspondencia_correoentrante_en_papelera_3123abbe', type: btree]
+    (message_id) [unique, name: 'correspondencia_correoentrante_message_id_key', type: btree]
+    (oficina_clasificada_id) [name: 'correspondencia_correoentrante_oficina_clasificada_id_44a1c6b4', type: btree]
+    (id) [pk, unique, name: 'correspondencia_correoentrante_pkey', type: btree]
+    (procesado) [name: 'correspondencia_correoentrante_procesado_7dc8d718', type: btree]
+    (radicado_asociado_id) [name: 'correspondencia_correoentrante_radicado_asociado_id_da824c2d', type: btree]
+    (serie_clasificada_id) [name: 'correspondencia_correoentrante_serie_clasificada_id_66117bb0', type: btree]
+    (subserie_clasificada_id) [name: 'correspondencia_correoentrante_subserie_clasificada_id_70b72d6b', type: btree]
+    (urgencia_asociada_id) [name: 'correspondencia_correoentrante_urgencia_asociada_id_6c18cc82', type: btree]
+    (usuario_papelera_id) [name: 'correspondencia_correoentrante_usuario_papelera_id_e015dade', type: btree]
+  }
+
+Table correspondencia_correspondencia {
+  Note: '''
+Modelo principal para gestionar la correspondencia entrante del sistema.
+
+Este modelo centraliza toda la información relacionada con documentos
+que ingresan a la entidad, incluyendo su radicación, asignación, seguimiento
+y cálculo automático de plazos de respuesta (SLA).
+
+Características principales:
+- Generación automática de números de radicado
+- Cálculo y persistencia de plazos SLA basados en TRD o configuración
+- Trazabilidad completa del flujo de correspondencia
+- Integración con calendario laboral para cálculos de fechas límite
+
+Attributes:
+numero_radicado (str): Número único generado automáticamente
+tipo_radicado (str): Tipo de radicado (ENTRANTE, etc.)
+fecha_radicacion (datetime): Fecha y hora de radicación
+usuario_radicador (User): Usuario que realizó la radicación
+remitente (Contacto): Contacto externo que envió la correspondencia
+asunto (str): Descripción del contenido de la correspondencia
+medio_recepcion (str): Medio por el cual llegó (FISICO/ELECTRONICO)
+requiere_respuesta (bool): Indica si requiere respuesta
+tiempo_respuesta (str): Configuración de tiempo (NORMAL/URGENTE/MUY_URGENTE)
+oficina_destino (OficinaProductora): Oficina responsable de procesar
+serie/subserie (FK): Clasificación documental
+estado (str): Estado actual en el flujo de trabajo
+usuario_destino_inicial (User): Usuario asignado inicialmente
+leido_por_oficina (bool): Indica si fue leído por la oficina
+fecha_limite_respuesta (datetime): Fecha límite calculada dinámicamente
+plazo_respuesta_dias (int): Días hábiles persistidos para reportes
+fecha_limite_respuesta_persist (datetime): Fecha límite persistida
+plazo_origen (str): Origen del plazo (TRD/FALLBACK/NONE)
+tramite_aplicado (TramiteTipo): Trámite aplicado si hay TRD'''
+
+  id big_auto [pk, unique, not null]
+  numero_radicado char [unique, not null]
+  tipo_radicado correspondencia.char_correspondencia_tipo_radicado [default:`"ENTRANTE"`, not null]
+  fecha_radicacion date_time [default:`django.utils.timezone.now()`, not null]
+  usuario_radicador_id foreign_key [null]
+  remitente_id foreign_key [note: '''Seleccione el contacto (persona) que envía''', null]
+  asunto text [not null]
+  serie_id foreign_key [null]
+  subserie_id foreign_key [null]
+  medio_recepcion correspondencia.char_correspondencia_medio_recepcion [default:`"FISICO"`, not null]
+  requiere_respuesta boolean [default:`False`, not null]
+  tiempo_respuesta correspondencia.char_correspondencia_tiempo_respuesta [null]
+  dias_personalizados integer [note: '''Días de respuesta personalizados (1-15). Si se especifica, tiene prioridad sobre tiempo_respuesta y TRD.''', null]
+  plazo_respuesta_dias integer [null]
+  fecha_limite_respuesta_persist date_time [null]
+  plazo_origen correspondencia.char_correspondencia_plazo_origen [default:`"NONE"`, not null]
+  tramite_aplicado_id foreign_key [null]
+  estado correspondencia.char_correspondencia_estado [default:`"RADICADA"`, not null]
+  leido_por_oficina boolean [note: '''Indica si alguien de la oficina destino ya lo leyó''', default:`False`, not null]
+  resumen_ia text [note: '''Resumen del contenido generado por IA''', null]
+  sellado boolean [note: '''Indica si el documento físico ya fue sellado/imprimido''', default:`False`, not null]
+  fecha_sellado date_time [note: '''Fecha y hora del primer sellado''', null]
+  en_planilla boolean [note: '''Indica si esta correspondencia ya fue descargada e incluida en una planilla''', default:`False`, not null]
+  oficina_destino_id foreign_key [not null]
+  usuario_destino_inicial_id foreign_key [null]
+  origen_radicacion correspondencia.char_correspondencia_origen_radicacion [note: '''Indica cómo fue radicada esta correspondencia''', default:`"NORMAL"`, not null]
+  fecha_recepcion_documento date [note: '''Fecha en que se recibió físicamente el documento (importante para calcular plazo de respuesta)''', null]
+  tipo_tramite correspondencia.char_correspondencia_tipo_tramite [note: '''Tipo de trámite (radicación rápida)''', null]
+  entidad_persona_remitente char [null]
+  funcionario_responsable_tramite char [null]
+  email_funcionario_responsable email [note: '''Correo electrónico del funcionario responsable del trámite''', null]
+  clasificacion_comunicacion char [null]
+  numero_folios positive_integer [null]
+  anexos char [null]
+  medio_recibido correspondencia.char_correspondencia_medio_recibido [null]
+  direccion_correo_remitente email [null]
+  empresa_transportadora char [null]
+  numero_guia char [null]
+  fecha_limite_respuesta_manual date [null]
+  fecha_primer_seguimiento date [null]
+  fecha_segundo_seguimiento date [null]
+  fecha_notificacion_vencimiento date [null]
+  fecha_respuesta date [null]
+  estado_respuesta correspondencia.char_correspondencia_estado_respuesta [note: '''Solo para radicación rápida: Pendiente, Respondida o Vencida.''', null]
+  radicado_enviado_respuesta char [null]
+
+  indexes {
+    (en_planilla) [name: 'correspondencia_correspondencia_en_planilla_a9e663aa', type: btree]
+    (numero_radicado) [unique, name: 'correspondencia_correspondencia_numero_radicado_key', type: btree]
+    (oficina_destino_id) [name: 'correspondencia_correspondencia_oficina_destino_id_60db489f', type: btree]
+    (origen_radicacion) [name: 'correspondencia_correspondencia_origen_radicacion_4306106d', type: btree]
+    (id) [pk, unique, name: 'correspondencia_correspondencia_pkey', type: btree]
+    (remitente_id) [name: 'correspondencia_correspondencia_remitente_id_44d41cc7', type: btree]
+    (sellado) [name: 'correspondencia_correspondencia_sellado_694cf705', type: btree]
+    (serie_id) [name: 'correspondencia_correspondencia_serie_id_ad01d4fe', type: btree]
+    (subserie_id) [name: 'correspondencia_correspondencia_subserie_id_b2cf9819', type: btree]
+    (tramite_aplicado_id) [name: 'correspondencia_correspondencia_tramite_aplicado_id_02f4a3bb', type: btree]
+    (usuario_destino_inicial_id) [name: 'correspondencia_correspondencia_usuario_destino_inicial_id_2eeff7e8', type: btree]
+    (usuario_radicador_id) [name: 'correspondencia_correspondencia_usuario_radicador_id_b84999ee', type: btree]
+  }
+
+Table correspondencia_correspondenciasalida {
+  Note: '''
+Representa una respuesta o comunicación de salida.'''
+
+  id big_auto [pk, unique, not null]
+  respuesta_a_id foreign_key [note: '''Correspondencia entrante a la que responde este documento (opcional para salidas independientes).''', null]
+  respuesta_a_urgencia_id foreign_key [note: '''Urgencia a la que responde este documento (opcional).''', null]
+  numero_radicado_salida char [unique, not null]
+  fecha_creacion date_time [not null]
+  usuario_redactor_id foreign_key [null]
+  fecha_ultima_modificacion date_time [not null]
+  oficina_emisora_id foreign_key [note: '''Oficina emisora de la correspondencia de salida (derivada de la entrante)''', null]
+  oficina_emisora_nombre char [null]
+  redactor_nombre char [null]
+  redactor_cargo char [null]
+  destinatario_contacto_id foreign_key [note: '''Contacto externo al que se dirige la respuesta (automático o seleccionado).''', null]
+  destinatario_email email [note: '''Email del destinatario al momento de la aprobación (automático).''', default:`""`, not null]
+  asunto char [not null]
+  cuerpo text [not null]
+  tipo_respuesta correspondencia.char_correspondenciasalida_tipo_respuesta [note: '''Indica si la salida corresponde a una respuesta obligatoria o discrecional.''', default:`"OBLIGATORIA"`, not null]
+  motivo_respuesta_discrecional text [note: '''Motivo obligatorio cuando la respuesta es discrecional.''', default:`""`, not null]
+  estado correspondencia.char_correspondenciasalida_estado [default:`"BORRADOR"`, not null]
+  usuario_aprobador_id foreign_key [null]
+  fecha_aprobacion date_time [null]
+  motivo_rechazo text [null]
+  fecha_envio date_time [null]
+  id_mensaje_enviado char [null]
+  postmark_message_id char [note: '''MessageID UUID devuelto por Postmark al enviar.''', null]
+  envio_tipo correspondencia.char_correspondenciasalida_envio_tipo [note: '''Modalidad de envío registrada al crear la salida. Opcional para trazabilidad.''', null]
+  envio_grupo_id foreign_key [note: '''Grupo/Categoría utilizado para el envío cuando aplica.''', null]
+  envio_total_destinatarios integer [null]
+  envio_detalle_snapshot char [null]
+  funcionario_envia char [note: '''Nombre del funcionario que envía la correspondencia.''', default:`""`, not null]
+  fue_respondida boolean [default:`False`, not null]
+  evidencia_respuesta file [null]
+
+  indexes {
+    (destinatario_contacto_id) [name: 'correspondencia_correspondenciasalida_destinatario_contacto_id_7798c704', type: btree]
+    (envio_grupo_id) [name: 'correspondencia_correspondenciasalida_envio_grupo_id_e3d0ca13', type: btree]
+    (numero_radicado_salida) [unique, name: 'correspondencia_correspondenciasalida_numero_radicado_salida_key', type: btree]
+    (oficina_emisora_id) [name: 'correspondencia_correspondenciasalida_oficina_emisora_id_5e818355', type: btree]
+    (id) [pk, unique, name: 'correspondencia_correspondenciasalida_pkey', type: btree]
+    (postmark_message_id) [name: 'correspondencia_correspondenciasalida_postmark_message_id_436379ad', type: btree]
+    (respuesta_a_id) [name: 'correspondencia_correspondenciasalida_respuesta_a_id_4996015e', type: btree]
+    (respuesta_a_urgencia_id) [name: 'correspondencia_correspondenciasalida_respuesta_a_urgencia_id_803428da', type: btree]
+    (usuario_aprobador_id) [name: 'correspondencia_correspondenciasalida_usuario_aprobador_id_7205028a', type: btree]
+    (usuario_redactor_id) [name: 'correspondencia_correspondenciasalida_usuario_redactor_id_612de082', type: btree]
+  }
+
+Table correspondencia_entidadexterna {
+  Note: '''
+Representa una entidad externa (empresa, institución, etc.).'''
+
+  id big_auto [pk, unique, not null]
+  nombre char [note: '''Nombre completo de la entidad externa''', unique, not null]
+  nit char [note: '''NIT o identificador fiscal (opcional)''', null]
+  direccion char [null]
+  telefono char [null]
+  dominio char [note: '''Dominio de correo asociado (opcional)''', unique, null]
+
+  indexes {
+    (dominio) [unique, name: 'correspondencia_entidadexterna_dominio_key', type: btree]
+    (nombre) [unique, name: 'correspondencia_entidadexterna_nombre_key', type: btree]
+    (id) [pk, unique, name: 'correspondencia_entidadexterna_pkey', type: btree]
+  }
+
+Table correspondencia_entidadexternadominio {
+  Note: '''
+Dominios adicionales autorizados para una entidad externa.'''
+
+  id big_auto [pk, unique, not null]
+  entidad_externa_id foreign_key [not null]
+  dominio char [unique, not null]
+  activo boolean [default:`True`, not null]
+  fecha_creacion date_time [not null]
+
+  indexes {
+    (dominio) [unique, name: 'correspondencia_entidadexternadominio_dominio_key', type: btree]
+    (entidad_externa_id) [name: 'correspondencia_entidadexternadominio_entidad_externa_id_3a6415ac', type: btree]
+    (id) [pk, unique, name: 'correspondencia_entidadexternadominio_pkey', type: btree]
+  }
+
+Table correspondencia_notificacion {
+  Note: '''
+Modelo para notificaciones del usuario'''
+
+  id big_auto [pk, unique, not null]
+  usuario_id foreign_key [not null]
+  tipo correspondencia.char_notificacion_tipo [default:`"asignacion"`, not null]
+  titulo char [not null]
+  mensaje text [not null]
+  correspondencia_id foreign_key [null]
+  comunicacion_interna_id foreign_key [note: '''Comunicación interna asociada (si aplica)''', null]
+  leida boolean [default:`False`, not null]
+  fecha_creacion date_time [not null]
+  fecha_lectura date_time [null]
+  url char [note: '''URL de destino al hacer clic''', null]
+
+  indexes {
+    (usuario_id,leida,fecha_creacion) [name: 'corresponde_usuario_76aa45_idx', type: btree]
+    (comunicacion_interna_id) [name: 'correspondencia_notificacion_comunicacion_interna_id_a3cdaed7', type: btree]
+    (correspondencia_id) [name: 'correspondencia_notificacion_correspondencia_id_2a21ca46', type: btree]
+    (id) [pk, unique, name: 'correspondencia_notificacion_pkey', type: btree]
+    (usuario_id) [name: 'correspondencia_notificacion_usuario_id_f1bc99e8', type: btree]
+  }
+
+Table correspondencia_subserietramite {
+  Note: '''
+Mapa 1-a-1 entre una Subserie Documental y un tipo de trámite definido por la TRD.'''
+
+  id big_auto [pk, unique, not null]
+  subserie_id one_to_one [unique, not null]
+  tramite_id foreign_key [not null]
+
+  indexes {
+    (id) [pk, unique, name: 'correspondencia_subserietramite_pkey', type: btree]
+    (subserie_id) [unique, name: 'correspondencia_subserietramite_subserie_id_key', type: btree]
+    (tramite_id) [name: 'correspondencia_subserietramite_tramite_id_a2369edf', type: btree]
+  }
+
+Table correspondencia_tipotramite {
+  Note: '''
+Tipo de trámite para radicación rápida con días de respuesta configurables.
+
+Permite administrar desde el panel de administración los tipos de trámite
+disponibles y sus tiempos de respuesta en días hábiles.'''
+
+  id big_auto [pk, unique, not null]
+  codigo char [note: '''Código único del tipo de trámite (ej: PT, PTA, PQRSF)''', unique, not null]
+  nombre char [note: '''Nombre descriptivo del tipo de trámite''', not null]
+  descripcion text [note: '''Descripción detallada del tipo de trámite (opcional)''', not null]
+  dias_respuesta positive_integer [note: '''Número de días hábiles para responder. Dejar vacío si no aplica plazo.''', null]
+  activo boolean [note: '''Solo los tipos activos aparecen en los formularios''', default:`True`, not null]
+  orden positive_integer [note: '''Orden de aparición en los formularios (menor número = primera posición)''', default:`0`, not null]
+  fecha_creacion date_time [not null]
+  fecha_modificacion date_time [not null]
+
+  indexes {
+    (codigo) [unique, name: 'correspondencia_tipotramite_codigo_key', type: btree]
+    (id) [pk, unique, name: 'correspondencia_tipotramite_pkey', type: btree]
+  }
+
+Table correspondencia_tramitetipo {
+  Note: '''
+Catálogo de tipos de trámite asociado a plazos legales de respuesta.'''
+
+  id big_auto [pk, unique, not null]
+  codigo char [unique, not null]
+  nombre char [not null]
+  plazo_dias_habiles positive_small_integer [not null]
+  fundamento_normativo char [not null]
+  activo boolean [default:`True`, not null]
+
+  indexes {
+    (codigo) [unique, name: 'correspondencia_tramitetipo_codigo_key', type: btree]
+    (id) [pk, unique, name: 'correspondencia_tramitetipo_pkey', type: btree]
+  }
+
+Table correspondencia_urgencia {
+  Note: '''
+Modelo para correspondencia de carácter urgente que se trabaja en horas laborales.
+
+A diferencia de la correspondencia normal, las urgencias:
+- Se miden en HORAS laborales (no días)
+- Saltan el proceso de distribución
+- Llegan directamente a TODA la oficina destino
+- Cualquier usuario de la oficina puede responder
+- Comparten la secuencia de radicado con Correspondencia normal
+
+Atributos principales:
+numero_radicado: Número secuencial compartido con Correspondencia
+radicado: Formato URGENCIA-YYYY-NNNNN
+horas_limite: Horas laborales (8am-5pm, Lun-Vie) para responder
+fecha_limite: Fecha límite calculada automáticamente
+estado: PENDIENTE | EN_PROCESO | RESPONDIDA | VENCIDA
+prioridad: ALTA | CRITICA'''
+
+  id big_auto [pk, unique, not null]
+  correo_entrante_id foreign_key [note: '''Correo entrante que origina esta urgencia''', not null]
+  numero_radicado positive_integer [note: '''Número secuencial compartido con correspondencia ENTRANTE''', unique, not null]
+  radicado char [note: '''Formato: ENTRANTE-YYYY-NNNNN compartido con Correspondencia''', unique, not null]
+  fecha_radicacion date_time [default:`django.utils.timezone.now()`, not null]
+  usuario_radica_id foreign_key [note: '''Usuario de ventanilla que radica la urgencia''', not null]
+  serie_id foreign_key [not null]
+  subserie_id foreign_key [null]
+  oficina_destino_id foreign_key [note: '''Toda la oficina recibe la urgencia, sin distribución''', not null]
+  horas_limite positive_small_integer [note: '''Horas laborales (8am-5pm, Lun-Vie) para responder''', default:`24`, not null]
+  fecha_limite date_time [note: '''Fecha límite calculada automáticamente''', not null]
+  estado correspondencia.char_urgencia_estado [default:`"PENDIENTE"`, not null]
+  usuario_asignado_id foreign_key [note: '''Usuario que tomó la urgencia para trabajarla''', null]
+  fecha_asignacion date_time [null]
+  usuario_responde_id foreign_key [null]
+  fecha_respuesta date_time [null]
+  respuesta text [not null]
+  prioridad correspondencia.char_urgencia_prioridad [default:`"ALTA"`, not null]
+  observaciones text [not null]
+  motivo_urgencia text [note: '''Justificación de por qué es urgente''', not null]
+  horas_transcurridas decimal [note: '''Horas laborales transcurridas desde radicación''', default:`0`, not null]
+
+  indexes {
+    (estado,oficina_destino_id) [name: 'corresponde_estado_c0876b_idx', type: btree]
+    (fecha_limite) [name: 'corresponde_fecha_l_be28f7_idx', type: btree]
+    (prioridad,estado) [name: 'corresponde_priorid_8f1520_idx', type: btree]
+    (correo_entrante_id) [name: 'correspondencia_urgencia_correo_entrante_id_155adfed', type: btree]
+    (estado) [name: 'correspondencia_urgencia_estado_fe24c9fc', type: btree]
+    (numero_radicado) [unique, name: 'correspondencia_urgencia_numero_radicado_key', type: btree]
+    (oficina_destino_id) [name: 'correspondencia_urgencia_oficina_destino_id_d1059f8d', type: btree]
+    (id) [pk, unique, name: 'correspondencia_urgencia_pkey', type: btree]
+    (prioridad) [name: 'correspondencia_urgencia_prioridad_1258044f', type: btree]
+    (radicado) [unique, name: 'correspondencia_urgencia_radicado_key', type: btree]
+    (serie_id) [name: 'correspondencia_urgencia_serie_id_77ffa136', type: btree]
+    (subserie_id) [name: 'correspondencia_urgencia_subserie_id_50140822', type: btree]
+    (usuario_asignado_id) [name: 'correspondencia_urgencia_usuario_asignado_id_ad116e41', type: btree]
+    (usuario_radica_id) [name: 'correspondencia_urgencia_usuario_radica_id_a650e9a1', type: btree]
+    (usuario_responde_id) [name: 'correspondencia_urgencia_usuario_responde_id_4317cc66', type: btree]
+  }
+
+Table documentos_despliegueoficina {
+  Note: '''
+Seguimiento manual del rollout por oficina (panel de monitoreo).'''
+
+  id big_auto [pk, unique, not null]
+  oficina_id one_to_one [unique, not null]
+  estado_visita documentos.char_despliegueoficina_estado_visita [default:`"pendiente"`, not null]
+  fecha_visita date [null]
+  notas text [default:`""`, not null]
+  actualizado_por_id foreign_key [null]
+  actualizado_en date_time [not null]
+
+  indexes {
+    (actualizado_por_id) [name: 'documentos_despliegueoficina_actualizado_por_id_4831065e', type: btree]
+    (oficina_id) [unique, name: 'documentos_despliegueoficina_oficina_id_key', type: btree]
+    (id) [pk, unique, name: 'documentos_despliegueoficina_pkey', type: btree]
+  }
+
+Table documentos_entidadproductora {
+  Note: '''
+EntidadProductora(id, nombre)'''
+
+  id big_auto [pk, unique, not null]
+  nombre char [unique, not null]
+
+  indexes {
+    (nombre) [unique, name: 'documentos_entidadproductora_nombre_key', type: btree]
+    (id) [pk, unique, name: 'documentos_entidadproductora_pkey', type: btree]
+  }
+
+Table documentos_oficinaproductora {
+  Note: '''
+OficinaProductora(id, nombre, codigo, codigo_trd, codigo_trd_comunicacion_interna, codigo_sis, unidad_administrativa, proceso)'''
+
+  id big_auto [pk, unique, not null]
+  nombre char [not null]
+  codigo char [note: '''Código de la oficina (opcional)''', null]
+  codigo_trd char [note: '''Código TRD de la oficina (solo el número, ej: 300)''', null]
+  codigo_trd_comunicacion_interna char [note: '''Código TRD autoritativo para comunicaciones internas de esta oficina''', null]
+  codigo_sis char [note: '''Código SIS de la dependencia para comunicaciones internas (ej: SUC-00, DIR-03). Si se define, tiene prioridad sobre el cálculo automático.''', null]
+  unidad_administrativa_id foreign_key [not null]
+  proceso_id foreign_key [note: '''Proceso al que pertenece esta oficina (Subproceso)''', not null]
+
+  indexes {
+    (id) [pk, unique, name: 'documentos_oficinaproductora_pkey', type: btree]
+    (proceso_id) [name: 'documentos_oficinaproductora_proceso_id_8ab6ce63', type: btree]
+    (unidad_administrativa_id) [name: 'documentos_oficinaproductora_unidad_administrativa_id_94862810', type: btree]
+  }
+
+Table documentos_perfilusuario {
+  Note: '''
+PerfilUsuario(id, user, oficina, cargo, tipo_documento, numero_documento, fecha_nacimiento, direccion, telefono, firma_digital, fecha_firma_creada, fecha_registro, solicita_lider)'''
+
+  id big_auto [pk, unique, not null]
+  user_id one_to_one [unique, not null]
+  oficina_id foreign_key [null]
+  cargo char [note: '''Cargo del usuario (opcional)''', null]
+  tipo_documento documentos.char_perfilusuario_tipo_documento [note: '''Tipo de documento de identidad''', default:`"CC"`, not null]
+  numero_documento char [note: '''Número de documento de identidad''', unique, null]
+  fecha_nacimiento date [note: '''Fecha de nacimiento''', null]
+  direccion char [note: '''Dirección de residencia''', null]
+  telefono char [note: '''Número de teléfono''', null]
+  firma_digital image [note: '''Firma manuscrita del usuario para usar en documentos''', null]
+  fecha_firma_creada date_time [note: '''Fecha en que se creó la firma''', null]
+  fecha_registro date_time [note: '''Fecha de registro del usuario''', null]
+  solicita_lider boolean [note: '''El usuario solicita ser líder de oficina''', default:`False`, not null]
+
+  indexes {
+    (numero_documento) [unique, name: 'documentos_perfilusuario_numero_documento_key', type: btree]
+    (oficina_id) [name: 'documentos_perfilusuario_oficina_id_14680036', type: btree]
+    (id) [pk, unique, name: 'documentos_perfilusuario_pkey', type: btree]
+    (user_id) [unique, name: 'documentos_perfilusuario_user_id_key', type: btree]
+  }
+
+Table documentos_prestamodocumental {
+  Note: '''
+Modelo principal para préstamos documentales'''
+
+  id big_auto [pk, unique, not null]
+  registro_id foreign_key [null]
+  fuid_id foreign_key [null]
+  solicitante_id foreign_key [not null]
+  oficina_solicitante_id foreign_key [null]
+  oficina_responsable_id foreign_key [note: '''Oficina a la que se dirige la solicitud de préstamo''', null]
+  subproceso_solicitante char [note: '''Subproceso que solicita''', null]
+  codigo_trd char [note: '''Código TRD''', null]
+  serie_id foreign_key [null]
+  subserie_id foreign_key [null]
+  descripcion_documento text [note: '''Descripción del documento (serie/subserie y fecha)''', null]
+  tipo_prestamo documentos.char_prestamodocumental_tipo_prestamo [not null]
+  estado documentos.char_prestamodocumental_estado [default:`"SOLICITADO"`, not null]
+  fecha_solicitud date_time [not null]
+  fecha_aprobacion date_time [null]
+  fecha_entrega date_time [null]
+  fecha_vencimiento date [note: '''Solo para préstamos físicos (10 días hábiles para Historia Clínica, 20 días hábiles para otros)''', null]
+  fecha_devolucion date_time [note: '''Fecha en que el usuario devolvió el documento''', null]
+  fecha_reintegracion date_time [note: '''Fecha en que Archivo Central reintegró el documento a su ubicación física''', null]
+  aprobado_por_id foreign_key [null]
+  procesado_por_id foreign_key [null]
+  vobo_jefe_nombre char [note: '''Nombre del jefe que aprueba''', default:`"Eliana Gelves"`, null]
+  vobo_jefe_cargo char [null]
+  vobo_jefe_fecha date [null]
+  documento_escaneado file [note: '''PDF escaneado del documento''', null]
+  documento_virtual file [note: '''PDF generado para préstamo virtual''', null]
+  motivo_rechazo text [null]
+  motivo_rechazo_usuario text [note: '''Motivo si el usuario rechaza el documento''', null]
+  documento_rechazo file [note: '''Documento adjunto explicando los motivos del rechazo''', null]
+  documento_devuelto boolean [default:`False`, not null]
+  documento_danado boolean [default:`False`, not null]
+  observaciones_dano text [note: '''Observaciones sobre daños o faltantes''', null]
+  confirmado_por_usuario boolean [note: '''Usuario confirma que recibió el documento correcto''', default:`False`, not null]
+  fecha_confirmacion date_time [null]
+  notas text [null]
+
+  indexes {
+    (estado,fecha_solicitud) [name: 'documentos__estado_ed1f62_idx', type: btree]
+    (solicitante_id,fecha_solicitud) [name: 'documentos__solicit_5cd088_idx', type: btree]
+    (tipo_prestamo,estado) [name: 'documentos__tipo_pr_9c1537_idx', type: btree]
+    (aprobado_por_id) [name: 'documentos_prestamodocumental_aprobado_por_id_d374a49b', type: btree]
+    (fuid_id) [name: 'documentos_prestamodocumental_fuid_id_b20457f0', type: btree]
+    (oficina_responsable_id) [name: 'documentos_prestamodocumental_oficina_responsable_id_60a75584', type: btree]
+    (oficina_solicitante_id) [name: 'documentos_prestamodocumental_oficina_solicitante_id_3287c200', type: btree]
+    (id) [pk, unique, name: 'documentos_prestamodocumental_pkey', type: btree]
+    (procesado_por_id) [name: 'documentos_prestamodocumental_procesado_por_id_2857db24', type: btree]
+    (registro_id) [name: 'documentos_prestamodocumental_registro_id_5fab9dca', type: btree]
+    (serie_id) [name: 'documentos_prestamodocumental_serie_id_b80e1d9b', type: btree]
+    (solicitante_id) [name: 'documentos_prestamodocumental_solicitante_id_a82b370b', type: btree]
+    (subserie_id) [name: 'documentos_prestamodocumental_subserie_id_fc9f29e9', type: btree]
+  }
+
+Table documentos_registrodearchivo {
+  Note: '''
+RegistroDeArchivo(id, Estado_archivo, numero_orden, codigo, codigo_serie, codigo_subserie, unidad_documental, fecha_archivo, fecha_inicial, fecha_final, soporte_fisico, soporte_electronico, caja, carpeta, tomo_legajo_libro, numero_folios, tipo, cantidad, ubicacion, cantidad_documentos_electronicos, tamano_documentos_electronicos, identificador_documento, notas, creado_por, fecha_creacion, fecha_edicion, editado_por)'''
+
+  id big_auto [pk, unique, not null]
+  Estado_archivo boolean [default:`True`, not null]
+  numero_orden integer [default:`0`, not null]
+  codigo char [null]
+  codigo_serie_id foreign_key [not null]
+  codigo_subserie_id foreign_key [null]
+  unidad_documental char [not null]
+  fecha_archivo date [null]
+  fecha_inicial date [null]
+  fecha_final date [null]
+  soporte_fisico boolean [default:`False`, not null]
+  soporte_electronico boolean [default:`False`, not null]
+  caja integer [null]
+  carpeta integer [null]
+  tomo_legajo_libro char [null]
+  numero_folios integer [null]
+  tipo char [null]
+  cantidad integer [null]
+  ubicacion char [null]
+  cantidad_documentos_electronicos integer [null]
+  tamano_documentos_electronicos char [null]
+  identificador_documento char [null]
+  notas text [null]
+  creado_por_id foreign_key [null]
+  fecha_creacion date_time [not null]
+  fecha_edicion date_time [null]
+  editado_por_id foreign_key [note: '''Último usuario que editó este registro''', null]
+
+  indexes {
+    (codigo_serie_id) [name: 'documentos_registrodearchivo_codigo_serie_id_ce15f1f1', type: btree]
+    (codigo_subserie_id) [name: 'documentos_registrodearchivo_codigo_subserie_id_659f2d27', type: btree]
+    (creado_por_id) [name: 'documentos_registrodearchivo_creado_por_id_6e21ec41', type: btree]
+    (editado_por_id) [name: 'documentos_registrodearchivo_editado_por_id_e57381df', type: btree]
+    (id) [pk, unique, name: 'documentos_registrodearchivo_pkey', type: btree]
+  }
+
+Table documentos_seriedocumental {
+  Note: '''
+SerieDocumental(id, codigo, nombre, codigo_trd)'''
+
+  id big_auto [pk, unique, not null]
+  codigo char [not null]
+  nombre char [not null]
+  codigo_trd char [note: '''Código TRD de la serie''', null]
+
+  indexes {
+    (id) [pk, unique, name: 'documentos_seriedocumental_pkey', type: btree]
+  }
+
+Table documentos_subseriedocumental {
+  Note: '''
+SubserieDocumental(id, codigo, nombre, codigo_trd, serie)'''
+
+  id big_auto [pk, unique, not null]
+  codigo char [not null]
+  nombre char [not null]
+  codigo_trd char [note: '''Código TRD de la subserie''', null]
+  serie_id foreign_key [not null]
+
+  indexes {
+    (id) [pk, unique, name: 'documentos_subseriedocumental_pkey', type: btree]
+    (serie_id) [name: 'documentos_subseriedocumental_serie_id_701eb220', type: btree]
+  }
+
+Table documentos_unidadadministrativa {
+  Note: '''
+UnidadAdministrativa(id, nombre, entidad_productora)'''
+
+  id big_auto [pk, unique, not null]
+  nombre char [not null]
+  entidad_productora_id foreign_key [not null]
+
+  indexes {
+    (entidad_productora_id) [name: 'documentos_unidadadministrativa_entidad_productora_id_52d24862', type: btree]
+    (id) [pk, unique, name: 'documentos_unidadadministrativa_pkey', type: btree]
+  }

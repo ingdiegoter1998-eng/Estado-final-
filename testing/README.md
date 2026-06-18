@@ -1,7 +1,8 @@
 # Testing
 
-Documentación de testing, pruebas y cobertura de tests.
+| Ruta | Descripción |
+|------|-------------|
+| `TESTING_V2_FULL.md` | Estrategia de testing V2 |
+| `adhoc/` | Scripts de prueba sueltos |
 
-## Contenido
-
-- **TESTING_V2_FULL.md** - Estrategia de testing para versión 2 completa
+**No confundir:** [`../reportes/`](../reportes/) = docs ejecutivos; [`../reports/`](../reports/) = salida pytest (gitignored).
