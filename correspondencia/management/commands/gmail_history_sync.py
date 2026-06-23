@@ -83,11 +83,15 @@ class Command(BaseCommand):
         fetched = 0
 
         try:
-            latest_history_id, history_ids_discovered = self._refresh_pending_queue(
-                client,
-                start_history_id=start_history_id,
-                max_results=max_results,
-            )
+            if pending_count() > 0:
+                latest_history_id = get_target_history_id() or start_history_id
+                history_ids_discovered = 0
+            else:
+                latest_history_id, history_ids_discovered = self._refresh_pending_queue(
+                    client,
+                    start_history_id=start_history_id,
+                    max_results=max_results,
+                )
 
             batch_ids = take_batch(fetch_batch_size)
             messages = []
@@ -117,7 +121,7 @@ class Command(BaseCommand):
                         ))
                         continue
                     if is_gmail_rate_limit_error(exc):
-                        remember_gmail_rate_limit(exc)
+                        remember_gmail_rate_limit(exc, scope='read')
                         prepend_pending(batch_ids[index:])
                         rate_limited = True
                         break

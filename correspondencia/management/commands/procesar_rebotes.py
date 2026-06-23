@@ -212,6 +212,28 @@ def _looks_like_dsn(msg: Message, text_body: str) -> bool:
     return sender_looks_like_bounce and (subject_looks_like_bounce or body_looks_like_bounce)
 
 
+def _metadata_looks_like_bounce_candidate(msg) -> bool:
+    """Filtra por cabeceras (metadata) antes de descargar format=raw."""
+    from_header = (getattr(msg, 'from_', None) or '').lower()
+    if not from_header:
+        from_header = ((getattr(msg, 'headers', {}) or {}).get('from') or [''])[0].lower()
+    subject = (getattr(msg, 'subject', None) or '').lower()
+    if not subject:
+        subject = ((getattr(msg, 'headers', {}) or {}).get('subject') or [''])[0].lower()
+
+    sender_looks_like_bounce = any(token in from_header for token in BOUNCE_SENDER_HINTS)
+    subject_looks_like_bounce = any(token in subject for token in BOUNCE_SUBJECT_HINTS)
+    return sender_looks_like_bounce and subject_looks_like_bounce
+
+
+def _rebote_uids_from_metadata(metadata_messages):
+    return [
+        str(msg.uid)
+        for msg in metadata_messages or []
+        if getattr(msg, 'uid', None) and _metadata_looks_like_bounce_candidate(msg)
+    ]
+
+
 def _allow_email_only_fallback(msg: Message, recipients: set[str], status: str | None, diagnostic: str | None, smtp_code: str | None) -> bool:
     """Solo permite fallback por email si el mensaje trae evidencia mínima de rebote."""
     if not recipients:
@@ -431,9 +453,11 @@ class Command(BaseCommand):
             processed_uids: set[str] = set()
 
             for folder in folders_to_try:
-                # 1) No leídos primero (evita reprocesar)
+                # 1) No leídos primero (metadata → raw solo para candidatos DSN)
                 uids_to_mark_seen: list[str] = []
-                for msg in mailbox.fetch_unread_messages(folder):
+                unread_metadata = list(mailbox.fetch_unread_messages(folder))
+                candidate_uids = _rebote_uids_from_metadata(unread_metadata)
+                for msg in mailbox.fetch_messages_by_uids(folder, candidate_uids):
                     try:
                         procesados_msg, processed = self._procesar_mensaje_dsn(msg)
                         procesados += procesados_msg
@@ -452,7 +476,12 @@ class Command(BaseCommand):
 
                 # 2) Leídos recientes como respaldo (p. ej. Gmail ya marcó visto)
                 date_from = (timezone.now() - timedelta(days=seen_time_window_days)).date()
-                for msg in mailbox.fetch_messages_since(folder, date_gte=date_from):
+                since_metadata = list(mailbox.fetch_messages_since(folder, date_gte=date_from))
+                since_candidate_uids = [
+                    uid for uid in _rebote_uids_from_metadata(since_metadata)
+                    if uid not in processed_uids
+                ]
+                for msg in mailbox.fetch_messages_by_uids(folder, since_candidate_uids):
                     if msg.uid in processed_uids:
                         continue
                     try:

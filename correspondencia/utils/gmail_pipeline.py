@@ -68,7 +68,7 @@ def _gmail_profile_email() -> tuple[str, str]:
     """Devuelve (email_vinculado, error)."""
     if not getattr(settings, 'GMAIL_API_REFRESH_TOKEN', ''):
         return '', 'GMAIL_API_REFRESH_TOKEN no configurado'
-    cooldown_message = gmail_rate_limit_message('Consulta de perfil omitida por rate limit Gmail API')
+    cooldown_message = gmail_rate_limit_message('Consulta de perfil omitida por rate limit Gmail API', scope='read')
     if cooldown_message:
         return '', cooldown_message
     try:
@@ -85,14 +85,15 @@ def _gmail_profile_email() -> tuple[str, str]:
         return profile.get('emailAddress', '') or '', ''
     except Exception as exc:
         if is_gmail_rate_limit_error(exc):
-            remember_gmail_rate_limit(exc)
+            remember_gmail_rate_limit(exc, scope='read')
         return '', str(exc)
 
 
 def build_operational_status() -> dict:
     sync = get_sync_state()
     now = timezone.now()
-    rate_limit_until = get_gmail_rate_limit_until()
+    rate_limit_until = get_gmail_rate_limit_until('read')
+    rate_limit_send_until = get_gmail_rate_limit_until('send')
     watch_expires_soon = False
     watch_missing = False
     if sync:
@@ -133,6 +134,7 @@ def build_operational_status() -> dict:
         'gmail_profile_email': gmail_profile_email,
         'gmail_profile_error': gmail_profile_error,
         'gmail_rate_limit_until': rate_limit_until.isoformat() if rate_limit_until else '',
+        'gmail_rate_limit_send_until': rate_limit_send_until.isoformat() if rate_limit_send_until else '',
         'celery_gmail_api_tasks_paused': celery_gmail_api_tasks_paused(),
         **runtime,
     }
@@ -168,7 +170,7 @@ def renew_watch_if_needed(*, force: bool = False, hours_before: int | None = Non
 
 def run_pubsub_pull(*, max_messages: int | None = None) -> GmailPipelineResult:
     max_messages = max_messages or int(getattr(settings, 'GMAIL_API_PUBSUB_PULL_MAX_MESSAGES', 10))
-    cooldown_message = gmail_rate_limit_message()
+    cooldown_message = gmail_rate_limit_message(scope='read')
     if cooldown_message:
         return GmailPipelineResult(
             status='WARN',
@@ -198,7 +200,7 @@ def run_pubsub_pull(*, max_messages: int | None = None) -> GmailPipelineResult:
 
 
 def run_history_sync(*, dry_run: bool = False) -> GmailPipelineResult:
-    cooldown_message = gmail_rate_limit_message()
+    cooldown_message = gmail_rate_limit_message(scope='read')
     if cooldown_message:
         return GmailPipelineResult(
             status='WARN',

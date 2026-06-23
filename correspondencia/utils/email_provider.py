@@ -295,13 +295,36 @@ class GmailAPIInboxProvider:
         self._service = self.client.get_service()
         return self
 
-    def _execute(self, request):
+    def _execute(self, request, *, scope='read'):
         try:
             return request.execute()
         except Exception as exc:
             if is_gmail_rate_limit_error(exc):
-                remember_gmail_rate_limit(exc)
+                remember_gmail_rate_limit(exc, scope=scope)
             raise
+
+    def list_message_ids(self, folder_name, *, query_parts=None, max_messages=None):
+        return self._list_message_ids(folder_name, query_parts=query_parts or [], max_messages=max_messages)
+
+    def fetch_metadata_by_uids(self, folder_name, uids):
+        """Obtiene cabeceras sin descargar el cuerpo (format=metadata)."""
+        messages = []
+        metadata_headers = ['Message-ID', 'Date', 'From', 'Subject', 'To']
+        for uid in uids or []:
+            data = self._execute(self._service.users().messages().get(
+                userId=self.user_id,
+                id=str(uid),
+                format='metadata',
+                metadataHeaders=metadata_headers,
+            ))
+            messages.append(
+                normalize_gmail_message(
+                    str(uid),
+                    data.get('payload', {}),
+                    internal_date=data.get('internalDate'),
+                )
+            )
+        return messages
 
     def fetch_headers(self, folder_name, *, date_gte):
         messages = []
@@ -372,11 +395,14 @@ class GmailAPIInboxProvider:
 
     def fetch_unread_messages(self, folder_name):
         message_ids = self._list_message_ids(folder_name, query_parts=['is:unread'])
-        return self.fetch_messages_by_uids(folder_name, message_ids)
+        return self.fetch_metadata_by_uids(folder_name, message_ids)
 
     def fetch_messages_since(self, folder_name, *, date_gte):
-        message_ids = self._list_message_ids(folder_name, query_parts=[f'after:{date_gte.strftime("%Y/%m/%d")}'])
-        return self.fetch_messages_by_uids(folder_name, message_ids)
+        message_ids = self._list_message_ids(
+            folder_name,
+            query_parts=[f'after:{date_gte.strftime("%Y/%m/%d")}'],
+        )
+        return self.fetch_metadata_by_uids(folder_name, message_ids)
 
     def mark_seen_many(self, uids):
         for uid in uids or []:
@@ -393,7 +419,7 @@ class GmailAPIInboxProvider:
         effective_query_parts = list(query_parts or [])
         if folder_name == '[Gmail]/Todos':
             effective_query_parts.insert(0, 'in:anywhere')
-        max_messages = int(max_messages or getattr(settings, 'GMAIL_API_MAX_SCAN_MESSAGES', 300))
+        max_messages = int(max_messages or getattr(settings, 'GMAIL_API_MAX_SCAN_MESSAGES', 50))
         page_token = None
         collected = []
         while True:

@@ -3,8 +3,11 @@ import os
 
 from django.conf import settings
 from django.core.management import call_command
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
+from correspondencia.models import EstadoSincronizacionCorreos
+from correspondencia.utils.email_sync_helpers import get_email_ingestion_sync_source
+from correspondencia.utils.gmail_history_queue import merge_pending_ids
 from correspondencia.utils.gmail_rate_limit import get_gmail_rate_limit_until
 
 try:
@@ -24,10 +27,6 @@ class Command(BaseCommand):
         parser.add_argument('--no-ack', action='store_true')
 
     def handle(self, *args, **options):
-        retry_after = get_gmail_rate_limit_until()
-        if retry_after:
-            raise CommandError(f'Gmail API en rate limit; reintentar después de {retry_after.isoformat()}')
-
         if SubscriberClient is None:
             raise RuntimeError('Falta google-cloud-pubsub. Instálalo para consumir notificaciones Pub/Sub.')
 
@@ -58,45 +57,52 @@ class Command(BaseCommand):
             if history_id:
                 history_ids.append(history_id)
 
-        # Revalidar cooldown tras el pull: si Gmail sigue en 429, no consumir history ni
-        # hacer ack (los mensajes Pub/Sub se reentregan cuando expire el bloqueo).
-        retry_after = get_gmail_rate_limit_until()
-        if retry_after:
+        max_history_id = max(history_ids, key=int) if history_ids else ''
+        if max_history_id and not dry_run:
+            sync, _ = EstadoSincronizacionCorreos.objects.get_or_create(
+                fuente=get_email_ingestion_sync_source(),
+            )
+            start_history_id = (sync.ultimo_history_id or '').strip()
+            merge_pending_ids([], target_history_id=max_history_id)
+            self.stdout.write(
+                f'history_checkpoint_persistido={max_history_id} '
+                f'(desde ultimo_history_id={start_history_id or "vacío"})'
+            )
+
+        read_cooldown = get_gmail_rate_limit_until('read')
+        sync_output = ''
+        rate_limited = bool(read_cooldown)
+
+        if read_cooldown:
             self.stdout.write(self.style.WARNING(
-                f'Pub/Sub recibió {len(received_messages)} mensaje(s) pero Gmail API sigue en rate limit; '
-                f'no se hace ack ni history sync. Reintentar después de {retry_after.isoformat()}'
+                f'Pub/Sub recibió {len(received_messages)} mensaje(s); Gmail API en cooldown de lectura. '
+                f'Sync diferido; checkpoint persistido. Reintentar después de {read_cooldown.isoformat()}'
             ))
-            self.stdout.write(f'mensajes_pubsub={len(received_messages)}')
-            self.stdout.write(f'history_ids={history_ids}')
-            self.stdout.write('ack=False')
-            return
+        else:
+            from io import StringIO
 
-        from io import StringIO
+            sync_buffer = StringIO()
+            call_command('gmail_history_sync', dry_run=dry_run, stdout=sync_buffer)
+            sync_output = sync_buffer.getvalue()
+            rate_limited = 'rate_limited=True' in sync_output
 
-        sync_buffer = StringIO()
-        call_command('gmail_history_sync', dry_run=dry_run, stdout=sync_buffer)
-        sync_output = sync_buffer.getvalue()
-        rate_limited = 'rate_limited=True' in sync_output
+            if rate_limited:
+                self.stdout.write(self.style.WARNING(
+                    'History sync detenido por rate limit Gmail API durante el drenaje.'
+                ))
+                self.stdout.write(sync_output)
 
-        if rate_limited:
-            self.stdout.write(self.style.WARNING(
-                'History sync detenido por rate limit Gmail API; no se hace ack para reentregar Pub/Sub.'
-            ))
-            self.stdout.write(sync_output)
-            self.stdout.write(f'mensajes_pubsub={len(received_messages)}')
-            self.stdout.write(f'history_ids={history_ids}')
-            self.stdout.write('ack=False')
-            return
-
-        if do_ack and ack_ids:
+        if do_ack and ack_ids and not dry_run:
             subscriber.acknowledge(subscription=subscription, ack_ids=ack_ids)
 
-        self.stdout.write(self.style.SUCCESS('Consumo Pub/Sub completado.'))
-        if sync_output.strip():
+        if sync_output.strip() and not rate_limited:
             self.stdout.write(sync_output)
+
+        self.stdout.write(self.style.SUCCESS('Consumo Pub/Sub completado.'))
         self.stdout.write(f'mensajes_pubsub={len(received_messages)}')
         self.stdout.write(f'history_ids={history_ids}')
-        self.stdout.write(f'ack={do_ack}')
+        self.stdout.write(f'ack={do_ack and not dry_run}')
+        self.stdout.write(f'rate_limited={rate_limited}')
 
     def _build_subscriber_client(self):
         credentials_file = getattr(settings, 'GMAIL_API_PUBSUB_CREDENTIALS_FILE', '').strip()

@@ -190,7 +190,12 @@ class GmailAPIClient:
 
     def send_message(self, mime_message):
         payload = {'raw': self.build_raw_message(mime_message)}
-        return self.get_service().users().messages().send(userId=self.user_id, body=payload).execute()
+        try:
+            return self.get_service().users().messages().send(userId=self.user_id, body=payload).execute()
+        except Exception as exc:
+            if is_gmail_rate_limit_error(exc):
+                remember_gmail_rate_limit(exc, scope='send')
+            raise
 
     def get_profile(self):
         return self.get_service().users().getProfile(userId=self.user_id).execute()
@@ -226,7 +231,7 @@ class GmailAPIClient:
             return self.get_service().users().history().list(**kwargs).execute()
         except Exception as exc:
             if is_gmail_rate_limit_error(exc):
-                remember_gmail_rate_limit(exc)
+                remember_gmail_rate_limit(exc, scope='read')
             raise
 
     @staticmethod

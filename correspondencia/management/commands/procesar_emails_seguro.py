@@ -121,7 +121,7 @@ class Command(BaseCommand):
         try:
             provider_name = getattr(settings, 'EMAIL_INGESTION_PROVIDER', 'imap').strip().lower()
             if provider_name == 'gmail_api':
-                retry_after = get_gmail_rate_limit_until()
+                retry_after = get_gmail_rate_limit_until('read')
                 if retry_after:
                     raise CommandError(
                         f'Gmail API en rate limit; reintentar después de {retry_after.isoformat()}'
@@ -315,7 +315,7 @@ class Command(BaseCommand):
             raise
         except Exception as e_general:
             if is_gmail_rate_limit_error(e_general):
-                retry_after = remember_gmail_rate_limit(e_general)
+                retry_after = remember_gmail_rate_limit(e_general, scope='read')
                 raise CommandError(
                     f'Gmail API en rate limit; reintentar después de {retry_after.isoformat()}'
                 ) from e_general

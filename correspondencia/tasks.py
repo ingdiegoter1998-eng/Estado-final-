@@ -81,7 +81,7 @@ def procesar_emails_periodico():
     db.close_old_connections()
 
     if get_email_ingestion_provider_name() == 'gmail_api':
-        if should_skip_gmail_api_celery_task('procesar_emails_periodico', logger=logger):
+        if should_skip_gmail_api_celery_task('procesar_emails_periodico', logger=logger, scope='read'):
             return
 
     if not _acquire_email_lock(timeout=240):
@@ -240,7 +240,7 @@ def procesar_rebotes_periodico():
     """Tarea periódica para ejecutar el comando manage.py procesar_rebotes."""
     db.close_old_connections()
     if get_email_ingestion_provider_name() == 'gmail_api':
-        if should_skip_gmail_api_celery_task('procesar_rebotes_periodico', logger=logger):
+        if should_skip_gmail_api_celery_task('procesar_rebotes_periodico', logger=logger, scope='read'):
             return
     if (
         getattr(settings, 'EMAIL_PROVIDER', '') == 'postmark'
@@ -257,7 +257,7 @@ def procesar_rebotes_periodico():
         logger.info("Tarea periódica procesar_rebotes finalizada exitosamente.")
     except Exception as e:
         if is_gmail_rate_limit_error(e):
-            remember_gmail_rate_limit(e)
+            remember_gmail_rate_limit(e, scope='read')
         logger.error(f"Error ejecutando la tarea periódica procesar_rebotes: {e}", exc_info=True)
     finally:
         db.close_old_connections()
@@ -385,6 +385,7 @@ def aprobar_y_enviar_respuestas_pendientes_periodico():
         if should_skip_gmail_api_celery_task(
             'aprobar_y_enviar_respuestas_pendientes_periodico',
             logger=logger,
+            scope='send',
         ):
             return
     if not _acquire_named_lock(_APROBAR_RESPUESTAS_LOCK_KEY, timeout=600):
@@ -575,7 +576,7 @@ def gmail_pubsub_pull_periodico():
     if get_email_ingestion_provider_name() != 'gmail_api':
         logger.debug('gmail_pubsub_pull_periodico: omitido (ingestion != gmail_api)')
         return
-    if should_skip_gmail_api_celery_task('gmail_pubsub_pull_periodico', logger=logger):
+    if should_skip_gmail_api_celery_task('gmail_pubsub_pull_periodico', logger=logger, scope='read'):
         return
 
     db.close_old_connections()
@@ -602,7 +603,7 @@ def gmail_watch_renew_periodico():
     if get_email_ingestion_provider_name() != 'gmail_api':
         logger.debug('gmail_watch_renew_periodico: omitido (ingestion != gmail_api)')
         return
-    if should_skip_gmail_api_celery_task('gmail_watch_renew_periodico', logger=logger):
+    if should_skip_gmail_api_celery_task('gmail_watch_renew_periodico', logger=logger, scope='read'):
         return
 
     db.close_old_connections()
