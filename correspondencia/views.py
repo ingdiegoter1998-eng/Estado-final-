@@ -48,6 +48,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView, DetailView, View, CreateView, TemplateView, RedirectView
 from django.utils import timezone
 from django.db import transaction
+from django.core.cache import cache
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from documentos.models import PerfilUsuario, OficinaProductora # Necesario para obtener perfil
 from correspondencia.permisos import usuario_puede_gestion_operativa
@@ -2053,10 +2054,14 @@ def _extract_int_pks_from_post(post, keys):
     pks = set()
     for key in keys:
         for raw in post.getlist(key):
-            try:
-                pks.add(int(raw))
-            except (TypeError, ValueError):
-                continue
+            for value in str(raw or '').split(','):
+                value = value.strip()
+                if not value:
+                    continue
+                try:
+                    pks.add(int(value))
+                except (TypeError, ValueError):
+                    continue
     return pks
 
 
@@ -2203,6 +2208,15 @@ def dashboard_ventanilla(request):
                 radicacion_form, post=request.POST, user=request.user,
             )
             if radicacion_form.is_valid():
+                request_token = (request.POST.get('radicacion_request_id') or '').strip()
+                if request_token:
+                    token_key = f'dashboard-radicacion-submit:{request.user.pk}:{request_token}'
+                    if not cache.add(token_key, True, timeout=300):
+                        messages.warning(
+                            request,
+                            'La radicación ya estaba en proceso. Se ignoró un envío duplicado del formulario.',
+                        )
+                        return redirect('correspondencia:dashboard_ventanilla')
                 try:
                     with transaction.atomic():
                         correspondencia = radicacion_form.save(commit=False)

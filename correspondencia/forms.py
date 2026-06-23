@@ -55,6 +55,25 @@ from .utils_sla import get_cutoff_time, aplicar_corte, sumar_habiles
 from django.utils import timezone
 import datetime
 
+
+class CommaSeparatedSelectMultiple(forms.SelectMultiple):
+    """Acepta selects múltiples enviados como valores repetidos o como CSV."""
+
+    def value_from_datadict(self, data, files, name):
+        raw_values = super().value_from_datadict(data, files, name)
+        if raw_values in (None, ''):
+            return []
+
+        values = raw_values if isinstance(raw_values, (list, tuple)) else [raw_values]
+        normalized = []
+        for raw_value in values:
+            for value in str(raw_value or '').split(','):
+                value = value.strip()
+                if value:
+                    normalized.append(value)
+        return normalized
+
+
 class CorrespondenciaForm(forms.ModelForm):
     """
     Formulario principal para radicar nueva correspondencia entrante.
@@ -509,7 +528,7 @@ class ManualRadicacionCorreoForm(forms.ModelForm):
         required=False,
         label="Compartir con otras oficinas",
         help_text="Otorga acceso de solo lectura a otras oficinas.",
-        widget=forms.SelectMultiple(attrs={
+        widget=CommaSeparatedSelectMultiple(attrs={
             'class': 'form-select',
             'size': '5',
             'data-otras-oficinas': 'true',
@@ -836,15 +855,8 @@ class ManualRadicacionCorreoForm(forms.ModelForm):
                     ),
                     Div(
                         Field('compartir_con_toda_oficina'),
-                        HTML('<small class="text-muted d-block mt-1">Desmarcado: solo verá el radicado el responsable principal. Marcado: también lo verá toda la oficina destino.</small>'),
                         css_class='form-check form-switch mb-3'
                     ),
-                    HTML("""
-                        <div class="alert alert-primary border small mb-3">
-                            <i class="bi bi-person-badge me-1"></i>
-                            El responsable principal siempre quedará asignado. Compartir con toda la oficina destino ahora es opcional.
-                        </div>
-                    """),
                     Field('otras_oficinas', css_class='mb-3'),
                     HTML("""
                         <div class="alert alert-light border small mb-0">

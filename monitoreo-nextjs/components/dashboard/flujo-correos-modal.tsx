@@ -62,7 +62,7 @@ export default function FlujoCorreosModal() {
             </DialogTitle>
             <DialogDescription className="text-xs sm:text-sm">
               {tab === "salida"
-                ? "Salidas por destinatario: radicado, oficina, MessageID y entrega Postmark/SMTP."
+                ? "Salidas por destinatario: radicado, oficina, MessageID, entrega y pendientes en cola de envío."
                 : "Entradas al buzón institucional: remitente, ingesta, estado y radicado derivado."}
             </DialogDescription>
           </DialogHeader>

@@ -9,6 +9,8 @@ from django.conf import settings
 
 POSTMARK_ATTACHMENTS_MAX_BYTES_DEFAULT = 10 * 1024 * 1024
 OUTBOUND_ATTACHMENTS_MAX_BYTES_DEFAULT = 25 * 1024 * 1024
+# Debe coincidir con client_max_body_size en deploy/nginx/correspondencia.conf
+NGINX_CLIENT_MAX_BODY_BYTES_DEFAULT = 25 * 1024 * 1024
 
 
 def correspondencia_max_outbound_attachments_bytes() -> int:
@@ -33,6 +35,17 @@ def postmark_attachments_limit_bytes() -> int:
                 'POSTMARK_ATTACHMENTS_MAX_BYTES',
                 POSTMARK_ATTACHMENTS_MAX_BYTES_DEFAULT,
             ),
+        )
+    )
+
+
+def nginx_client_max_body_bytes() -> int:
+    """Límite de carga HTTP impuesto por Nginx (client_max_body_size)."""
+    return int(
+        getattr(
+            settings,
+            'NGINX_CLIENT_MAX_BODY_BYTES',
+            NGINX_CLIENT_MAX_BODY_BYTES_DEFAULT,
         )
     )
 

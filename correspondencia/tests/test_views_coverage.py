@@ -387,14 +387,14 @@ class TestViewsCoverage:
 
         assert pks == {28, 88}
 
-    def test_extract_int_pks_from_post_ignores_comma_joined_invalid_value(self):
-        """Test: valor inválido '28,88' (bug JS) no produce PKs parseables."""
+    def test_extract_int_pks_from_post_accepts_comma_joined_values(self):
+        """Test: compatibilidad con valores '28,88' enviados por Select2 múltiple."""
         post = QueryDict(mutable=True)
         post['radicar-otras_oficinas'] = '28,88'
 
         pks = _extract_int_pks_from_post(post, ('radicar-otras_oficinas',))
 
-        assert pks == set()
+        assert pks == {28, 88}
 
     def test_dashboard_ventanilla_radicacion_con_multiples_otras_oficinas(self, ventanilla_client, setup_data):
         """Test: distribución rápida acepta varias oficinas adicionales en el POST."""

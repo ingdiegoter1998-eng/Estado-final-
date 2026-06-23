@@ -861,6 +861,7 @@ function inicializarNuevoModalResponder() {
             // Enviar formulario
             const formData = new FormData(form);
             
+            const outboundAjax = window.CorrespondenciaOutboundAjax;
             fetch(form.dataset.responderEndpoint, {
                 method: 'POST',
                 body: formData,
@@ -869,6 +870,9 @@ function inicializarNuevoModalResponder() {
                 }
             })
             .then(response => {
+                if (outboundAjax && typeof outboundAjax.parseOutboundAjaxResponse === 'function') {
+                    return outboundAjax.parseOutboundAjaxResponse(response, { adjuntosMb: ADJUNTOS_UPLOAD_MB });
+                }
                 if (!response.ok) {
                     throw new Error('Error en la respuesta del servidor');
                 }
@@ -941,14 +945,20 @@ function inicializarNuevoModalResponder() {
             })
             .catch(error => {
                 console.error('Error:', error);
-                const errorMsg = 'Error al enviar la respuesta. Por favor, intente nuevamente.';
+                const totalAdjuntos = calcularTamanoTotalAdjuntos();
+                if (totalAdjuntos > ADJUNTOS_UPLOAD_MAX_BYTES) {
+                    mostrarAlertaAdjuntosDrive(totalAdjuntos);
+                }
+                const errorMsg = (outboundAjax && typeof outboundAjax.mensajeErrorEnvioFormulario === 'function')
+                    ? outboundAjax.mensajeErrorEnvioFormulario(error, { adjuntosMb: ADJUNTOS_UPLOAD_MB })
+                    : 'No se pudo enviar la respuesta. Verifique los adjuntos y su conexión.';
                 if (typeof window.showError === 'function') {
                     window.showError(errorMsg);
                 } else if (typeof showError === 'function') {
                     showError(errorMsg);
                 } else {
                     console.warn('showError no disponible, usando alert como fallback');
-                alert('Error al enviar la respuesta');
+                    alert(errorMsg);
                 }
             })
             .finally(() => {

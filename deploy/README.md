@@ -264,7 +264,7 @@ Con esto, Celery worker y beat arrancan automáticamente al encender la máquina
   - `*.ngrok.io`, `*.ngrok-free.app`, `*.ngrok-free.dev` (ngrok remoto)
 
 ## Tamaño máximo de subida
-- Configurado en Nginx: `client_max_body_size 20M`.
+- Configurado en Nginx: `client_max_body_size 25M`.
 - Para cambiar, editar `/etc/nginx/sites-available/correspondencia` y recargar.
 
 ## Troubleshooting

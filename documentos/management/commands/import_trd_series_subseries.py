@@ -80,8 +80,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--file",
             dest="file",
-            default="dataUnidad/SERIES Y SUBSERIES.csv",
-            help="Ruta al CSV de TRD (por defecto dataUnidad/SERIES Y SUBSERIES.csv)",
+            default="data/trd/SERIES Y SUBSERIES.csv",
+            help="Ruta al CSV de TRD (por defecto data/trd/SERIES Y SUBSERIES.csv)",
         )
         parser.add_argument(
             "--threshold",

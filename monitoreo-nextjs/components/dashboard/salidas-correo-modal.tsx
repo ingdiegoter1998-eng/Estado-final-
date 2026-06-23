@@ -49,8 +49,11 @@ type SalidaCorreo = MessageIdsFields & {
   oficina_nombre: string;
   usuario_nombre: string;
   hora: string;
-  estado: "ENVIADO" | "FALLO" | "REBOTE" | string;
+  estado: "ENVIADO" | "FALLO" | "REBOTE" | "PENDIENTE" | string;
   estado_label: string;
+  salida_estado?: string;
+  salida_estado_label?: string;
+  motivo_pendiente?: string;
   destinatario_email: string;
   destinatario_nombre: string;
   postmark_estado: string;
@@ -148,6 +151,7 @@ type SalidaCorreoDetalle = MessageIdsFields & {
   resumen_entrega: {
     total_destinatarios: number;
     enviados: number;
+    pendientes?: number;
     fallos: number;
     rebotes: number;
   };
@@ -182,6 +186,7 @@ function estadoVariant(estado: string) {
   if (estado === "ENVIADO") return "success";
   if (estado === "REBOTE") return "danger";
   if (estado === "FALLO") return "warning";
+  if (estado === "PENDIENTE") return "info";
   return "secondary";
 }
 
@@ -189,6 +194,7 @@ function estadoLabel(estado: string) {
   if (estado === "ENVIADO") return "Enviado";
   if (estado === "REBOTE") return "Rebote";
   if (estado === "FALLO") return "Fallo";
+  if (estado === "PENDIENTE") return "Pendiente";
   return estado || "Otro";
 }
 
@@ -444,9 +450,10 @@ function SalidaCorreoDetailPanel({
           </DetailSection>
 
           <DetailSection title="Entrega y destinatarios" icon={<MailCheck className="h-4 w-4 text-emerald-400" />}>
-            <div className="mb-3 grid gap-3 sm:grid-cols-4">
+            <div className="mb-3 grid gap-3 sm:grid-cols-5">
               <DetailField label="Destinatarios" value={data.resumen_entrega.total_destinatarios} />
               <DetailField label="Enviados" value={data.resumen_entrega.enviados} />
+              <DetailField label="Pendientes" value={data.resumen_entrega.pendientes ?? 0} />
               <DetailField label="Fallos" value={data.resumen_entrega.fallos} />
               <DetailField label="Rebotes" value={data.resumen_entrega.rebotes} />
             </div>
@@ -833,6 +840,11 @@ function SalidasCorreoContent() {
                       <p className="font-medium text-foreground/90">
                         {item.postmark_estado}
                       </p>
+                      {item.estado === "PENDIENTE" && item.salida_estado_label && (
+                        <p className="mt-1 text-[11px] text-blue-300">
+                          Salida: {item.salida_estado_label}
+                        </p>
+                      )}
                       {item.postmark_recibido_at && (
                         <p className="mt-1 text-[11px] text-muted-foreground">
                           Evento {item.postmark_record_type}: {formatFecha(item.postmark_recibido_at)}

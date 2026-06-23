@@ -313,13 +313,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // LÓGICA DE CATEGORÍAS (GRUPOS)
     // =================================================================
     
+    function formatearConteoCategoria(total) {
+        const n = parseInt(total, 10) || 0;
+        const etiqueta = n === 1 ? 'contacto' : 'contactos';
+        return `<i class="bi bi-people-fill" aria-hidden="true"></i> ${n} ${etiqueta}`;
+    }
+
     function resetCategoriasUI() {
         categoriaSeleccionada = null;
         if(categoriaIdInput) categoriaIdInput.value = '';
         if(categoriaWrap) categoriaWrap.style.display = 'none';
+        if(categoriaCount) categoriaCount.innerHTML = '';
         if(btnTextoCategoria) btnTextoCategoria.textContent = 'Seleccionar categoría';
         if(btnAbrirCategorias) {
-            btnAbrirCategorias.classList.remove('btn-success', 'text-white');
+            btnAbrirCategorias.classList.remove('btn-success', 'text-white', 'salida-categoria-btn--active');
             btnAbrirCategorias.classList.add('btn-outline-warning');
         }
     }
@@ -361,12 +368,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 categoriaSeleccionada = { id: item.dataset.id, nombre: item.dataset.nombre, total: item.dataset.total };
                 if(categoriaIdInput) categoriaIdInput.value = categoriaSeleccionada.id;
                 if(categoriaNombre) categoriaNombre.textContent = categoriaSeleccionada.nombre;
-                if(categoriaCount) categoriaCount.textContent = `${categoriaSeleccionada.total} contactos`;
+                if(categoriaCount) categoriaCount.innerHTML = formatearConteoCategoria(categoriaSeleccionada.total);
                 if(categoriaWrap) categoriaWrap.style.display = 'block';
                 if(btnTextoCategoria) btnTextoCategoria.textContent = categoriaSeleccionada.nombre;
                 if(btnAbrirCategorias) {
-                    btnAbrirCategorias.classList.remove('btn-outline-warning');
-                    btnAbrirCategorias.classList.add('btn-success', 'text-white');
+                    btnAbrirCategorias.classList.remove('btn-outline-warning', 'btn-success', 'text-white');
+                    btnAbrirCategorias.classList.add('salida-categoria-btn--active');
                     bootstrap.Dropdown.getInstance(btnAbrirCategorias).hide();
                 }
                 limpiarDestinatariosManuales();
@@ -563,12 +570,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if(submitBtn) submitBtn.disabled = true;
 
         const formData = new FormData(form);
+        const outboundAjax = window.CorrespondenciaOutboundAjax;
         fetch(salidaEndpoint, {
             method: 'POST',
             body: formData,
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
         .then(response => {
+            if (outboundAjax && typeof outboundAjax.parseOutboundAjaxResponse === 'function') {
+                return outboundAjax.parseOutboundAjaxResponse(response, { adjuntosMb: ADJUNTOS_UPLOAD_MB });
+            }
             if (!response.ok) {
                 throw new Error('Error en la respuesta del servidor');
             }
@@ -606,14 +617,20 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => {
             console.error('Error:', error);
-            const errorMsg = 'Error de conexión al enviar el formulario. Por favor, intente nuevamente.';
+            const totalAdjuntos = calcularTamanoTotalAdjuntos();
+            if (totalAdjuntos > ADJUNTOS_UPLOAD_MAX_BYTES) {
+                mostrarAlertaAdjuntosDrive(totalAdjuntos);
+            }
+            const errorMsg = (outboundAjax && typeof outboundAjax.mensajeErrorEnvioFormulario === 'function')
+                ? outboundAjax.mensajeErrorEnvioFormulario(error, { adjuntosMb: ADJUNTOS_UPLOAD_MB })
+                : 'No se pudo enviar el formulario. Verifique los adjuntos y su conexión.';
             if (typeof window.showError === 'function') {
                 window.showError(errorMsg);
             } else if (typeof showError === 'function') {
                 showError(errorMsg);
             } else {
                 console.warn('showError no disponible, usando alert como fallback');
-            alert('Error de conexión al enviar el formulario.');
+                alert(errorMsg);
             }
         })
         .finally(() => {

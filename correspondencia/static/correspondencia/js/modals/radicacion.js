@@ -47,7 +47,7 @@
     var subseriesUrl = (modal && modal.querySelector('.modal-content')) ? modal.querySelector('.modal-content').getAttribute('data-subseries-url') : null;
     if (!$serie.length || !$subserie.length || !subseriesUrl) return;
 
-    $serie.on('change', function(){
+    $serie.off('change.radicacionSubseries').on('change.radicacionSubseries', function(){
       var serieId = $(this).val();
       if (!serieId) {
         $subserie.empty().append('<option value="">Seleccione serie primero</option>').prop('disabled', true);
@@ -65,6 +65,33 @@
           $subserie.empty().append('<option value="">Error al cargar</option>').prop('disabled', true);
         });
     });
+  }
+
+  function createSubmitToken() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return window.crypto.randomUUID();
+    }
+    return [
+      Date.now().toString(36),
+      Math.random().toString(36).slice(2),
+      Math.random().toString(36).slice(2)
+    ].join('-');
+  }
+
+  function ensureSubmitToken($form, forceNew) {
+    if (!$form || !$form.length) return;
+
+    var $token = $form.find('input[name="radicacion_request_id"]');
+    if (!$token.length) {
+      $token = $('<input>', {
+        type: 'hidden',
+        name: 'radicacion_request_id'
+      }).appendTo($form);
+    }
+
+    if (forceNew || !$token.val()) {
+      $token.val(createSubmitToken());
+    }
   }
 
   /**
@@ -99,6 +126,37 @@
     return window.DashboardDeferredSelects &&
       typeof window.DashboardDeferredSelects.isDeferredFieldId === 'function' &&
       window.DashboardDeferredSelects.isDeferredFieldId(fieldId);
+  }
+
+  /** Elimina Select2 y contenedores huérfanos (evita doble caja visible). */
+  function destroySelect2Field($field) {
+    if (!$field || !$field.length || !window.$) {
+      return;
+    }
+    if ($field.hasClass('select2-hidden-accessible') || $field.data('select2')) {
+      try {
+        $field.select2('destroy');
+      } catch (e) {
+        /* instancia stale */
+      }
+    }
+    $field.removeClass('select2-hidden-accessible');
+    $field.next('.select2-container').remove();
+  }
+
+  function initSelect2Field($field, options) {
+    if (!$field.length || !$.fn.select2) {
+      return;
+    }
+    if (isDashboardDeferredField($field.attr('id') || '')) {
+      return;
+    }
+    destroySelect2Field($field);
+    $field.select2($.extend({
+      theme: 'bootstrap-5',
+      dropdownParent: $field.closest('.modal'),
+      width: '100%'
+    }, options || {}));
   }
 
   function initAutocompleteRemitente(){
@@ -180,18 +238,9 @@
 
     if (!$toggle.length || !$section.length) return;
 
-    function initSelect2Field($field, options) {
-      if (!$field.length || !$.fn.select2) return;
-      if (isDashboardDeferredField($field.attr('id') || '')) return;
-      if ($field.hasClass('select2-hidden-accessible')) {
-        $field.select2('destroy');
-      }
-      $field.select2($.extend({
-        theme: 'bootstrap-5',
-        dropdownParent: $field.closest('.modal'),
-        width: '100%'
-      }, options || {}));
-    }
+    // Responsable principal: select nativo (lista corta vía AJAX). Select2 aquí
+    // dejaba el <select> visible y generaba un span.select2-container duplicado.
+    destroySelect2Field($user);
 
     function syncOtherOffices() {
       if (!$otherOffices.length) return;
@@ -203,6 +252,16 @@
       $otherOffices.trigger('change.select2');
     }
 
+    function ensureOtherOfficesSelect2() {
+      if (!$toggle.is(':checked') || !$otherOffices.length) {
+        return;
+      }
+      initSelect2Field($otherOffices, {
+        placeholder: 'Seleccione oficinas adicionales...',
+        closeOnSelect: false
+      });
+    }
+
     function toggleSection() {
       var enabled = $toggle.is(':checked');
       $section.stop(true, true)[enabled ? 'slideDown' : 'slideUp'](150);
@@ -210,6 +269,9 @@
       if (enabled) {
         syncOtherOffices();
         loadUsers();
+        ensureOtherOfficesSelect2();
+      } else if (!isDashboardDeferredField($otherOffices.attr('id') || '')) {
+        destroySelect2Field($otherOffices);
       }
       $modal.trigger('radicacion:summary-update');
     }
@@ -240,21 +302,14 @@
         });
     }
 
-    initSelect2Field($user, {
-      placeholder: 'Seleccione un usuario...',
-      allowClear: true
-    });
-
-    initSelect2Field($otherOffices, {
-      placeholder: 'Seleccione oficinas adicionales...',
-      closeOnSelect: false
-    });
-
-    $toggle.off('change.distribucionRapida').on('change.distribucionRapida', toggleSection);
-    $office.off('change.distribucionRapida').on('change.distribucionRapida', function() {
-      syncOtherOffices();
-      loadUsers();
-    });
+    if (modal.dataset.quickDistributionBound !== '1') {
+      modal.dataset.quickDistributionBound = '1';
+      $toggle.on('change.distribucionRapida', toggleSection);
+      $office.on('change.distribucionRapida', function() {
+        syncOtherOffices();
+        loadUsers();
+      });
+    }
 
     syncOtherOffices();
     toggleSection();
@@ -357,6 +412,7 @@
     var $section = $form.find('#quick-distribution-section');
     var wizardError = initWizardErrorBanner($form);
     initAdjuntosHints($form);
+    ensureSubmitToken($form, false);
 
     if (!$step1.length || !$step2.length || !$next.length || !$back.length || !$submit.length) return;
 
@@ -454,9 +510,9 @@
         if (!raw) {
           return;
         }
-        var values = Array.isArray(raw) ? raw : [raw];
+        var values = Array.isArray(raw) ? raw : String(raw).split(',');
         values.forEach(function(val) {
-          val = String(val);
+          val = String(val).trim();
           if (!val) {
             return;
           }
@@ -574,6 +630,12 @@
     });
     $modal.off('radicacion:summary-update').on('radicacion:summary-update', updateSummary);
     $form.off('submit.radicacionWizard').on('submit.radicacionWizard', function(e) {
+      if ($form.data('radicacionSubmitting') === true) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        return false;
+      }
+
       if (currentStep !== 2) {
         e.preventDefault();
         e.stopImmediatePropagation();
@@ -584,9 +646,20 @@
         e.stopImmediatePropagation();
         return false;
       }
+
+      ensureSubmitToken($form, false);
+      $form.data('radicacionSubmitting', true);
+      $submit.prop('disabled', true)
+        .html('<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>Guardando...');
+      $next.add($back).prop('disabled', true);
     });
 
     $modal.off('shown.bs.modal.radicacionWizard').on('shown.bs.modal.radicacionWizard', function() {
+      $form.data('radicacionSubmitting', false);
+      ensureSubmitToken($form, true);
+      $submit.prop('disabled', false)
+        .html('<i class="bi bi-check-lg me-1"></i>Guardar radicación');
+      $next.add($back).prop('disabled', false);
       if (wizardError) {
         wizardError.clearWizardError();
       }

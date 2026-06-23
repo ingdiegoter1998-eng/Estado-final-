@@ -915,6 +915,11 @@ def _postmark_estado_para_destinatario(destinatario, evento):
         if _outbound_usa_postmark():
             return f'No aceptado por {provider_label} o sin MessageID persistido'
         return 'No aceptado por el proveedor de envío o sin ID persistido'
+    if destinatario.estado == 'PENDIENTE':
+        salida = getattr(destinatario, 'correspondencia_salida', None)
+        if salida is not None:
+            return _motivo_pendiente_envio(salida)
+        return 'Pendiente de envío'
     return 'Sin referencia de entrega del proveedor persistida'
 
 
@@ -966,6 +971,68 @@ def _filtro_rango_destinatario(desde, hasta):
             fecha_envio__gte=desde,
             fecha_envio__lte=hasta,
         )
+    )
+
+
+# Salidas cuya entrega aún no terminó (incluye pendientes visibles en monitoreo).
+_SALIDA_ESTADOS_EN_PIPELINE_ENVIO = ('PENDIENTE_APROBACION', 'APROBADA', 'ERROR_ENVIO')
+
+
+def _motivo_pendiente_envio(salida):
+    """Texto operativo para destinatarios PENDIENTE en el flujo de salida."""
+    estado = (getattr(salida, 'estado', None) or '').strip()
+    if estado == 'PENDIENTE_APROBACION':
+        base = 'En cola de aprobación y envío automático'
+    elif estado == 'APROBADA':
+        base = 'Aprobada; pendiente de intento de envío'
+    elif estado == 'ERROR_ENVIO':
+        base = 'Reintento de envío pendiente'
+    else:
+        base = 'Pendiente de envío'
+
+    try:
+        from correspondencia.utils.gmail_rate_limit import get_gmail_rate_limit_until
+
+        retry_after = get_gmail_rate_limit_until()
+        if retry_after:
+            return f'{base}. Gmail API en rate limit hasta {retry_after.isoformat()}'
+    except Exception:
+        pass
+    return base
+
+
+def _qs_base_monitoreo_salidas_correo():
+    """Destinatarios del flujo saliente: eventos + pendientes operativos en pipeline."""
+    return (
+        SalidaDestinatario.objects
+        .select_related(*_SALIDA_OFICINA_SELECT_RELATED)
+        .exclude(
+            Q(estado='PENDIENTE')
+            & ~Q(correspondencia_salida__estado__in=_SALIDA_ESTADOS_EN_PIPELINE_ENVIO)
+        )
+    )
+
+
+def _annotate_fecha_referencia_destinatario(qs):
+    """
+    Fecha única para filtrar/ordenar: evento de envío o fechas de la salida padre.
+    Permite listar PENDIENTE sin ultimo_evento_at (p. ej. rate limit sin intento).
+    """
+    return qs.annotate(
+        fecha_referencia=Coalesce(
+            'ultimo_evento_at',
+            'fecha_envio',
+            'correspondencia_salida__fecha_aprobacion',
+            'correspondencia_salida__fecha_ultima_modificacion',
+            'correspondencia_salida__fecha_creacion',
+        )
+    )
+
+
+def _aplicar_rango_monitoreo_salidas(qs, desde, hasta):
+    return (
+        _annotate_fecha_referencia_destinatario(qs)
+        .filter(fecha_referencia__gte=desde, fecha_referencia__lte=hasta)
     )
 
 
@@ -1136,15 +1203,10 @@ def api_monitoreo_salidas_correo(request):
         desde = (ahora - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
         hasta = ahora
 
-    qs = (
-        SalidaDestinatario.objects
-        .select_related(*_SALIDA_OFICINA_SELECT_RELATED)
-        .filter(_filtro_rango_destinatario(desde, hasta))
-        .exclude(estado='PENDIENTE')
-    )
+    qs = _aplicar_rango_monitoreo_salidas(_qs_base_monitoreo_salidas_correo(), desde, hasta)
 
     estado = (request.GET.get('estado') or '').strip().upper()
-    estados_validos = {'ENVIADO', 'FALLO', 'REBOTE'}
+    estados_validos = {'ENVIADO', 'FALLO', 'REBOTE', 'PENDIENTE'}
     if estado in estados_validos:
         qs = qs.filter(estado=estado)
 
@@ -1169,7 +1231,7 @@ def api_monitoreo_salidas_correo(request):
     offset = (page - 1) * page_size
 
     destinatarios = _listar_con_reintentos(
-        qs.order_by('-ultimo_evento_at', '-fecha_envio', '-id')[offset:offset + page_size]
+        qs.order_by('-fecha_referencia', '-id')[offset:offset + page_size]
     )
 
     try:
@@ -1209,7 +1271,15 @@ def api_monitoreo_salidas_correo(request):
             or (salida.usuario_redactor.get_full_name() if salida.usuario_redactor else '')
             or (salida.usuario_redactor.username if salida.usuario_redactor else '')
         )
-        hora = d.ultimo_evento_at or d.fecha_envio or salida.fecha_envio or salida.fecha_aprobacion
+        hora = (
+            getattr(d, 'fecha_referencia', None)
+            or d.ultimo_evento_at
+            or d.fecha_envio
+            or salida.fecha_envio
+            or salida.fecha_aprobacion
+            or salida.fecha_ultima_modificacion
+            or salida.fecha_creacion
+        )
 
         registros.append({
             'id': d.id,
@@ -1220,6 +1290,9 @@ def api_monitoreo_salidas_correo(request):
             'hora': hora.isoformat() if hora else '',
             'estado': d.estado,
             'estado_label': d.get_estado_display(),
+            'salida_estado': salida.estado or '',
+            'salida_estado_label': salida.get_estado_display(),
+            'motivo_pendiente': _motivo_pendiente_envio(salida) if d.estado == 'PENDIENTE' else '',
             'destinatario_email': email,
             'destinatario_nombre': d.nombre_snapshot or '',
             **_message_ids_payload(d),
@@ -1320,12 +1393,16 @@ def api_monitoreo_salidas_correo_detalle(request, salida_id):
             'postmark_estado': _postmark_estado_para_destinatario(destinatario, evento_principal),
             'postmark_url': _postmark_message_url(postmark_id),
             'detalle_error': destinatario.detalle_error or '',
-            'motivo_resumen': _resumir_motivo_rebote(
-                destinatario.detalle_error,
-                destinatario.smtp_code,
-                destinatario.dsn_status,
-                destinatario.estado,
-            ) if destinatario.estado in {'FALLO', 'REBOTE'} or destinatario.detalle_error else '',
+            'motivo_resumen': (
+                _motivo_pendiente_envio(salida)
+                if destinatario.estado == 'PENDIENTE'
+                else _resumir_motivo_rebote(
+                    destinatario.detalle_error,
+                    destinatario.smtp_code,
+                    destinatario.dsn_status,
+                    destinatario.estado,
+                )
+            ) if destinatario.estado in {'FALLO', 'REBOTE', 'PENDIENTE'} or destinatario.detalle_error else '',
             'smtp_code': destinatario.smtp_code or '',
             'dsn_status': destinatario.dsn_status or '',
             'ultimo_evento_at': destinatario.ultimo_evento_at.isoformat() if destinatario.ultimo_evento_at else '',
@@ -1348,6 +1425,7 @@ def api_monitoreo_salidas_correo_detalle(request, salida_id):
     total_enviados = sum(1 for item in destinatarios_payload if item['estado'] == 'ENVIADO')
     total_fallos = sum(1 for item in destinatarios_payload if item['estado'] == 'FALLO')
     total_rebotes = sum(1 for item in destinatarios_payload if item['estado'] == 'REBOTE')
+    total_pendientes = sum(1 for item in destinatarios_payload if item['estado'] == 'PENDIENTE')
 
     return Response({
         'id': salida.id,
@@ -1393,6 +1471,7 @@ def api_monitoreo_salidas_correo_detalle(request, salida_id):
         'resumen_entrega': {
             'total_destinatarios': total_destinatarios,
             'enviados': total_enviados,
+            'pendientes': total_pendientes,
             'fallos': total_fallos,
             'rebotes': total_rebotes,
         },

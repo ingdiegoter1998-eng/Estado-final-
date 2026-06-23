@@ -12,7 +12,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--file',
             type=str,
-            default='dataUnidad/SERIES Y SUBSERIES.csv',
+            default='data/trd/SERIES Y SUBSERIES.csv',
             help='Ruta del archivo CSV con datos de series y subseries'
         )
         parser.add_argument(

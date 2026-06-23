@@ -64,6 +64,32 @@
     return data;
   }
 
+  function normalizeMultipleOfficeSelect($el) {
+    if (!$el || !$el.length || !$el.prop('multiple')) {
+      return;
+    }
+
+    var seen = {};
+    var selectedValues = [];
+    $el.find('option').each(function () {
+      var val = (this.value || '').trim();
+
+      // Las oficinas del endpoint son PK numéricas. Opciones CSV o vacías son
+      // residuos de inicializaciones previas y producen chips concatenados.
+      if (!val || val.indexOf(',') !== -1 || seen[val]) {
+        $(this).remove();
+        return;
+      }
+
+      seen[val] = true;
+      if (this.selected) {
+        selectedValues.push(val);
+      }
+    });
+
+    $el.val(selectedValues);
+  }
+
   function triggerAjaxSearchOnOpen($el) {
     $el.off('select2:open.deferredAjax').on('select2:open.deferredAjax', function () {
       setTimeout(function () {
@@ -124,14 +150,13 @@
   function initOficinaAjax($el, modal, url) {
     destroySelect2($el);
     var isMultiple = !!$el.prop('multiple');
-    var preselected = getPreselectedOptions($el);
+    normalizeMultipleOfficeSelect($el);
     $el.select2({
       theme: 'bootstrap-5',
       dropdownParent: $(modal),
       placeholder: $el.attr('data-placeholder') || 'Buscar oficina...',
       allowClear: !isMultiple,
       width: '100%',
-      data: preselected,
       minimumInputLength: 0,
       minimumResultsForSearch: 0,
       closeOnSelect: !isMultiple,
