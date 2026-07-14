@@ -874,6 +874,7 @@
             <li>Marca la opción <strong>"Documento devuelto físicamente"</strong>.</li>
             <li>Si el documento presenta daños, marca <strong>"Presenta daños o faltantes"</strong> y describe las observaciones.</li>
             <li>El préstamo cambia a estado "DEVUELTO".</li>
+            <li>Si el préstamo está vinculado a un registro documental, el sistema lo reactiva automáticamente como <strong>"Activo en Archivo de Gestión"</strong> (disponible/vigente) y deja constancia en el historial.</li>
           </ol>
 
           <h6>14.8. Estados del Préstamo</h6>
@@ -881,7 +882,7 @@
             <li><strong>SOLICITADO:</strong> El usuario ha enviado la solicitud y está pendiente de procesamiento.</li>
             <li><strong>ENTREGADO:</strong> El archivo central ha cargado la evidencia y el documento está disponible.</li>
             <li><strong>PRESTAMO_ACTIVO:</strong> El solicitante ha confirmado la recepción del documento.</li>
-            <li><strong>DEVUELTO:</strong> El documento físico ha sido devuelto al archivo central.</li>
+            <li><strong>DEVUELTO:</strong> El documento físico ha sido devuelto al archivo central y, si aplica, queda activo en Archivo de Gestión.</li>
             <li><strong>RECHAZADO:</strong> La solicitud fue rechazada por el archivo central.</li>
             <li><strong>RECHAZADO_POR_USUARIO:</strong> El solicitante rechazó la entrega.</li>
             <li><strong>VENCIDO:</strong> El préstamo físico ha excedido su fecha de vencimiento.</li>

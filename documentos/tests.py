@@ -142,7 +142,18 @@ class PrestamosDocumentalesFlowTests(TestCase):
 		self.assertEqual(prestamo.estado, 'PRESTAMO_ACTIVO')
 
 	def test_archivo_puede_registrar_devolucion_despues_de_solicitud(self):
-		prestamo = self._crear_prestamo(estado='DEVOLUCION_SOLICITADA')
+		from documentos.models import RegistroDeArchivo, SerieDocumental
+
+		serie = SerieDocumental.objects.create(nombre='Serie Préstamo Test', codigo='SPT-01')
+		registro = RegistroDeArchivo.objects.create(
+			numero_orden=1,
+			codigo='REG-PREST-1',
+			codigo_serie=serie,
+			unidad_documental='Expediente en préstamo',
+			Estado_archivo=False,
+			ubicacion='En préstamo',
+		)
+		prestamo = self._crear_prestamo(estado='DEVOLUCION_SOLICITADA', registro=registro)
 
 		self.client.force_login(self.gestor_archivo)
 		respuesta = self.client.post(
@@ -153,10 +164,15 @@ class PrestamosDocumentalesFlowTests(TestCase):
 
 		self.assertEqual(respuesta.status_code, 200)
 		prestamo.refresh_from_db()
+		registro.refresh_from_db()
 		self.assertEqual(prestamo.estado, 'DEVUELTO')
 		self.assertTrue(prestamo.documento_devuelto)
 		self.assertIsNotNone(prestamo.fecha_devolucion)
-		self.assertEqual(prestamo.historial.first().evento, 'Documento recibido por Archivo')
+		self.assertTrue(registro.Estado_archivo)
+		self.assertIn('Activo en Archivo de Gestión', registro.ubicacion)
+		eventos = list(prestamo.historial.values_list('evento', flat=True))
+		self.assertIn('Documento recibido por Archivo', eventos)
+		self.assertIn('Documento activado en Archivo de Gestión', eventos)
 
 	def test_solicitar_devolucion_registra_evento_de_historial(self):
 		prestamo = self._crear_prestamo(estado='PRESTAMO_ACTIVO')

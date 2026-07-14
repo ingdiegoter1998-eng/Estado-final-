@@ -2435,6 +2435,35 @@ def registrar_historial_prestamo(prestamo, evento, descripcion='', usuario=None)
     )
 
 
+def activar_documento_en_archivo_gestion(prestamo, usuario=None):
+    """
+    Al recibir Archivo la devolución física, reactiva el registro documental
+    como "Activo en Archivo de Gestión" (disponible / vigente).
+    """
+    registro = prestamo.registro
+    if registro is None:
+        return False
+
+    dependencia = obtener_oficina_responsable_label(prestamo)
+    ubicacion = f"Activo en Archivo de Gestión — {dependencia}"
+
+    registro.Estado_archivo = True
+    registro.ubicacion = ubicacion
+    if usuario is not None:
+        registro.editado_por = usuario
+        registro.save(update_fields=['Estado_archivo', 'ubicacion', 'editado_por', 'fecha_edicion'])
+    else:
+        registro.save(update_fields=['Estado_archivo', 'ubicacion', 'fecha_edicion'])
+
+    registrar_historial_prestamo(
+        prestamo,
+        "Documento activado en Archivo de Gestión",
+        f"Tras la recepción en {dependencia}, el registro quedó activo en Archivo de Gestión ({ubicacion}).",
+        usuario,
+    )
+    return True
+
+
 def get_client_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
@@ -3245,8 +3274,19 @@ def procesar_prestamo(request, pk):
                     
                     # Registrar en historial
                     registrar_historial_prestamo(prestamo, "Documento recibido por Archivo", descripcion_devolucion, request.user)
-                    
-                    messages.success(request, f'Préstamo #{prestamo.id} finalizado exitosamente. Estado actualizado a DEVUELTO.')
+
+                    # Reactivar el documento en Archivo de Gestión al cerrar el trámite
+                    activado = activar_documento_en_archivo_gestion(prestamo, request.user)
+                    if activado:
+                        messages.success(
+                            request,
+                            f'Préstamo #{prestamo.id} finalizado. Documento activado en Archivo de Gestión.'
+                        )
+                    else:
+                        messages.success(
+                            request,
+                            f'Préstamo #{prestamo.id} finalizado exitosamente. Estado actualizado a DEVUELTO.'
+                        )
                 else:
                     messages.success(request, f'Préstamo #{prestamo.id} actualizado.')
                 
