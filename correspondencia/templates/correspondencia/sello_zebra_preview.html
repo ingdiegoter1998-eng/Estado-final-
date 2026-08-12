@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vista previa sello {{ sello.tipo }} — {{ sello.radicado }}</title>
+    <style>
+        :root {
+            --ink: #14324f;
+            --mute: #5d7388;
+            --line: rgba(20, 50, 79, 0.14);
+            --glass: rgba(255, 255, 255, 0.55);
+            --page: #e8f1fa;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 1.5rem 1rem;
+            font-family: "Segoe UI", system-ui, sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(900px 420px at 10% 0%, rgba(11, 79, 151, 0.18), transparent 55%),
+                radial-gradient(700px 380px at 90% 100%, rgba(56, 189, 248, 0.16), transparent 50%),
+                linear-gradient(165deg, #f4f8fc 0%, #e5eef8 100%);
+        }
+        .wrap {
+            width: min(720px, 100%);
+            display: grid;
+            gap: 1rem;
+        }
+        .meta, .actions {
+            background: var(--glass);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 18px 40px -28px rgba(15, 40, 70, 0.35);
+        }
+        .meta { padding: 1rem 1.1rem; }
+        .meta h1 { margin: 0 0 0.35rem; font-size: 1.15rem; }
+        .meta p { margin: 0; color: var(--mute); font-size: 0.92rem; line-height: 1.45; }
+        .stage {
+            display: grid;
+            place-items: center;
+            padding: 1.25rem;
+            border-radius: 18px;
+            border: 1px dashed rgba(20, 50, 79, 0.2);
+            background: rgba(255, 255, 255, 0.28);
+        }
+        .label {
+            width: 576px;
+            max-width: 100%;
+            aspect-ratio: 3 / 2;
+            background: #fff;
+            border: 3px solid #14324f;
+            outline: 2px solid #14324f;
+            outline-offset: -10px;
+            border-radius: 2px;
+            padding: 16px 18px;
+            display: grid;
+            grid-template-columns: 1.35fr 0.9fr;
+            gap: 0.65rem;
+            box-shadow: 0 20px 40px -28px rgba(15, 40, 70, 0.45);
+        }
+        .label-copy {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 0;
+        }
+        .hospital { font-size: 0.82rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+        .subtitle { font-size: 0.72rem; font-weight: 700; color: #355870; margin-top: 0.15rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .rule { height: 2px; background: #14324f; margin: 0.45rem 0; width: 100%; }
+        .radicado { font-size: 1.05rem; font-weight: 900; word-break: break-word; line-height: 1.2; }
+        .fecha, .oficina, .extra { font-size: 0.88rem; font-weight: 650; margin-top: 0.25rem; }
+        .tipo { font-size: 1rem; font-weight: 900; letter-spacing: 0.14em; margin-top: 0.45rem; }
+        .label-qr {
+            display: grid;
+            place-items: center;
+            align-content: center;
+            gap: 0.35rem;
+            border-left: 1px dashed rgba(20, 50, 79, 0.25);
+            padding-left: 0.55rem;
+        }
+        .label-qr img {
+            width: min(148px, 100%);
+            height: auto;
+            image-rendering: pixelated;
+        }
+        .label-qr span {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #355870;
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            padding: 0.85rem;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            border-radius: 12px;
+            padding: 0.7rem 1rem;
+            font-weight: 750;
+            font-size: 0.92rem;
+        }
+        .btn-primary { background: #0b4f97; color: #fff; }
+        .btn-secondary { background: rgba(255,255,255,0.75); color: #14324f; border: 1px solid var(--line); }
+        .url-note {
+            margin: 0;
+            font-size: 0.78rem;
+            color: var(--mute);
+            word-break: break-all;
+        }
+        @media (max-width: 640px) {
+            .label { width: 100%; grid-template-columns: 1fr; }
+            .label-qr { border-left: 0; border-top: 1px dashed rgba(20, 50, 79, 0.25); padding: 0.55rem 0 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="meta">
+            <h1>Vista previa del sello {{ sello.tipo }}</h1>
+            <p>
+                Etiqueta térmica <strong>3″ × 2″</strong> (Zebra ZD230) con QR al verificador público.
+            </p>
+            <p class="url-note" style="margin-top:0.45rem">QR → {{ sello.verificar_url }}</p>
+        </div>
+
+        <div class="stage">
+            <div class="label">
+                <div class="label-copy">
+                    <div>
+                        <div class="hospital">E.S.E. Hospital del Sarare</div>
+                        <div class="subtitle">Radicación de correspondencia</div>
+                        <div class="rule"></div>
+                        <div class="radicado">{{ sello.radicado }}</div>
+                        <div class="fecha">{{ sello.fecha }}</div>
+                        <div class="oficina">{{ sello.oficina }}</div>
+                        {% if sello.extra %}<div class="extra">{{ sello.extra }}</div>{% endif %}
+                    </div>
+                    <div class="tipo">{{ sello.tipo }}</div>
+                </div>
+                <div class="label-qr">
+                    {% if qr_data_uri %}
+                    <img src="{{ qr_data_uri }}" alt="Código QR de verificación">
+                    {% endif %}
+                    <span>Escanear</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <a class="btn btn-primary" href="{{ url_descarga_zpl }}">Descargar ZPL</a>
+            <a class="btn btn-secondary" href="{{ url_volver }}">Volver al detalle</a>
+        </div>
+    </div>
+</body>
+</html>

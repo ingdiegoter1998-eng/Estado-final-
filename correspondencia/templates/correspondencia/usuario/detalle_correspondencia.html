@@ -1282,6 +1282,15 @@
                                 <i class="bi bi-arrow-left-right"></i>
                                 <span>Redistribuir</span>
                             </button>
+
+                            {% if request.user|has_group:"Ventanilla" or request.user.is_superuser %}
+                            <a href="{% url 'correspondencia:preview_sello_zebra_entrada' correspondencia.pk %}"
+                               class="detail-action-tile"
+                               title="Vista previa del sello 3x2 (Zebra ZD230)">
+                                <i class="bi bi-printer"></i>
+                                <span>Sello Zebra (entrada)</span>
+                            </a>
+                            {% endif %}
                         </div>
 
                         {% if acceso_interoficina and acceso_interoficina.solo_lider and request.user|has_group:"Lider" %}

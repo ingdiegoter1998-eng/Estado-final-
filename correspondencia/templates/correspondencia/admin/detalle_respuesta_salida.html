@@ -1130,6 +1130,14 @@
                                 <span>Correspondencia original</span>
                             </a>
                             {% endif %}
+                            {% if request.user|has_group:"Ventanilla" or request.user.is_superuser %}
+                            <a href="{% url 'correspondencia:preview_sello_zebra_salida' respuesta.id %}"
+                               class="detail-action-tile"
+                               title="Vista previa del sello 3x2 (Zebra ZD230)">
+                                <i class="bi bi-printer"></i>
+                                <span>Sello Zebra (salida)</span>
+                            </a>
+                            {% endif %}
                         </div>
                         <div class="detail-note">Las acciones rápidas mantienen el mismo flujo operativo de la vista original, pero con una jerarquía visual más cercana a la pantalla de referencia.</div>
                     </div>

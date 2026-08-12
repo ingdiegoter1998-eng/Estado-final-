@@ -242,6 +242,14 @@ LOGIN_REDIRECT_URL = "/registros/welcome/"
 # App Next.js de monitoreo/tickets (ruta pública). Vacío = mismo host que la petición + /monitoreo/chat.
 MONITOREO_CHAT_URL = os.getenv("MONITOREO_CHAT_URL", "").strip()
 
+# Micro-sitio público de verificación de sellos (QR en etiquetas Zebra).
+# Pre-prod: Vite verificar-sello; prod: dominio público HTTPS.
+# Alcance, contrato API y checklist: verificar-sello/README.md
+SELLO_VERIFICAR_BASE_URL = os.getenv(
+    "SELLO_VERIFICAR_BASE_URL",
+    "http://127.0.0.1:5174",
+).strip().rstrip("/")
+
 # ====================================================================================
 # INTERNACIONALIZACIÓN
 # ====================================================================================
