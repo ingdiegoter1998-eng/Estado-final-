@@ -1,7 +1,9 @@
 """Sellos ZPL para Zebra ZD230 (3" x 2", 203 dpi).
 
-Diseño replicado a partir de la plantilla que envió el hospital (sin QR):
-logo institucional + "RADICACIÓN DE CORRESPONDENCIA" en el encabezado,
+Diseño replicado a partir de la plantilla que envió el hospital (sin QR y
+sin logo — a esa resolución de impresión térmica el badge institucional
+quedaba ilegible/deforme, así que el encabezado es solo tipografía):
+"HOSPITAL DEL SARARE" + "RADICACIÓN DE CORRESPONDENCIA" en el encabezado,
 número de radicado grande, fecha/hora con ícono de calendario, oficina con
 ícono de persona, y una franja inferior negra con el tipo (ENTRADA/SALIDA)
 en blanco.
@@ -17,13 +19,11 @@ LABEL_WIDTH_DOTS = 609
 LABEL_HEIGHT_DOTS = 406
 
 _ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets", "sello")
-_LOGO_PATH = os.path.join(_ASSETS_DIR, "logo.png")
 _CALENDARIO_PATH = os.path.join(_ASSETS_DIR, "calendario.png")
 _PERSONA_PATH = os.path.join(_ASSETS_DIR, "persona.png")
 
 # Tamaño de los íconos en la etiqueta (ancho en puntos @203dpi; el alto se
 # escala manteniendo la proporción original de cada imagen).
-_LOGO_WIDTH = 60
 _ICONO_WIDTH = 38
 
 
@@ -113,12 +113,10 @@ def _build_label(*, tipo: str, radicado: str, fecha: str, oficina: str) -> str:
     if len(oficina) > 33:
         oficina = oficina[:32].rstrip() + "…"
 
-    logo_gf, logo_w, logo_h = _image_to_zpl_gf(_LOGO_PATH, _LOGO_WIDTH)
     cal_gf, cal_w, cal_h = _image_to_zpl_gf(_CALENDARIO_PATH, _ICONO_WIDTH)
     per_gf, per_w, per_h = _image_to_zpl_gf(_PERSONA_PATH, _ICONO_WIDTH)
 
-    logo_x, logo_y = 24, 26
-    texto_x = logo_x + logo_w + 16
+    texto_x = 26
     divisor_x = 350
     col_derecha_x = divisor_x + 18
 
@@ -129,26 +127,23 @@ def _build_label(*, tipo: str, radicado: str, fecha: str, oficina: str) -> str:
         "^CI28",
         # Borde exterior redondeado
         "^FO10,10^GB589,386,4,B,2^FS",
-        # Logo institucional
-        f"^FO{logo_x},{logo_y}{logo_gf}^FS",
-        # Nombre del hospital (2 líneas) + subtítulo
-        f"^FO{texto_x},22^A0N,26,26^FDHOSPITAL^FS",
-        f"^FO{texto_x},50^A0N,26,26^FDDEL SARARE^FS",
-        f"^FO{texto_x},82^A0N,15,15^FDEmpresa Social del Estado^FS",
+        # Nombre del hospital + subtítulo (encabezado solo tipográfico)
+        f"^FO{texto_x},30^A0N,28,28^FDHOSPITAL DEL SARARE^FS",
+        f"^FO{texto_x},64^A0N,15,15^FDEmpresa Social del Estado^FS",
         # Divisor vertical + título de la derecha
-        f"^FO{divisor_x},22^GB2,104,2^FS",
-        f"^FO{col_derecha_x},30^A0N,24,24^FDRADICACIÓN DE^FS",
-        f"^FO{col_derecha_x},60^A0N,24,24^FDCORRESPONDENCIA^FS",
+        f"^FO{divisor_x},22^GB2,88,2^FS",
+        f"^FO{col_derecha_x},26^A0N,22,22^FDRADICACIÓN DE^FS",
+        f"^FO{col_derecha_x},54^A0N,22,22^FDCORRESPONDENCIA^FS",
         # Radicado (grande)
-        "^FO26,142^GB557,2,2^FS",
-        f"^FO24,154^A0N,50,28^FD{radicado}^FS",
-        "^FO26,216^GB557,2,2^FS",
+        "^FO26,126^GB557,2,2^FS",
+        f"^FO24,138^A0N,50,28^FD{radicado}^FS",
+        "^FO26,200^GB557,2,2^FS",
         # Fecha / hora
-        f"^FO24,234{cal_gf}^FS",
-        f"^FO72,236^A0N,28,28^FD{fecha}^FS",
+        f"^FO24,222{cal_gf}^FS",
+        f"^FO72,224^A0N,28,28^FD{fecha}^FS",
         # Oficina
-        f"^FO24,280{per_gf}^FS",
-        f"^FO72,282^A0N,28,28^FD{oficina}^FS",
+        f"^FO24,268{per_gf}^FS",
+        f"^FO72,270^A0N,28,28^FD{oficina}^FS",
         # Franja inferior con el tipo (blanco sobre negro)
         "^FO26,326^GB557,58,58^FS",
         f"^FO0,346^A0N,34,34^FB609,1,0,C^FR^FD{tipo}^FS",
