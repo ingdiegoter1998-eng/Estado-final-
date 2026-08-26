@@ -5116,7 +5116,7 @@ def _usuario_es_ventanilla(user) -> bool:
 
 @login_required
 def imprimir_sello_zebra_entrada(request, pk):
-    """Descarga ZPL 3x2 con QR para Zebra ZD230 — solo Ventanilla."""
+    """Descarga ZPL 3x2 para Zebra ZD230 — solo Ventanilla."""
     from .utils.sello_zebra import zpl_sello_entrada
 
     correspondencia = get_object_or_404(Correspondencia, pk=pk)
@@ -5163,7 +5163,6 @@ def preview_sello_zebra_entrada(request, pk):
     sello = datos_sello_entrada(correspondencia)
     return render(request, 'correspondencia/sello_zebra_preview.html', {
         'sello': sello,
-        'qr_data_uri': _qr_data_uri(sello.get('verificar_url', '')),
         'url_descarga_zpl': reverse('correspondencia:imprimir_sello_zebra_entrada', args=[pk]),
         'url_volver': reverse('correspondencia:detalle_correspondencia', args=[pk]),
     })
@@ -5171,7 +5170,7 @@ def preview_sello_zebra_entrada(request, pk):
 
 @login_required
 def imprimir_sello_zebra_salida(request, respuesta_id):
-    """Descarga ZPL 3x2 con QR para salida — solo Ventanilla."""
+    """Descarga ZPL 3x2 para salida — solo Ventanilla."""
     from .utils.sello_zebra import zpl_sello_salida
 
     salida = get_object_or_404(
@@ -5213,32 +5212,9 @@ def preview_sello_zebra_salida(request, respuesta_id):
     sello = datos_sello_salida(salida)
     return render(request, 'correspondencia/sello_zebra_preview.html', {
         'sello': sello,
-        'qr_data_uri': _qr_data_uri(sello.get('verificar_url', '')),
         'url_descarga_zpl': reverse('correspondencia:imprimir_sello_zebra_salida', args=[respuesta_id]),
         'url_volver': reverse('correspondencia:detalle_respuesta_salida', args=[respuesta_id]),
     })
-
-
-def _qr_data_uri(payload: str) -> str:
-    """PNG en data-URI para la preview HTML del sello."""
-    if not payload:
-        return ''
-    try:
-        import base64
-        from io import BytesIO
-
-        import qrcode
-
-        qr = qrcode.QRCode(version=None, box_size=6, border=1)
-        qr.add_data(payload)
-        qr.make(fit=True)
-        img = qr.make_image(fill_color='black', back_color='white')
-        buf = BytesIO()
-        img.save(buf, format='PNG')
-        encoded = base64.b64encode(buf.getvalue()).decode('ascii')
-        return f'data:image/png;base64,{encoded}'
-    except Exception:
-        return ''
 
 
 # @login_required

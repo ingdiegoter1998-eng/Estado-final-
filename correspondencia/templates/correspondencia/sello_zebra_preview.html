@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -10,7 +11,6 @@
             --mute: #5d7388;
             --line: rgba(20, 50, 79, 0.14);
             --glass: rgba(255, 255, 255, 0.55);
-            --page: #e8f1fa;
         }
         * { box-sizing: border-box; }
         body {
@@ -27,7 +27,7 @@
                 linear-gradient(165deg, #f4f8fc 0%, #e5eef8 100%);
         }
         .wrap {
-            width: min(720px, 100%);
+            width: min(640px, 100%);
             display: grid;
             gap: 1rem;
         }
@@ -50,53 +50,95 @@
             border: 1px dashed rgba(20, 50, 79, 0.2);
             background: rgba(255, 255, 255, 0.28);
         }
+
+        /* --- Etiqueta 3x2 (misma composición que el ZPL) --- */
         .label {
             width: 576px;
             max-width: 100%;
-            aspect-ratio: 3 / 2;
+            aspect-ratio: 609 / 406;
             background: #fff;
-            border: 3px solid #14324f;
-            outline: 2px solid #14324f;
-            outline-offset: -10px;
-            border-radius: 2px;
-            padding: 16px 18px;
-            display: grid;
-            grid-template-columns: 1.35fr 0.9fr;
-            gap: 0.65rem;
-            box-shadow: 0 20px 40px -28px rgba(15, 40, 70, 0.45);
-        }
-        .label-copy {
+            color: #000;
+            border: 3px solid #000;
+            border-radius: 22px;
+            padding: 18px 20px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            min-width: 0;
+            box-shadow: 0 20px 40px -28px rgba(15, 40, 70, 0.45);
+            font-family: "Arial Narrow", "Segoe UI", Arial, sans-serif;
         }
-        .hospital { font-size: 0.82rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
-        .subtitle { font-size: 0.72rem; font-weight: 700; color: #355870; margin-top: 0.15rem; text-transform: uppercase; letter-spacing: 0.05em; }
-        .rule { height: 2px; background: #14324f; margin: 0.45rem 0; width: 100%; }
-        .radicado { font-size: 1.05rem; font-weight: 900; word-break: break-word; line-height: 1.2; }
-        .fecha, .oficina, .extra { font-size: 0.88rem; font-weight: 650; margin-top: 0.25rem; }
-        .tipo { font-size: 1rem; font-weight: 900; letter-spacing: 0.14em; margin-top: 0.45rem; }
-        .label-qr {
+        .label-header {
             display: grid;
-            place-items: center;
-            align-content: center;
-            gap: 0.35rem;
-            border-left: 1px dashed rgba(20, 50, 79, 0.25);
-            padding-left: 0.55rem;
+            grid-template-columns: auto 1fr auto 1fr;
+            align-items: center;
+            column-gap: 16px;
+            padding-bottom: 16px;
         }
-        .label-qr img {
-            width: min(148px, 100%);
+        .label-header img {
+            width: 50px;
             height: auto;
-            image-rendering: pixelated;
+            display: block;
         }
-        .label-qr span {
-            font-size: 0.68rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
+        .hospital-nombre {
+            font-size: 1.05rem;
+            font-weight: 900;
             text-transform: uppercase;
-            color: #355870;
+            line-height: 1.12;
+            letter-spacing: 0.01em;
         }
+        .hospital-sub {
+            font-size: 0.62rem;
+            font-weight: 700;
+            color: #333;
+            text-transform: none;
+            margin-top: 2px;
+        }
+        .header-divider {
+            width: 2px;
+            align-self: stretch;
+            background: #000;
+        }
+        .radicacion-titulo {
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            line-height: 1.25;
+        }
+        .rule { height: 2px; background: #000; width: 100%; }
+        .radicado {
+            font-size: 2.1rem;
+            font-weight: 900;
+            letter-spacing: -0.01em;
+            padding: 18px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .fila-icono {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 0;
+            font-size: 1.1rem;
+            font-weight: 750;
+        }
+        .fila-icono svg { flex: none; width: 26px; height: 26px; }
+        .fila-icono span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .tipo-franja {
+            margin-top: auto;
+            background: #000;
+            color: #fff;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            border-radius: 0 0 16px 16px;
+            padding: 10px 0;
+        }
+
         .actions {
             display: flex;
             flex-wrap: wrap;
@@ -115,48 +157,50 @@
         }
         .btn-primary { background: #0b4f97; color: #fff; }
         .btn-secondary { background: rgba(255,255,255,0.75); color: #14324f; border: 1px solid var(--line); }
-        .url-note {
-            margin: 0;
-            font-size: 0.78rem;
-            color: var(--mute);
-            word-break: break-all;
-        }
-        @media (max-width: 640px) {
-            .label { width: 100%; grid-template-columns: 1fr; }
-            .label-qr { border-left: 0; border-top: 1px dashed rgba(20, 50, 79, 0.25); padding: 0.55rem 0 0; }
-        }
     </style>
 </head>
 <body>
     <div class="wrap">
         <div class="meta">
             <h1>Vista previa del sello {{ sello.tipo }}</h1>
-            <p>
-                Etiqueta térmica <strong>3″ × 2″</strong> (Zebra ZD230) con QR al verificador público.
-            </p>
-            <p class="url-note" style="margin-top:0.45rem">QR → {{ sello.verificar_url }}</p>
+            <p>Etiqueta térmica <strong>3″ × 2″</strong> (Zebra ZD230). Así se imprime exactamente.</p>
         </div>
 
         <div class="stage">
             <div class="label">
-                <div class="label-copy">
+                <div class="label-header">
+                    <img src="{% static 'correspondencia/img/sello_logo_mono.png' %}" alt="Hospital del Sarare">
                     <div>
-                        <div class="hospital">E.S.E. Hospital del Sarare</div>
-                        <div class="subtitle">Radicación de correspondencia</div>
-                        <div class="rule"></div>
-                        <div class="radicado">{{ sello.radicado }}</div>
-                        <div class="fecha">{{ sello.fecha }}</div>
-                        <div class="oficina">{{ sello.oficina }}</div>
-                        {% if sello.extra %}<div class="extra">{{ sello.extra }}</div>{% endif %}
+                        <div class="hospital-nombre">Hospital<br>del Sarare</div>
+                        <div class="hospital-sub">Empresa Social del Estado</div>
                     </div>
-                    <div class="tipo">{{ sello.tipo }}</div>
+                    <div class="header-divider"></div>
+                    <div class="radicacion-titulo">RADICACIÓN DE<br>CORRESPONDENCIA</div>
                 </div>
-                <div class="label-qr">
-                    {% if qr_data_uri %}
-                    <img src="{{ qr_data_uri }}" alt="Código QR de verificación">
-                    {% endif %}
-                    <span>Escanear</span>
+
+                <div class="rule"></div>
+                <div class="radicado">{{ sello.radicado }}</div>
+                <div class="rule"></div>
+
+                <div class="fila-icono">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                        <path d="M3 10h18"></path>
+                        <path d="M8 3v4"></path>
+                        <path d="M16 3v4"></path>
+                        <rect x="9" y="13" width="6" height="5" fill="#000" stroke="none"></rect>
+                    </svg>
+                    <span>{{ sello.fecha }}</span>
                 </div>
+                <div class="fila-icono">
+                    <svg viewBox="0 0 24 24" fill="#000" stroke="none">
+                        <circle cx="12" cy="7" r="4"></circle>
+                        <path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"></path>
+                    </svg>
+                    <span>{{ sello.oficina }}</span>
+                </div>
+
+                <div class="tipo-franja">{{ sello.tipo }}</div>
             </div>
         </div>
 
