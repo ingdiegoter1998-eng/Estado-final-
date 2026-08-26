@@ -1,6 +1,7 @@
 import base64
 import email.utils as email_utils
 import imaplib
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone as dt_timezone
 from email import message_from_bytes, policy
@@ -48,13 +49,47 @@ def _normalize_headers(headers):
     return normalized
 
 
+_MESES_ES = {
+    'ENE': 1, 'FEB': 2, 'MAR': 3, 'ABR': 4, 'MAY': 5, 'JUN': 6,
+    'JUL': 7, 'AGO': 8, 'SEP': 9, 'SET': 9, 'OCT': 10, 'NOV': 11, 'DIC': 12,
+}
+
+_RE_FECHA_NO_ESTANDAR = re.compile(
+    r'^\s*(\d{1,2})[-/ ]([A-ZÑ]{3,4})[-/ ](\d{4})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?\s*$',
+    re.IGNORECASE,
+)
+
+
+def _parse_fecha_no_estandar(value):
+    """Respaldo para cabeceras Date no conformes a RFC 5322, p. ej. '05-AGO-2026 21:00:32'
+    (mes en español) enviadas por algunos sistemas de correo externos (Exchange/Notes)."""
+    if not value:
+        return None
+    match = _RE_FECHA_NO_ESTANDAR.match(value.strip())
+    if not match:
+        return None
+    day, mes_txt, year, hour, minute, second = match.groups()
+    mes = _MESES_ES.get(mes_txt.upper()[:3])
+    if not mes:
+        return None
+    try:
+        return datetime(
+            int(year), mes, int(day), int(hour), int(minute), int(second or 0),
+            tzinfo=dt_timezone.utc,
+        )
+    except ValueError:
+        return None
+
+
 def _parsed_header_datetime(value, fallback=None):
     if not value:
         return fallback
     try:
         parsed = email_utils.parsedate_to_datetime(value)
     except Exception:
-        return fallback
+        parsed = None
+    if parsed is None:
+        parsed = _parse_fecha_no_estandar(value)
     if parsed is None:
         return fallback
     if parsed.tzinfo is None:
@@ -150,10 +185,26 @@ def normalize_gmail_message(message_id, payload, *, raw_bytes=None, internal_dat
     fallback_date = None
     if internal_date:
         try:
-            fallback_date = datetime.fromtimestamp(int(internal_date) / 1000, tz=dt_timezone.utc)
+            internal_date_ms = int(internal_date)
         except Exception:
-            fallback_date = None
-    parsed_date = _parsed_header_datetime((headers.get('date') or [''])[0] if headers.get('date') else None, fallback=fallback_date)
+            internal_date_ms = 0
+        # Gmail reporta internalDate=0 cuando tampoco pudo interpretar el header Date del
+        # mensaje (p. ej. formatos no RFC 5322 de algunos remitentes externos). No es una
+        # fecha real de recepción, así que no debe usarse como respaldo.
+        if internal_date_ms > 0:
+            try:
+                fallback_date = datetime.fromtimestamp(internal_date_ms / 1000, tz=dt_timezone.utc)
+            except Exception:
+                fallback_date = None
+    parsed_date = _parsed_header_datetime(
+        (headers.get('date') or [''])[0] if headers.get('date') else None,
+        fallback=fallback_date,
+    )
+    if parsed_date is None:
+        # Último recurso: si ni el header Date ni internalDate de Gmail son utilizables,
+        # se usa el momento de ingesta para no perder el correo (antes caía a 1970-01-01
+        # y era descartado en silencio por el filtro de "correo anterior a 2026-01-01").
+        parsed_date = datetime.now(tz=dt_timezone.utc)
 
     attachments = _extract_attachments(email_obj) if email_obj is not None else []
     text_body, html_body = _extract_text_and_html(email_obj) if email_obj is not None else ('', '')
