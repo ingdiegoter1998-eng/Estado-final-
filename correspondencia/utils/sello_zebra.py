@@ -19,8 +19,8 @@ LABEL_WIDTH_DOTS = 609
 LABEL_HEIGHT_DOTS = 406
 
 _ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets", "sello")
-_CALENDARIO_PATH = os.path.join(_ASSETS_DIR, "calendario.png")
-_PERSONA_PATH = os.path.join(_ASSETS_DIR, "persona.png")
+CALENDARIO_PATH = os.path.join(_ASSETS_DIR, "calendario.png")
+PERSONA_PATH = os.path.join(_ASSETS_DIR, "persona.png")
 
 # Tamaño de los íconos en la etiqueta (ancho en puntos @203dpi; el alto se
 # escala manteniendo la proporción original de cada imagen).
@@ -113,8 +113,8 @@ def _build_label(*, tipo: str, radicado: str, fecha: str, oficina: str) -> str:
     if len(oficina) > 33:
         oficina = oficina[:32].rstrip() + "…"
 
-    cal_gf, cal_w, cal_h = _image_to_zpl_gf(_CALENDARIO_PATH, _ICONO_WIDTH)
-    per_gf, per_w, per_h = _image_to_zpl_gf(_PERSONA_PATH, _ICONO_WIDTH)
+    cal_gf, cal_w, cal_h = _image_to_zpl_gf(CALENDARIO_PATH, _ICONO_WIDTH)
+    per_gf, per_w, per_h = _image_to_zpl_gf(PERSONA_PATH, _ICONO_WIDTH)
 
     texto_x = 26
     divisor_x = 350

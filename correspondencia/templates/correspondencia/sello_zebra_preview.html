@@ -151,6 +151,14 @@
         }
         .btn-primary { background: #0b4f97; color: #fff; }
         .btn-secondary { background: rgba(255,255,255,0.75); color: #14324f; border: 1px solid var(--line); }
+        .link-zpl {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.78rem;
+            color: var(--mute);
+            text-decoration: underline;
+            margin-left: auto;
+        }
     </style>
 </head>
 <body>
@@ -197,8 +205,9 @@
         </div>
 
         <div class="actions">
-            <a class="btn btn-primary" href="{{ url_descarga_zpl }}">Descargar ZPL</a>
+            <a class="btn btn-primary" href="{{ url_descarga_pdf }}" target="_blank" rel="noopener">Descargar / Imprimir PDF</a>
             <a class="btn btn-secondary" href="{{ url_volver }}">Volver al detalle</a>
+            <a class="link-zpl" href="{{ url_descarga_zpl }}">Descargar ZPL (avanzado)</a>
         </div>
     </div>
 </body>

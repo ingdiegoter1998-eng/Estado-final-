@@ -63,8 +63,10 @@ urlpatterns = [
     path('correspondencia/<int:pk>/', views.detalle_correspondencia, name='detalle_correspondencia'),
     path('correspondencia/<int:pk>/sello.pdf', views.imprimir_sello_correspondencia, name='imprimir_sello'),
     path('correspondencia/<int:pk>/sello.zpl', views.imprimir_sello_zebra_entrada, name='imprimir_sello_zebra_entrada'),
+    path('correspondencia/<int:pk>/sello-zebra.pdf', views.pdf_sello_zebra_entrada, name='pdf_sello_zebra_entrada'),
     path('correspondencia/<int:pk>/sello-zebra/', views.preview_sello_zebra_entrada, name='preview_sello_zebra_entrada'),
     path('respuesta/<int:respuesta_id>/sello.zpl', views.imprimir_sello_zebra_salida, name='imprimir_sello_zebra_salida'),
+    path('respuesta/<int:respuesta_id>/sello-zebra.pdf', views.pdf_sello_zebra_salida, name='pdf_sello_zebra_salida'),
     path('respuesta/<int:respuesta_id>/sello-zebra/', views.preview_sello_zebra_salida, name='preview_sello_zebra_salida'),
     # path('correspondencia/<int:pk>/marcar_leido/', views.marcar_como_leido, name='marcar_leido'), # <-- COMENTADA: Funcionalidad ahora en detalle_correspondencia
     # Añadir URL para redistribución si se implementa

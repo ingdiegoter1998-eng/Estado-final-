@@ -5147,6 +5147,38 @@ def imprimir_sello_zebra_entrada(request, pk):
 
 
 @login_required
+def pdf_sello_zebra_entrada(request, pk):
+    """Descarga el sello de entrada en PDF (3x2) — se abre e imprime directo, sin ZPL."""
+    from .utils.sello_pdf import pdf_sello_entrada
+
+    correspondencia = get_object_or_404(Correspondencia, pk=pk)
+    if not _usuario_es_ventanilla(request.user):
+        messages.error(request, "Sin permisos. Solo Ventanilla puede imprimir sellos.")
+        return redirect('correspondencia:detalle_correspondencia', pk=pk)
+
+    if not correspondencia.numero_radicado:
+        messages.error(request, "La correspondencia debe estar radicada antes de imprimir el sello.")
+        return redirect('correspondencia:detalle_correspondencia', pk=pk)
+
+    pdf_bytes = pdf_sello_entrada(correspondencia)
+    try:
+        correspondencia.marcar_sellado()
+        HistorialCorrespondencia.objects.create(
+            correspondencia=correspondencia,
+            evento='SELLO_IMPRESO',
+            usuario=request.user,
+            descripcion='Sello (entrada) generado en PDF.',
+        )
+    except Exception:
+        pass
+
+    safe_name = (correspondencia.numero_radicado or str(pk)).replace('/', '-')
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="sello_entrada_{safe_name}.pdf"'
+    return response
+
+
+@login_required
 def preview_sello_zebra_entrada(request, pk):
     """Vista previa HTML del sello de entrada (solo Ventanilla)."""
     from .utils.sello_zebra import datos_sello_entrada
@@ -5163,6 +5195,7 @@ def preview_sello_zebra_entrada(request, pk):
     sello = datos_sello_entrada(correspondencia)
     return render(request, 'correspondencia/sello_zebra_preview.html', {
         'sello': sello,
+        'url_descarga_pdf': reverse('correspondencia:pdf_sello_zebra_entrada', args=[pk]),
         'url_descarga_zpl': reverse('correspondencia:imprimir_sello_zebra_entrada', args=[pk]),
         'url_volver': reverse('correspondencia:detalle_correspondencia', args=[pk]),
     })
@@ -5193,6 +5226,30 @@ def imprimir_sello_zebra_salida(request, respuesta_id):
 
 
 @login_required
+def pdf_sello_zebra_salida(request, respuesta_id):
+    """Descarga el sello de salida en PDF (3x2) — se abre e imprime directo, sin ZPL."""
+    from .utils.sello_pdf import pdf_sello_salida
+
+    salida = get_object_or_404(
+        CorrespondenciaSalida.objects.select_related('oficina_emisora', 'respuesta_a'),
+        pk=respuesta_id,
+    )
+    if not _usuario_es_ventanilla(request.user):
+        messages.error(request, "Sin permisos. Solo Ventanilla puede imprimir sellos.")
+        return redirect('correspondencia:detalle_respuesta_salida', respuesta_id=respuesta_id)
+
+    if not salida.numero_radicado_salida:
+        messages.error(request, "La salida debe tener radicado antes de imprimir el sello.")
+        return redirect('correspondencia:detalle_respuesta_salida', respuesta_id=respuesta_id)
+
+    pdf_bytes = pdf_sello_salida(salida)
+    safe_name = (salida.numero_radicado_salida or str(respuesta_id)).replace('/', '-')
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="sello_salida_{safe_name}.pdf"'
+    return response
+
+
+@login_required
 def preview_sello_zebra_salida(request, respuesta_id):
     """Vista previa HTML del sello de salida (solo Ventanilla)."""
     from .utils.sello_zebra import datos_sello_salida
@@ -5212,6 +5269,7 @@ def preview_sello_zebra_salida(request, respuesta_id):
     sello = datos_sello_salida(salida)
     return render(request, 'correspondencia/sello_zebra_preview.html', {
         'sello': sello,
+        'url_descarga_pdf': reverse('correspondencia:pdf_sello_zebra_salida', args=[respuesta_id]),
         'url_descarga_zpl': reverse('correspondencia:imprimir_sello_zebra_salida', args=[respuesta_id]),
         'url_volver': reverse('correspondencia:detalle_respuesta_salida', args=[respuesta_id]),
     })
