@@ -1,11 +1,10 @@
-"""Sello en PDF (3" x 2"), mismo diseño que el ZPL de sello_zebra.py.
+"""Sello en PDF — etiqueta real de 2" x 1" (5cm x 2.5cm), mismo diseño que el ZPL.
 
-Ventanilla tenía que descargar un .zpl (texto plano con comandos Zebra) y no
-todos los equipos tienen el software para mandarlo a imprimir — terminaban
-pegando el código en visores online. El PDF resuelve eso: se abre con
-cualquier lector y se imprime directo (o se manda por USB/red a la Zebra
-usando el driver de Windows, que sí sabe convertir un PDF a impresión
-térmica).
+Ventanilla no tenía forma confiable de mandar un .zpl a imprimir (el sistema
+no reconoce la extensión) y terminaban pegando el código en visores online.
+El PDF se abre con cualquier lector y se imprime directo. El tamaño de
+página coincide con el rollo real de la Zebra (2" x 1"), no con el 3" x 2"
+que se asumió al principio.
 """
 from __future__ import annotations
 
@@ -14,15 +13,10 @@ from io import BytesIO
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 
-from correspondencia.utils.sello_zebra import (
-    CALENDARIO_PATH,
-    PERSONA_PATH,
-    datos_sello_entrada,
-    datos_sello_salida,
-)
+from correspondencia.utils.sello_zebra import datos_sello_entrada, datos_sello_salida
 
-PAGE_WIDTH = 3 * inch
-PAGE_HEIGHT = 2 * inch
+PAGE_WIDTH = 2 * inch
+PAGE_HEIGHT = 1 * inch
 
 
 def _y(top_pt: float) -> float:
@@ -30,7 +24,7 @@ def _y(top_pt: float) -> float:
     return PAGE_HEIGHT - top_pt
 
 
-def _fit_font_size(c: canvas.Canvas, text: str, font: str, start_size: float, max_width: float, min_size: float = 6) -> float:
+def _fit_font_size(c: canvas.Canvas, text: str, font: str, start_size: float, max_width: float, min_size: float = 5) -> float:
     """Tamaño de fuente más grande (hasta ``start_size``) que cabe en ``max_width``."""
     size = start_size
     while size > min_size and c.stringWidth(text, font, size) > max_width:
@@ -39,85 +33,60 @@ def _fit_font_size(c: canvas.Canvas, text: str, font: str, start_size: float, ma
 
 
 def _draw_label(c: canvas.Canvas, *, tipo: str, radicado: str, fecha: str, oficina: str) -> None:
-    from PIL import Image
-    from reportlab.lib.utils import ImageReader
-
     tipo = (tipo or "").upper()
     oficina = (oficina or "").strip()
-    if len(oficina) > 33:
-        oficina = oficina[:32].rstrip() + "…"
+
+    izq = 6
+    ancho_util = PAGE_WIDTH - 2 * izq
 
     # Borde exterior redondeado
-    margen = 4
-    c.setLineWidth(1.3)
+    margen = 3
+    c.setLineWidth(1)
     c.roundRect(
         margen, margen, PAGE_WIDTH - 2 * margen, PAGE_HEIGHT - 2 * margen,
-        radius=7, stroke=1, fill=0,
+        radius=4, stroke=1, fill=0,
     )
 
-    izq = 13
-    der = PAGE_WIDTH - izq
-    divisor_x = 122
-    gap = 6
-
-    # Encabezado: nombre del hospital + subtítulo (autoajustado para no chocar con el divisor)
-    hospital_w = divisor_x - gap - izq
-    hospital_size = _fit_font_size(c, "HOSPITAL DEL SARARE", "Helvetica-Bold", 10, hospital_w)
-    c.setFont("Helvetica-Bold", hospital_size)
-    c.drawString(izq, _y(20), "HOSPITAL DEL SARARE")
-    sub_size = _fit_font_size(c, "Empresa Social del Estado", "Helvetica-Bold", 5.5, hospital_w)
-    c.setFont("Helvetica-Bold", sub_size)
-    c.drawString(izq, _y(29), "Empresa Social del Estado")
-
-    # Divisor vertical + título derecho (autoajustado al ancho disponible)
-    c.setLineWidth(0.8)
-    c.line(divisor_x, _y(10), divisor_x, _y(41))
-    titulo_x = divisor_x + gap
-    titulo_w = der - titulo_x
-    titulo_size = min(
-        _fit_font_size(c, "RADICACIÓN DE", "Helvetica-Bold", 8, titulo_w),
-        _fit_font_size(c, "CORRESPONDENCIA", "Helvetica-Bold", 8, titulo_w),
-    )
+    # Título centrado
+    titulo = "RADICACIÓN DE CORRESPONDENCIA"
+    titulo_size = _fit_font_size(c, titulo, "Helvetica-Bold", 6.5, ancho_util)
     c.setFont("Helvetica-Bold", titulo_size)
-    c.drawString(titulo_x, _y(19), "RADICACIÓN DE")
-    c.drawString(titulo_x, _y(28), "CORRESPONDENCIA")
+    c.drawCentredString(PAGE_WIDTH / 2, _y(11), titulo)
 
     # Regla + radicado grande
-    c.setLineWidth(0.7)
-    c.line(izq, _y(46), PAGE_WIDTH - izq, _y(46))
-    c.setFont("Helvetica-Bold", 17)
-    radicado_size = 17
-    ancho_disponible = PAGE_WIDTH - 2 * izq
-    while c.stringWidth(radicado, "Helvetica-Bold", radicado_size) > ancho_disponible and radicado_size > 10:
-        radicado_size -= 1
+    c.setLineWidth(0.6)
+    c.line(izq, _y(15), PAGE_WIDTH - izq, _y(15))
+    radicado_size = _fit_font_size(c, radicado, "Helvetica-Bold", 14, ancho_util)
     c.setFont("Helvetica-Bold", radicado_size)
-    c.drawString(izq, _y(63), radicado)
-    c.setLineWidth(0.7)
-    c.line(izq, _y(72), PAGE_WIDTH - izq, _y(72))
+    c.drawString(izq, _y(29), radicado)
+    c.line(izq, _y(34), PAGE_WIDTH - izq, _y(34))
 
-    # Fecha / hora con ícono de calendario
-    icono_w = 11
-    cal_img = ImageReader(Image.open(CALENDARIO_PATH))
-    c.drawImage(cal_img, izq, _y(89), icono_w, icono_w, mask="auto")
-    c.setFont("Helvetica-Bold", 8.5)
-    c.drawString(izq + icono_w + 6, _y(83), fecha or "")
+    # Fecha / hora
+    fecha_size = _fit_font_size(c, fecha or "", "Helvetica-Bold", 6.5, ancho_util)
+    c.setFont("Helvetica-Bold", fecha_size)
+    c.drawString(izq, _y(43), fecha or "")
 
-    # Oficina con ícono de persona
-    per_img = ImageReader(Image.open(PERSONA_PATH))
-    c.drawImage(per_img, izq, _y(106), icono_w, icono_w, mask="auto")
-    c.drawString(izq + icono_w + 6, _y(100), oficina or "")
+    # Oficina (trunca con elipsis si no cabe)
+    oficina_mostrar = oficina
+    oficina_size = 6.5
+    while oficina_mostrar and c.stringWidth(oficina_mostrar, "Helvetica-Bold", oficina_size) > ancho_util:
+        oficina_mostrar = oficina_mostrar[:-1]
+    if oficina_mostrar != oficina and oficina_mostrar:
+        oficina_mostrar = oficina_mostrar[:-1].rstrip() + "…"
+    c.setFont("Helvetica-Bold", oficina_size)
+    c.drawString(izq, _y(52), oficina_mostrar)
 
     # Franja inferior negra con el tipo (blanco sobre negro)
-    franja_y_top = 115
-    franja_alto = 21
+    franja_y_top = 60
+    franja_alto = 14
     c.setFillColorRGB(0, 0, 0)
     c.roundRect(
-        izq, _y(franja_y_top + franja_alto), PAGE_WIDTH - 2 * izq, franja_alto,
-        radius=3, stroke=0, fill=1,
+        izq, _y(franja_y_top + franja_alto), ancho_util, franja_alto,
+        radius=2, stroke=0, fill=1,
     )
     c.setFillColorRGB(1, 1, 1)
-    c.setFont("Helvetica-Bold", 12)
-    c.drawCentredString(PAGE_WIDTH / 2, _y(franja_y_top + franja_alto - 6), tipo)
+    c.setFont("Helvetica-Bold", 8)
+    c.drawCentredString(PAGE_WIDTH / 2, _y(franja_y_top + franja_alto - 4), tipo)
     c.setFillColorRGB(0, 0, 0)
 
 
