@@ -48,9 +48,9 @@ def _draw_label(c: canvas.Canvas, *, tipo: str, radicado: str, fecha: str, ofici
     )
 
     # Encabezado centrado: hospital + título (2 líneas)
-    hospital_size = _fit_font_size(c, "HOSPITAL DEL SARARE", "Helvetica-Bold", 5.5, ancho_util)
+    hospital_size = _fit_font_size(c, "HOSPITAL DEL SARARE E.S.E", "Helvetica-Bold", 5.5, ancho_util)
     c.setFont("Helvetica-Bold", hospital_size)
-    c.drawCentredString(PAGE_WIDTH / 2, _y(9), "HOSPITAL DEL SARARE")
+    c.drawCentredString(PAGE_WIDTH / 2, _y(9), "HOSPITAL DEL SARARE E.S.E")
 
     titulo = "RADICACIÓN DE CORRESPONDENCIA"
     titulo_size = _fit_font_size(c, titulo, "Helvetica-Bold", 5, ancho_util)

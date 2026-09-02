@@ -82,7 +82,7 @@ def _build_label(*, tipo: str, radicado: str, fecha: str, oficina: str) -> str:
         # Borde exterior redondeado
         f"^FO4,4^GB{LABEL_WIDTH_DOTS - 8},{LABEL_HEIGHT_DOTS - 8},3,B,2^FS",
         # Encabezado (centrado, 2 líneas): hospital + título
-        f"^FO0,7^A0N,12,12^FB{LABEL_WIDTH_DOTS},1,0,C^FDHOSPITAL DEL SARARE^FS",
+        f"^FO0,7^A0N,12,12^FB{LABEL_WIDTH_DOTS},1,0,C^FDHOSPITAL DEL SARARE E.S.E^FS",
         f"^FO0,21^A0N,11,11^FB{LABEL_WIDTH_DOTS},1,0,C^FDRADICACIÓN DE CORRESPONDENCIA^FS",
         # Radicado (grande)
         f"^FO{_IZQ},36^GB{_ANCHO_UTIL},2,2^FS",
