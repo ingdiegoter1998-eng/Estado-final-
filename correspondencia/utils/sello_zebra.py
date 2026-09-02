@@ -71,8 +71,8 @@ def _truncar_a_ancho(texto: str, font_height: int, ancho_disponible: int) -> str
 def _build_label(*, tipo: str, radicado: str, fecha: str, oficina: str) -> str:
     tipo = _zpl_escape((tipo or "").upper())
     radicado = _zpl_escape(radicado)
-    fecha = _truncar_a_ancho(_zpl_escape(fecha), 17, _ANCHO_UTIL)
-    oficina = _truncar_a_ancho(_zpl_escape(oficina).strip(), 17, _ANCHO_UTIL)
+    fecha = _truncar_a_ancho(_zpl_escape(fecha), 16, _ANCHO_UTIL)
+    oficina = _truncar_a_ancho(_zpl_escape(oficina).strip(), 16, _ANCHO_UTIL)
 
     lines = [
         "^XA",
@@ -81,19 +81,20 @@ def _build_label(*, tipo: str, radicado: str, fecha: str, oficina: str) -> str:
         "^CI28",
         # Borde exterior redondeado
         f"^FO4,4^GB{LABEL_WIDTH_DOTS - 8},{LABEL_HEIGHT_DOTS - 8},3,B,2^FS",
-        # Título (centrado, una sola línea)
-        f"^FO0,10^A0N,16,16^FB{LABEL_WIDTH_DOTS},1,0,C^FDRADICACIÓN DE CORRESPONDENCIA^FS",
+        # Encabezado (centrado, 2 líneas): hospital + título
+        f"^FO0,7^A0N,12,12^FB{LABEL_WIDTH_DOTS},1,0,C^FDHOSPITAL DEL SARARE^FS",
+        f"^FO0,21^A0N,11,11^FB{LABEL_WIDTH_DOTS},1,0,C^FDRADICACIÓN DE CORRESPONDENCIA^FS",
         # Radicado (grande)
-        f"^FO{_IZQ},34^GB{_ANCHO_UTIL},2,2^FS",
-        f"^FO{_IZQ},42^A0N,34,20^FD{radicado}^FS",
-        f"^FO{_IZQ},82^GB{_ANCHO_UTIL},2,2^FS",
+        f"^FO{_IZQ},36^GB{_ANCHO_UTIL},2,2^FS",
+        f"^FO{_IZQ},43^A0N,30,18^FD{radicado}^FS",
+        f"^FO{_IZQ},76^GB{_ANCHO_UTIL},2,2^FS",
         # Fecha / hora
-        f"^FO{_IZQ},90^A0N,17,17^FD{fecha}^FS",
+        f"^FO{_IZQ},83^A0N,16,16^FD{fecha}^FS",
         # Oficina
-        f"^FO{_IZQ},112^A0N,17,17^FD{oficina}^FS",
+        f"^FO{_IZQ},103^A0N,16,16^FD{oficina}^FS",
         # Franja inferior con el tipo (blanco sobre negro)
-        f"^FO{_IZQ},144^GB{_ANCHO_UTIL},34,34^FS",
-        f"^FO0,152^A0N,22,22^FB{LABEL_WIDTH_DOTS},1,0,C^FR^FD{tipo}^FS",
+        f"^FO{_IZQ},142^GB{_ANCHO_UTIL},34,34^FS",
+        f"^FO0,150^A0N,22,22^FB{LABEL_WIDTH_DOTS},1,0,C^FR^FD{tipo}^FS",
         "^XZ",
         "",
     ]

@@ -47,38 +47,42 @@ def _draw_label(c: canvas.Canvas, *, tipo: str, radicado: str, fecha: str, ofici
         radius=4, stroke=1, fill=0,
     )
 
-    # Título centrado
+    # Encabezado centrado: hospital + título (2 líneas)
+    hospital_size = _fit_font_size(c, "HOSPITAL DEL SARARE", "Helvetica-Bold", 5.5, ancho_util)
+    c.setFont("Helvetica-Bold", hospital_size)
+    c.drawCentredString(PAGE_WIDTH / 2, _y(9), "HOSPITAL DEL SARARE")
+
     titulo = "RADICACIÓN DE CORRESPONDENCIA"
-    titulo_size = _fit_font_size(c, titulo, "Helvetica-Bold", 6.5, ancho_util)
+    titulo_size = _fit_font_size(c, titulo, "Helvetica-Bold", 5, ancho_util)
     c.setFont("Helvetica-Bold", titulo_size)
-    c.drawCentredString(PAGE_WIDTH / 2, _y(11), titulo)
+    c.drawCentredString(PAGE_WIDTH / 2, _y(17), titulo)
 
     # Regla + radicado grande
     c.setLineWidth(0.6)
-    c.line(izq, _y(15), PAGE_WIDTH - izq, _y(15))
-    radicado_size = _fit_font_size(c, radicado, "Helvetica-Bold", 14, ancho_util)
+    c.line(izq, _y(19), PAGE_WIDTH - izq, _y(19))
+    radicado_size = _fit_font_size(c, radicado, "Helvetica-Bold", 12, ancho_util)
     c.setFont("Helvetica-Bold", radicado_size)
-    c.drawString(izq, _y(29), radicado)
+    c.drawString(izq, _y(30), radicado)
     c.line(izq, _y(34), PAGE_WIDTH - izq, _y(34))
 
     # Fecha / hora
-    fecha_size = _fit_font_size(c, fecha or "", "Helvetica-Bold", 6.5, ancho_util)
+    fecha_size = _fit_font_size(c, fecha or "", "Helvetica-Bold", 6, ancho_util)
     c.setFont("Helvetica-Bold", fecha_size)
-    c.drawString(izq, _y(43), fecha or "")
+    c.drawString(izq, _y(42), fecha or "")
 
     # Oficina (trunca con elipsis si no cabe)
     oficina_mostrar = oficina
-    oficina_size = 6.5
+    oficina_size = 6
     while oficina_mostrar and c.stringWidth(oficina_mostrar, "Helvetica-Bold", oficina_size) > ancho_util:
         oficina_mostrar = oficina_mostrar[:-1]
     if oficina_mostrar != oficina and oficina_mostrar:
         oficina_mostrar = oficina_mostrar[:-1].rstrip() + "…"
     c.setFont("Helvetica-Bold", oficina_size)
-    c.drawString(izq, _y(52), oficina_mostrar)
+    c.drawString(izq, _y(50), oficina_mostrar)
 
     # Franja inferior negra con el tipo (blanco sobre negro)
-    franja_y_top = 60
-    franja_alto = 14
+    franja_y_top = 54
+    franja_alto = 13
     c.setFillColorRGB(0, 0, 0)
     c.roundRect(
         izq, _y(franja_y_top + franja_alto), ancho_util, franja_alto,
