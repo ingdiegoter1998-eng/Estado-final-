@@ -384,6 +384,45 @@ def _marcar_lectura_usuario_en_pagina(correspondencias, usuario):
         item.leido_por_usuario_actual = item.id in leidos_ids
 
 
+def _filtrar_lectura_por_usuario(queryset, usuario, estado_lectura):
+    """Filtra pendientes/leídos según la distribución del usuario actual (no el ratio colectivo X/Y)."""
+    if not estado_lectura:
+        return queryset
+    if estado_lectura == 'no_leidos':
+        return queryset.filter(
+            distribuciones_internas__usuario_asignado=usuario,
+            distribuciones_internas__leido=False,
+        ).distinct()
+    if estado_lectura == 'leidos':
+        return queryset.filter(
+            distribuciones_internas__usuario_asignado=usuario,
+            distribuciones_internas__leido=True,
+        ).exclude(
+            distribuciones_internas__usuario_asignado=usuario,
+            distribuciones_internas__leido=False,
+        ).distinct()
+    return queryset
+
+
+def _marcar_notificaciones_consulta(usuario, *, correspondencia=None, comunicacion_interna=None):
+    """
+    Retira de la campana las notificaciones del usuario ligadas al ítem consultado.
+    Cubre duplicados (asignación + compartido, etc.) del mismo radicado/comunicación.
+    """
+    if usuario is None or (correspondencia is None and comunicacion_interna is None):
+        return 0
+
+    qs = Notificacion.objects.filter(usuario=usuario, leida=False)
+    if correspondencia is not None:
+        corr_id = getattr(correspondencia, 'pk', correspondencia)
+        qs = qs.filter(correspondencia_id=corr_id)
+    if comunicacion_interna is not None:
+        ci_id = getattr(comunicacion_interna, 'pk', comunicacion_interna)
+        qs = qs.filter(comunicacion_interna_id=ci_id)
+
+    return qs.update(leida=True, fecha_lectura=timezone.now())
+
+
 def _asignar_estado_respuesta_bandeja(correspondencia, fecha_respuesta=None):
     fecha_limite = correspondencia.fecha_limite_respuesta
     correspondencia.respuesta_registrada_en = fecha_respuesta
@@ -422,8 +461,13 @@ def _guardar_adjuntos_radicacion_fisica(correspondencia, request):
     adjuntos_guardados = 0
     total_size = 0
     max_files = 10
-    max_total_size = 15 * 1024 * 1024
-    max_file_size = 5 * 1024 * 1024
+    # Alineado con los límites de adjuntos de correo (email_config.MAX_FILE_SIZE_MB /
+    # MAX_TOTAL_SIZE_MB). Los 5MB/15MB anteriores rechazaban documentos escaneados
+    # normales de Ventanilla, que es el caso de uso principal de la radicación física.
+    max_file_size_mb = 20
+    max_total_size_mb = 40
+    max_total_size = max_total_size_mb * 1024 * 1024
+    max_file_size = max_file_size_mb * 1024 * 1024
     allowed_extensions_fisico = ['.pdf', '.jpg', '.jpeg', '.png', '.tiff', '.bmp']
     allowed_extensions_general = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.tiff', '.bmp', '.xls', '.xlsx', '.zip']
     adjuntos_files = _obtener_archivos_adjuntos(request)
@@ -448,12 +492,16 @@ def _guardar_adjuntos_radicacion_fisica(correspondencia, request):
             )
 
         if adjunto_file.size > max_file_size:
-            raise ValidationError(f"Archivo {adjunto_file.name} excede el tamaño máximo de 5MB.")
+            raise ValidationError(
+                f"Archivo {adjunto_file.name} ({adjunto_file.size / (1024*1024):.1f}MB) "
+                f"excede el tamaño máximo de {max_file_size_mb}MB."
+            )
 
         total_size += adjunto_file.size
         if total_size > max_total_size:
             raise ValidationError(
-                f"El tamaño total de archivos ({total_size / (1024*1024):.1f}MB) excede el límite de 15MB."
+                f"El tamaño total de archivos ({total_size / (1024*1024):.1f}MB) "
+                f"excede el límite de {max_total_size_mb}MB."
             )
 
     for adjunto_file in adjuntos_files:
@@ -1543,12 +1591,10 @@ def bandeja_personal(request):
                 ),
             )
 
-            # Filtro por estado de lectura basado en X/Y
-            if estado_lectura:
-                if estado_lectura == 'leidos':
-                    correspondencias_qs = correspondencias_qs.filter(total_leidos=F('total_destinatarios'))
-                elif estado_lectura == 'no_leidos':
-                    correspondencias_qs = correspondencias_qs.filter(total_leidos__lt=F('total_destinatarios'))
+            # Filtro por estado de lectura del usuario actual (alineado con dashboard y filas)
+            correspondencias_qs = _filtrar_lectura_por_usuario(
+                correspondencias_qs, usuario_actual, estado_lectura
+            )
 
             # Optimizar relaciones relacionadas después de anotar
             correspondencias_qs = correspondencias_qs.select_related(
@@ -1796,18 +1842,10 @@ def bandeja_oficina(request):
                 )
             )
 
-            # Filtro por estado de lectura
-            if estado_lectura:
-                if estado_lectura == 'leidos':
-                    correspondencias_qs = correspondencias_qs.filter(
-                        total_destinatarios__gt=0,
-                        total_leidos=F('total_destinatarios')
-                    )
-                elif estado_lectura == 'no_leidos':
-                    correspondencias_qs = correspondencias_qs.filter(
-                        total_destinatarios__gt=0,
-                        total_leidos__lt=F('total_destinatarios')
-                    )
+            # Filtro por lectura del usuario actual (pendientes reales, no ratio colectivo X/Y)
+            correspondencias_qs = _filtrar_lectura_por_usuario(
+                correspondencias_qs, usuario_actual, estado_lectura
+            )
 
             # Filtro por estado de plazo usando propiedad del modelo
             if estado_plazo:
@@ -1836,6 +1874,7 @@ def bandeja_oficina(request):
                 correspondencias_page = paginator.page(1)
 
             correspondencias_list = correspondencias_page.object_list
+            _marcar_lectura_usuario_en_pagina(correspondencias_list, usuario_actual)
             for item in correspondencias_list:
                 _asignar_estado_respuesta_bandeja(
                     item,
@@ -2962,20 +3001,18 @@ def dashboard_usuario(request):
     hoy_inicio = ahora.astimezone(timezone.get_current_timezone()).replace(hour=0, minute=0, second=0, microsecond=0)
     hoy_fin = hoy_inicio + datetime.timedelta(days=1)
     
-    # KPIs de correspondencia personal usando la misma base que la bandeja personal.
+    # KPIs de correspondencia personal: pendientes reales del usuario (su copia sin leer).
     if oficina_usuario:
         correspondencias_personales_qs = _base_bandeja_personal_queryset(
             request.user,
             oficina_usuario,
         )
 
-        correspondencias_pendientes = correspondencias_personales_qs.annotate(
-            num_distribuciones=Count('distribuciones_internas', distinct=True),
-            total_destinatarios=Count('distribuciones_internas', distinct=True),
-            total_leidos=Count('distribuciones_internas', filter=Q(distribuciones_internas__leido=True), distinct=True)
-        ).filter(
-            total_leidos__lt=F('total_destinatarios')  # X < Y
-        ).distinct()
+        correspondencias_pendientes = _filtrar_lectura_por_usuario(
+            correspondencias_personales_qs,
+            request.user,
+            'no_leidos',
+        )
         kpi_recibidos_pendientes = correspondencias_pendientes.count()
 
         correspondencias_hoy = correspondencias_personales_qs.filter(
@@ -2987,15 +3024,16 @@ def dashboard_usuario(request):
         kpi_recibidos_pendientes = 0
         kpi_recibidos_hoy = 0
     
-    # KPIs de oficina usando la misma base que la bandeja de oficina.
+    # KPIs de oficina: pendientes de lectura del usuario en bandeja compartida.
     kpi_oficina_pendientes = 0
     kpi_oficina_hoy = 0
     if oficina_usuario:
         correspondencias_oficina_qs = _base_bandeja_oficina_queryset(oficina_usuario)
 
-        kpi_oficina_pendientes = correspondencias_oficina_qs.filter(
-            total_destinatarios__gt=0,
-            total_leidos__lt=F('total_destinatarios'),
+        kpi_oficina_pendientes = _filtrar_lectura_por_usuario(
+            correspondencias_oficina_qs,
+            request.user,
+            'no_leidos',
         ).count()
 
         kpi_oficina_hoy = correspondencias_oficina_qs.filter(
@@ -3028,18 +3066,22 @@ def dashboard_usuario(request):
         )
     ).count()
     
-    # --- Correspondencia reciente personal ---
+    # --- Correspondencia reciente personal (solo pendientes de lectura del usuario) ---
     distribuciones_recientes = DistribucionInternaUsuario.objects.filter(
-        usuario_asignado=request.user
+        usuario_asignado=request.user,
+        leido=False,
     ).select_related('correspondencia__remitente', 'correspondencia__oficina_destino').order_by('-fecha_asignacion')[:8]
     
-    # --- Correspondencia reciente de oficina ---
+    # --- Correspondencia reciente de oficina (sin leer para el usuario actual) ---
     correspondencia_reciente_oficina = []
     if oficina_usuario:
-        correspondencia_reciente_oficina = Correspondencia.objects.filter(
-            tipo_radicado='ENTRANTE',
-            oficina_destino=oficina_usuario
-        ).select_related('remitente', 'usuario_destino_inicial').order_by('-fecha_radicacion')[:8]
+        correspondencia_reciente_oficina = list(
+            _filtrar_lectura_por_usuario(
+                _base_bandeja_oficina_queryset(oficina_usuario),
+                request.user,
+                'no_leidos',
+            ).select_related('remitente', 'usuario_destino_inicial').order_by('-fecha_radicacion')[:8]
+        )
     
     # --- Correspondencia compartida recientemente ---
     # Buscar correspondencia que el usuario haya compartido (esto requeriría un campo adicional)
@@ -3099,9 +3141,10 @@ def dashboard_usuario(request):
             'url': reverse('correspondencia:detalle_respuesta_salida', args=[salida.id])
         })
     
-    # 2. Últimas correspondencias asignadas
+    # 2. Últimas asignaciones aún pendientes de lectura (no gestionadas)
     distribuciones_asignadas = DistribucionInternaUsuario.objects.filter(
-        usuario_asignado=request.user
+        usuario_asignado=request.user,
+        leido=False,
     ).select_related('correspondencia__remitente__entidad_externa', 'asignado_por').order_by('-fecha_asignacion')[:5]
     
     for dist in distribuciones_asignadas:
@@ -4880,6 +4923,9 @@ def detalle_correspondencia(request, pk):
             messages.error(request, "No tienes permiso para ver esta correspondencia.")
             redirect_url = 'correspondencia:bandeja_personal' if perfil_usuario else 'correspondencia:welcome'
             return redirect(redirect_url)
+
+        # Al consultar desde bandeja/dashboard/campana, retirar notificaciones ligadas
+        _marcar_notificaciones_consulta(usuario_actual, correspondencia=correspondencia)
 
         if es_de_oficina_destino and correspondencia.estado != 'RADICADA':
             try:
@@ -8462,6 +8508,12 @@ def obtener_notificaciones(request):
     """
     usuario = request.user
     
+    # Contar antes de limitar: el badge no debe caparse a 20
+    total_no_leidas = Notificacion.objects.filter(
+        usuario=usuario,
+        leida=False,
+    ).count()
+
     # Obtener notificaciones no leídas
     notificaciones_no_leidas = Notificacion.objects.filter(
         usuario=usuario,
@@ -8491,7 +8543,7 @@ def obtener_notificaciones(request):
         'success': True,
         'no_leidas': [serializar_notificacion(n) for n in notificaciones_no_leidas],
         'leidas': [serializar_notificacion(n) for n in notificaciones_leidas],
-        'total_no_leidas': notificaciones_no_leidas.count(),
+        'total_no_leidas': total_no_leidas,
     }
     
     return JsonResponse(data)
@@ -8500,13 +8552,25 @@ def obtener_notificaciones(request):
 @login_required
 @require_POST
 def marcar_notificacion_leida(request, notificacion_id):
-    """Marca una notificación como leída."""
+    """Marca una notificación como leída y sus hermanas del mismo ítem."""
     try:
         notificacion = Notificacion.objects.get(
             id=notificacion_id,
             usuario=request.user
         )
         notificacion.marcar_leida()
+
+        # Retirar duplicados del mismo radicado/comunicación interna
+        if notificacion.correspondencia_id:
+            _marcar_notificaciones_consulta(
+                request.user,
+                correspondencia=notificacion.correspondencia_id,
+            )
+        if notificacion.comunicacion_interna_id:
+            _marcar_notificaciones_consulta(
+                request.user,
+                comunicacion_interna=notificacion.comunicacion_interna_id,
+            )
         
         return JsonResponse({
             'success': True,
@@ -10367,11 +10431,22 @@ def _distribuir_comunicacion_interna(comunicacion, usuario_distribuidor):
             ).exclude(pk=comunicacion.remitente_usuario_id)
     
     elif tipo_dist == 'OFICINA':
-        # Todos los usuarios de la oficina destino
-        if comunicacion.destinatario_oficina:
+        # Todas las oficinas/subprocesos destinatarios (múltiples), no solo el campo legacy.
+        from .models import ComunicacionInternaDestinatario
+        oficinas_ids = list(
+            ComunicacionInternaDestinatario.objects.filter(
+                comunicacion=comunicacion,
+                tipo='OFICINA',
+                oficina__isnull=False,
+            ).values_list('oficina_id', flat=True).distinct()
+        )
+        if not oficinas_ids and comunicacion.destinatario_oficina_id:
+            oficinas_ids = [comunicacion.destinatario_oficina_id]
+
+        if oficinas_ids:
             usuarios_destino = User.objects.filter(
                 is_active=True,
-                perfil__oficina=comunicacion.destinatario_oficina
+                perfil__oficina_id__in=oficinas_ids,
             ).exclude(pk=comunicacion.remitente_usuario_id)
     
     else:  # USUARIO
@@ -10401,6 +10476,8 @@ def _distribuir_comunicacion_interna(comunicacion, usuario_distribuidor):
             usuarios_destino = [comunicacion.destinatario_usuario]
     
     count = 0
+    notificaciones_creadas = 0
+    detalle_url = reverse('correspondencia:interna_detalle', kwargs={'pk': comunicacion.pk})
     for usuario in usuarios_destino:
         # Crear distribución
         dist, created = ComunicacionInternaDistribucion.objects.get_or_create(
@@ -10409,23 +10486,103 @@ def _distribuir_comunicacion_interna(comunicacion, usuario_distribuidor):
         )
         if created:
             count += 1
-            # Crear notificación
+
+        # Notificar si es distribución nueva o si faltaba la campana (reparación / reintento)
+        ya_notificado = Notificacion.objects.filter(
+            usuario=usuario,
+            comunicacion_interna=comunicacion,
+            tipo='comunicacion_interna',
+        ).exists()
+        if created or not ya_notificado:
             Notificacion.objects.create(
                 usuario=usuario,
                 tipo='comunicacion_interna',
                 titulo=f"Nueva comunicación interna: {comunicacion.asunto[:50]}",
-                mensaje=f"Has recibido una comunicación interna de {comunicacion.remitente_nombre} ({comunicacion.remitente_oficina.nombre}).",
+                mensaje=(
+                    f"Has recibido una comunicación interna de {comunicacion.remitente_nombre} "
+                    f"({comunicacion.remitente_oficina.nombre})."
+                ),
                 comunicacion_interna=comunicacion,
-                url=reverse('correspondencia:interna_detalle', kwargs={'pk': comunicacion.pk})
+                url=detalle_url,
             )
+            notificaciones_creadas += 1
     
     # Registrar en historial
     HistorialComunicacionInterna.objects.create(
         comunicacion=comunicacion,
         evento='DISTRIBUIDA',
         usuario=usuario_distribuidor,
-        descripcion=f"Distribuida a {count} usuarios"
+        descripcion=(
+            f"Distribuida a {count} usuarios nuevos "
+            f"({notificaciones_creadas} notificaciones creadas)"
+        )
     )
+    return {'usuarios_nuevos': count, 'notificaciones': notificaciones_creadas}
+
+
+def _usuario_debe_registrar_lectura_interna(user, comunicacion):
+    """True si el usuario es destinatario efectivo (debe figurar en trazabilidad al consultar)."""
+    from .models import ComunicacionInternaDestinatario, ComunicacionInternaDistribucion
+
+    if ComunicacionInternaDistribucion.objects.filter(comunicacion=comunicacion, usuario=user).exists():
+        return True
+
+    try:
+        oficina = user.perfil.oficina
+    except AttributeError:
+        oficina = None
+
+    tipo = comunicacion.tipo_distribucion or ('ENTIDAD' if comunicacion.es_a_toda_entidad else None)
+
+    if tipo == 'USUARIO':
+        if comunicacion.destinatario_usuario_id == user.id:
+            return True
+        return ComunicacionInternaDestinatario.objects.filter(
+            comunicacion=comunicacion, tipo='USUARIO', usuario=user
+        ).exists()
+
+    if tipo == 'OFICINA' and oficina:
+        if comunicacion.destinatario_oficina_id == oficina.id:
+            return True
+        return ComunicacionInternaDestinatario.objects.filter(
+            comunicacion=comunicacion, tipo='OFICINA', oficina=oficina
+        ).exists()
+
+    if tipo == 'PROCESO' and oficina and comunicacion.destinatario_proceso_id:
+        return getattr(oficina, 'proceso_id', None) == comunicacion.destinatario_proceso_id
+
+    if tipo == 'ENTIDAD' or comunicacion.es_a_toda_entidad:
+        return user.is_active and user.id != comunicacion.remitente_usuario_id
+
+    return False
+
+
+def _registrar_lectura_comunicacion_interna(user, comunicacion):
+    """
+    Asegura fila de distribución y marca lectura para destinatarios efectivos.
+    Cubre el caso en que la bandeja muestra la CI por oficina destinataria
+    pero aún no existía ComunicacionInternaDistribucion (bug multi-oficina).
+    """
+    from .models import ComunicacionInternaDistribucion, HistorialComunicacionInterna
+
+    if not _usuario_debe_registrar_lectura_interna(user, comunicacion):
+        return False
+
+    dist, _ = ComunicacionInternaDistribucion.objects.get_or_create(
+        comunicacion=comunicacion,
+        usuario=user,
+    )
+    if dist.leido:
+        return False
+
+    dist.marcar_leido()
+    HistorialComunicacionInterna.objects.create(
+        comunicacion=comunicacion,
+        evento='LEIDA',
+        usuario=user,
+        descripcion=f"Leída por {user.get_full_name() or user.username}",
+    )
+    return True
 
 
 @login_required
@@ -12056,23 +12213,11 @@ class ComunicacionInternaDetailView(LoginRequiredMixin, DetailView):
             comunicacion=comunicacion
         ).order_by('-fecha')
         
-        # Marcar como leída si el usuario es destinatario
-        try:
-            distribucion = ComunicacionInternaDistribucion.objects.get(
-                comunicacion=comunicacion,
-                usuario=user
-            )
-            if not distribucion.leido:
-                distribucion.marcar_leido()
-                # Registrar en historial
-                HistorialComunicacionInterna.objects.create(
-                    comunicacion=comunicacion,
-                    evento='LEIDA',
-                    usuario=user,
-                    descripcion=f"Leída por {user.get_full_name() or user.username}"
-                )
-        except ComunicacionInternaDistribucion.DoesNotExist:
-            pass
+        # Marcar lectura para destinatarios efectivos (incluye multi-oficina sin fila previa)
+        _registrar_lectura_comunicacion_interna(user, comunicacion)
+
+        # Retirar notificaciones de la campana al consultar (bandeja o panel)
+        _marcar_notificaciones_consulta(user, comunicacion_interna=comunicacion)
         
         # Calcular si el usuario puede responder (para pasar al template)
         context['puede_responder'] = comunicacion.puede_responder(user)
