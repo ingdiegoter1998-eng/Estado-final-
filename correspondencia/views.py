@@ -2137,10 +2137,16 @@ def _configure_dashboard_ventanilla_form_querysets(*forms, post=None, user=None)
         if 'otras_oficinas' in form.fields:
             form.fields['otras_oficinas'].queryset = qs_otras_oficinas
         if 'usuario_destino_rapido' in form.fields and usuario_rapido_pks:
-            qs_usuario = User.objects.filter(pk__in=usuario_rapido_pks, is_active=True).select_related('perfil')
+            # .distinct() en ambos lados del OR: esta función puede llamarse más de
+            # una vez sobre el mismo form en la misma request (p. ej. si la
+            # radicación 'radicar' falla y el flujo vuelve a pasar por aquí al
+            # final de la vista). Si `actual` ya quedó marcado distinct de una
+            # invocación previa, combinarlo con un queryset nuevo sin distinct
+            # revienta con "Cannot combine a unique query with a non-unique query."
+            qs_usuario = User.objects.filter(pk__in=usuario_rapido_pks, is_active=True).select_related('perfil').distinct()
             actual = form.fields['usuario_destino_rapido'].queryset
             if actual.exists():
-                qs_usuario = qs_usuario | actual
+                qs_usuario = qs_usuario | actual.distinct()
             form.fields['usuario_destino_rapido'].queryset = qs_usuario.distinct()
 
 
