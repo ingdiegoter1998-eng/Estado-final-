@@ -816,8 +816,8 @@ class ManualRadicacionCorreoForm(forms.ModelForm):
                             <div class="form-text">
                                 <small class="text-muted">
                                     <i class="bi bi-info-circle me-1"></i>
-                                    Formatos permitidos: PDF, Word, imágenes, Excel y ZIP. 
-                                    Máximo 10 archivos, 15MB total por correspondencia.
+                                    Formatos permitidos: PDF, Word, imágenes, Excel y ZIP.
+                                    Máximo 10 archivos, 20MB por archivo, 40MB total por correspondencia.
                                 </small>
                             </div>
                             <div class="alert alert-info mt-2 mb-0" id="adjuntos-info" role="alert" style="display: none;">
@@ -1739,7 +1739,8 @@ class RadicacionRapidaEntranteForm(forms.ModelForm):
             'class': 'form-control',
             'accept': '.pdf,.doc,.docx,.jpg,.jpeg,.png,.xls,.xlsx,.zip'
         }),
-        help_text="Puede seleccionar múltiples archivos (PDF, Word, imágenes, Excel, ZIP)"
+        help_text="Puede seleccionar múltiples archivos (PDF, Word, imágenes, Excel, ZIP). "
+        "Máximo 10 archivos, 20MB por archivo, 40MB total."
     )
     
     class Meta:
@@ -1938,6 +1939,25 @@ class RadicacionRapidaEntranteForm(forms.ModelForm):
         elif not fecha_respuesta:
             cleaned_data['estado_respuesta'] = cleaned_data.get('estado_respuesta') or 'PENDIENTE'
 
+        # Validar adjuntos (cantidad/tipo/tamaño). El widget permite selección múltiple
+        # pero FileField solo expone un archivo en cleaned_data, así que se leen todos
+        # directo de self.files (mismo campo que usa la vista vía request.FILES.getlist).
+        try:
+            from correspondencia.utils.adjuntos_radicacion import (
+                EXTENSIONES_GENERAL,
+                validar_lista_adjuntos,
+            )
+
+            clave = self.add_prefix('adjuntos_archivos')
+            if hasattr(self.files, 'getlist'):
+                archivos = self.files.getlist(clave)
+            else:
+                valor = self.files.get(clave)
+                archivos = [valor] if valor else []
+            validar_lista_adjuntos(archivos, allowed_extensions=EXTENSIONES_GENERAL)
+        except ValidationError as exc:
+            self.add_error(None, exc)
+
         return cleaned_data
 
     def save(self, commit=True):
@@ -2036,6 +2056,9 @@ class RadicacionRapidaSalienteForm(forms.ModelForm):
             'fue_respondida': '¿Ya fue respondida?',
             'evidencia_respuesta': 'Evidencia de respuesta',
         }
+        help_texts = {
+            'evidencia_respuesta': 'Máximo 20MB.',
+        }
     
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -2058,16 +2081,27 @@ class RadicacionRapidaSalienteForm(forms.ModelForm):
         # Si hay usuario, preseleccionar su oficina
         if self.user and hasattr(self.user, 'perfil') and self.user.perfil.oficina:
             self.fields['oficina_emisora'].initial = self.user.perfil.oficina
-    
+
+    def clean_evidencia_respuesta(self):
+        from correspondencia.utils.adjuntos_radicacion import (
+            EXTENSIONES_GENERAL,
+            validar_lista_adjuntos,
+        )
+
+        archivo = self.cleaned_data.get('evidencia_respuesta')
+        if archivo:
+            validar_lista_adjuntos([archivo], allowed_extensions=EXTENSIONES_GENERAL, max_files=1)
+        return archivo
+
     def clean(self):
         cleaned_data = super().clean()
         destinatario = cleaned_data.get('destinatario_contacto')
         destinatario_texto = cleaned_data.get('destinatario_texto', '').strip()
-        
+
         # Validar que al menos uno esté presente
         if not destinatario and not destinatario_texto:
             raise ValidationError(
                 'Debe especificar un destinatario (contacto registrado o texto libre).'
             )
-        
+
         return cleaned_data

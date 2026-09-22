@@ -169,8 +169,8 @@ window.usuarioOficinaTrd = '{{ request.user.perfil.oficina.codigo_trd|default:""
           <div class="form-text">
             <small class="text-muted">
               <i class="bi bi-info-circle me-1"></i>
-              Formatos permitidos: PDF, JPG, PNG, TIFF, BMP. 
-              Máximo 10 archivos, 15MB total por correspondencia.
+              Formatos permitidos: PDF, JPG, PNG, TIFF, BMP.
+              Máximo 10 archivos, 20MB por archivo, 40MB total por correspondencia.
             </small>
           </div>
           {% if form.medio_recepcion.value == 'FISICO' %}

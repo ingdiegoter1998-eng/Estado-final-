@@ -419,51 +419,24 @@ def _guardar_adjuntos_radicacion_fisica(correspondencia, request):
                 return archivos
         return []
 
+    from correspondencia.utils.adjuntos_radicacion import (
+        EXTENSIONES_FISICO,
+        EXTENSIONES_GENERAL,
+        validar_lista_adjuntos,
+    )
+
     adjuntos_guardados = 0
-    total_size = 0
-    max_files = 10
-    # Alineado con los límites de adjuntos de correo (email_config.MAX_FILE_SIZE_MB /
-    # MAX_TOTAL_SIZE_MB). Los 5MB/15MB anteriores rechazaban documentos escaneados
-    # normales de Ventanilla, que es el caso de uso principal de la radicación física.
-    max_file_size_mb = 20
-    max_total_size_mb = 40
-    max_total_size = max_total_size_mb * 1024 * 1024
-    max_file_size = max_file_size_mb * 1024 * 1024
-    allowed_extensions_fisico = ['.pdf', '.jpg', '.jpeg', '.png', '.tiff', '.bmp']
-    allowed_extensions_general = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', '.tiff', '.bmp', '.xls', '.xlsx', '.zip']
     adjuntos_files = _obtener_archivos_adjuntos(request)
 
     if not adjuntos_files:
         return 0
 
-    if len(adjuntos_files) > max_files:
-        raise ValidationError(f"Máximo {max_files} archivos permitidos por correspondencia.")
-
     allowed_extensions = (
-        allowed_extensions_fisico
+        EXTENSIONES_FISICO
         if correspondencia.medio_recepcion == 'FISICO'
-        else allowed_extensions_general
+        else EXTENSIONES_GENERAL
     )
-
-    for adjunto_file in adjuntos_files:
-        file_extension = os.path.splitext(adjunto_file.name)[1].lower()
-        if file_extension not in allowed_extensions:
-            raise ValidationError(
-                f"Formato no permitido: {adjunto_file.name}. Solo se permiten: {', '.join(allowed_extensions)}"
-            )
-
-        if adjunto_file.size > max_file_size:
-            raise ValidationError(
-                f"Archivo {adjunto_file.name} ({adjunto_file.size / (1024*1024):.1f}MB) "
-                f"excede el tamaño máximo de {max_file_size_mb}MB."
-            )
-
-        total_size += adjunto_file.size
-        if total_size > max_total_size:
-            raise ValidationError(
-                f"El tamaño total de archivos ({total_size / (1024*1024):.1f}MB) "
-                f"excede el límite de {max_total_size_mb}MB."
-            )
+    validar_lista_adjuntos(adjuntos_files, allowed_extensions=allowed_extensions)
 
     for adjunto_file in adjuntos_files:
         try:
@@ -2381,7 +2354,9 @@ def dashboard_ventanilla(request):
             entidad_form = EntidadExternaForm()
             radicacion_form = _dashboard_radicacion_form(prefix='radicar')
             rapida_entrante_form = _dashboard_rapida_ent_form(prefix='rapida_ent')
-            rapida_saliente_form = _dashboard_rapida_sal_form(request.user, request.POST, prefix='rapida_sal')
+            rapida_saliente_form = _dashboard_rapida_sal_form(
+                request.user, request.POST, request.FILES, prefix='rapida_sal',
+            )
             _configure_dashboard_ventanilla_form_querysets(
                 rapida_saliente_form, post=request.POST, user=request.user,
             )
