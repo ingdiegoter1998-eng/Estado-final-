@@ -1036,11 +1036,30 @@
                 <div class="card shadow-sm mb-4">
                     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <h5 class="section-title"><i class="bi bi-paperclip"></i> Archivos adjuntos</h5>
-                        <span class="section-link">{{ adjuntos_respuesta|length }} archivo{{ adjuntos_respuesta|length|pluralize }}</span>
+                        <span class="section-link">{% if respuesta.evidencia_respuesta %}{% with total=adjuntos_respuesta|length|add:1 %}{{ total }} archivo{{ total|pluralize }}{% endwith %}{% else %}{{ adjuntos_respuesta|length }} archivo{{ adjuntos_respuesta|length|pluralize }}{% endif %}</span>
                     </div>
                     <div class="card-body">
-                        {% if adjuntos_respuesta %}
+                        {% if adjuntos_respuesta or respuesta.evidencia_respuesta %}
                         <div class="detail-attachment-list">
+                            {% if respuesta.evidencia_respuesta %}
+                            <div class="detail-attachment-item">
+                                <div class="attachment-icon bg-success-subtle text-success">
+                                    <i class="bi bi-file-earmark-check"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="detail-value">Evidencia de respuesta</div>
+                                    <div class="detail-subtext">{{ respuesta.evidencia_respuesta.name|cut:"salidas/evidencias/" }}</div>
+                                </div>
+                                <div class="attachment-actions">
+                                    <a href="{{ respuesta.evidencia_respuesta.url }}" target="_blank" class="btn btn-outline-secondary" title="Visualizar archivo">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ respuesta.evidencia_respuesta.url }}" target="_blank" download class="btn btn-outline-primary" title="Descargar archivo">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endif %}
                             {% for adjunto in adjuntos_respuesta %}
                             <div class="detail-attachment-item">
                                 <div class="attachment-icon bg-primary-subtle text-primary">
